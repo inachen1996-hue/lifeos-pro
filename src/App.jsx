@@ -27,19 +27,19 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center space-y-6">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-6">
           <div className="bg-rose-50 p-6 rounded-full">
-              <AlertCircle className="w-10 h-10 text-rose-500" />
+              <AlertCircle className="w-12 h-12 text-rose-500" />
           </div>
           <div>
-              <h3 className="text-slate-800 font-bold text-xl mb-2">显示出了点小问题</h3>
-              <p className="text-sm text-slate-500">数据格式可能有点偏差</p>
+              <h3 className="text-slate-800 font-bold text-2xl mb-2">显示出了点小问题</h3>
+              <p className="text-base text-slate-500">数据格式可能有点偏差</p>
           </div>
           <div className="flex flex-col gap-4 w-full max-w-xs">
-             <button onClick={() => window.location.reload()} className="w-full bg-slate-800 text-white px-6 py-4 rounded-2xl text-base font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+             <button onClick={() => window.location.reload()} className="w-full bg-slate-800 text-white px-6 py-4 rounded-2xl text-lg font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
                 <RefreshCw className="w-5 h-5"/> 刷新页面
              </button>
-             <button onClick={this.handleReset} className="w-full bg-white border border-slate-200 text-slate-500 px-6 py-4 rounded-2xl text-base font-medium active:bg-slate-50 transition-colors">
+             <button onClick={this.handleReset} className="w-full bg-white border border-slate-200 text-slate-600 px-6 py-4 rounded-2xl text-lg font-medium active:bg-slate-50 transition-colors">
                 重置数据
              </button>
           </div>
@@ -62,7 +62,6 @@ const callGeminiWithRetry = async (model, prompt, retries = 3, initialDelay = 10
         throw error;
       }
       const delay = initialDelay * Math.pow(2, i);
-      console.log(`Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -73,7 +72,6 @@ const parseJSONSafely = (text) => {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.warn("JSON Parse failed, attempting repair...", e);
     try {
       let fixed = text.replace(/,(\s*[}\]])/g, '$1').replace(/'/g, '"');
       return JSON.parse(fixed);
@@ -124,13 +122,13 @@ const sanitizeData = (data) => {
   return safeData;
 };
 
-// --- 饼图组件 ---
+// --- 饼图组件 (归一化版) ---
 const SimplePieChart = ({ data }) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-            <PieIcon className="w-8 h-8 text-slate-300 mb-2" />
-            <span className="text-sm text-slate-400">暂无时间记录</span>
+        <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-3xl border-2 border-slate-100 border-dashed">
+            <PieIcon className="w-10 h-10 text-slate-300 mb-3" />
+            <span className="text-base text-slate-400 font-medium">暂无时间记录</span>
         </div>
       );
   }
@@ -139,6 +137,9 @@ const SimplePieChart = ({ data }) => {
     '#A78BFA', '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A3A3A3', '#818CF8', '#FB923C'
   ];
 
+  // 1. 计算当前数据的总占比 (可能是 20%, 50% 等)
+  const totalPercentage = data.reduce((acc, item) => acc + (parseFloat(item.percentage) || 0), 0);
+  
   let cumulativePercent = 0;
 
   const getCoordinatesForPercent = (percent) => {
@@ -149,18 +150,23 @@ const SimplePieChart = ({ data }) => {
 
   const slices = data.map((slice, index) => {
     const color = colors[index % colors.length];
-    const percentage = parseFloat(slice.percentage) || 0;
-    if (percentage <= 0) return null;
+    const rawPercentage = parseFloat(slice.percentage) || 0;
+    if (rawPercentage <= 0) return null;
+
+    // 2. 归一化：计算这项任务在“已记录总时间”里的占比 (0.0 - 1.0)
+    // 这样就能保证所有扇形加起来是一个完整的圆 (100%)
+    const normalizedPercent = totalPercentage > 0 ? (rawPercentage / totalPercentage) : 0;
 
     const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
-    cumulativePercent += percentage / 100;
+    cumulativePercent += normalizedPercent;
     const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
     
-    if (percentage > 99.9) {
+    // 如果占比接近 100%，画一个完整的圆
+    if (normalizedPercent > 0.999) {
       return <circle key={index} cx="0" cy="0" r="1" fill={color} />;
     }
 
-    const largeArcFlag = percentage > 50 ? 1 : 0;
+    const largeArcFlag = normalizedPercent > 0.5 ? 1 : 0;
     const pathData = [
       `M 0 0`,
       `L ${startX} ${startY}`,
@@ -172,37 +178,56 @@ const SimplePieChart = ({ data }) => {
   });
 
   return (
-    <div className="flex flex-col items-center justify-center py-4">
-      <div className="flex items-center justify-center gap-6 w-full">
-          <div className="w-32 h-32 relative shrink-0">
-            <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-sm">
+    <div className="flex flex-col items-center justify-center py-6">
+      <div className="flex items-center justify-center gap-8 w-full">
+          <div className="w-36 h-36 relative shrink-0">
+            <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-md">
               {slices}
             </svg>
           </div>
-          <div className="flex-1 min-w-[120px] space-y-3">
-            {data.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: colors[idx % colors.length] }}></div>
-                  <span className="text-slate-600 font-medium truncate max-w-[100px]" title={item.category}>{item.category}</span>
+          <div className="flex-1 min-w-[140px] space-y-3">
+            {data.map((item, idx) => {
+              const rawPercentage = parseFloat(item.percentage) || 0;
+              // 计算显示的百分比：也是基于“已记录时间”的占比
+              const displayPercent = totalPercentage > 0 ? ((rawPercentage / totalPercentage) * 100).toFixed(1) : 0;
+              
+              return (
+                <div key={idx} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full shadow-sm shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></div>
+                    <span className="text-slate-700 font-bold text-sm truncate max-w-[110px]" title={item.category}>{item.category}</span>
+                  </div>
+                  <span className="text-slate-500 font-mono font-bold text-sm">{displayPercent}%</span>
                 </div>
-                <span className="text-slate-500 font-mono font-bold">{item.percentage}%</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
       </div>
     </div>
   );
 };
 
+// 图标获取
+const getCategoryIcon = (category) => {
+  const cat = (category || "").toLowerCase();
+  if (cat.includes('睡') || cat.includes('sleep')) return <Moon className="w-4 h-4" />;
+  if (cat.includes('工') || cat.includes('work')) return <Briefcase className="w-4 h-4" />;
+  if (cat.includes('学') || cat.includes('study') || cat.includes('读')) return <BookOpen className="w-4 h-4" />;
+  if (cat.includes('娱') || cat.includes('play') || cat.includes('game')) return <Gamepad2 className="w-4 h-4" />;
+  if (cat.includes('通') || cat.includes('commute')) return <Car className="w-4 h-4" />;
+  if (cat.includes('吃') || cat.includes('eat') || cat.includes('饭')) return <Coffee className="w-4 h-4" />;
+  if (cat.includes('复') || cat.includes('recovery')) return <Heart className="w-4 h-4" />;
+  return <Activity className="w-4 h-4" />;
+};
+
 // 样式
 const getBlockStyle = (type) => {
   switch (type) {
-    case 'focus': return 'bg-[#E0F7FA]/80 border-[#B2EBF2] text-cyan-900 shadow-sm';
-    case 'rest': return 'bg-[#E8F5E9]/80 border-[#C8E6C9] text-emerald-900 shadow-sm';
-    case 'recovery': return 'bg-[#FCE4EC]/80 border-[#F8BBD0] text-pink-900 shadow-sm';
-    case 'routine': return 'bg-[#FFF3E0]/80 border-[#FFE0B2] text-orange-900 shadow-sm';
-    case 'fun': return 'bg-[#F3E5F5]/80 border-[#E1BEE7] text-purple-900 shadow-sm';
+    case 'focus': return 'bg-[#E0F7FA]/90 border-[#B2EBF2] text-cyan-900 shadow-sm';
+    case 'rest': return 'bg-[#E8F5E9]/90 border-[#C8E6C9] text-emerald-900 shadow-sm';
+    case 'recovery': return 'bg-[#FCE4EC]/90 border-[#F8BBD0] text-pink-900 shadow-sm';
+    case 'routine': return 'bg-[#FFF3E0]/90 border-[#FFE0B2] text-orange-900 shadow-sm';
+    case 'fun': return 'bg-[#F3E5F5]/90 border-[#E1BEE7] text-purple-900 shadow-sm';
     default: return 'bg-slate-50 border-slate-200 text-slate-700';
   }
 };
@@ -248,21 +273,21 @@ function App() {
   const diaryRef = useRef(null);
 
   const physicalOptions = [
-    { l: "⚡️ 充沛", v: "充沛", activeClass: "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm ring-1 ring-indigo-100" },
-    { l: "🙂 正常", v: "正常", activeClass: "bg-slate-50 border-slate-200 text-slate-700 shadow-sm ring-1 ring-slate-100" },
-    { l: "🥱 疲惫", v: "疲惫", activeClass: "bg-amber-50 border-amber-200 text-amber-700 shadow-sm ring-1 ring-amber-100" },
-    { l: "💥 腰痛", v: "腰痛", activeClass: "bg-rose-50 border-rose-200 text-rose-700 shadow-sm ring-1 ring-rose-100" },
-    { l: "🤕 头痛", v: "头痛", activeClass: "bg-rose-50 border-rose-200 text-rose-700 shadow-sm ring-1 ring-rose-100" },
-    { l: "🤢 腹痛", v: "腹痛", activeClass: "bg-rose-50 border-rose-200 text-rose-700 shadow-sm ring-1 ring-rose-100" }
+    { l: "⚡️ 充沛", v: "充沛", activeClass: "bg-indigo-100 border-indigo-300 text-indigo-800 ring-1 ring-indigo-200" },
+    { l: "🙂 正常", v: "正常", activeClass: "bg-slate-100 border-slate-300 text-slate-800 ring-1 ring-slate-200" },
+    { l: "🥱 疲惫", v: "疲惫", activeClass: "bg-amber-100 border-amber-300 text-amber-800 ring-1 ring-amber-200" },
+    { l: "💥 腰痛", v: "腰痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" },
+    { l: "🤕 头痛", v: "头痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" },
+    { l: "🤢 腹痛", v: "腹痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" }
   ];
 
   const mentalOptions = [
-    { l: "🧠 专注", v: "专注", activeClass: "bg-violet-50 border-violet-200 text-violet-700 shadow-sm ring-1 ring-violet-100" },
-    { l: "🌊 平静", v: "平静", activeClass: "bg-sky-50 border-sky-200 text-sky-700 shadow-sm ring-1 ring-sky-100" },
-    { l: "😐 一般", v: "一般", activeClass: "bg-slate-50 border-slate-200 text-slate-700 shadow-sm ring-1 ring-slate-100" },
-    { l: "🔥 焦虑", v: "焦虑", activeClass: "bg-orange-50 border-orange-200 text-orange-700 shadow-sm ring-1 ring-orange-100" },
-    { l: "🕳️ 空虚", v: "空虚", activeClass: "bg-gray-100 border-gray-300 text-gray-600 shadow-sm ring-1 ring-gray-200" },
-    { l: "😶‍🌫️ 涣散", v: "涣散", activeClass: "bg-stone-50 border-stone-200 text-stone-600 shadow-sm ring-1 ring-stone-100" }
+    { l: "🧠 专注", v: "专注", activeClass: "bg-violet-100 border-violet-300 text-violet-800 ring-1 ring-violet-200" },
+    { l: "🌊 平静", v: "平静", activeClass: "bg-sky-100 border-sky-300 text-sky-800 ring-1 ring-sky-200" },
+    { l: "😐 一般", v: "一般", activeClass: "bg-slate-100 border-slate-300 text-slate-800 ring-1 ring-slate-200" },
+    { l: "🔥 焦虑", v: "焦虑", activeClass: "bg-orange-100 border-orange-300 text-orange-800 ring-1 ring-orange-200" },
+    { l: "🕳️ 空虚", v: "空虚", activeClass: "bg-gray-200 border-gray-400 text-gray-700 ring-1 ring-gray-300" },
+    { l: "😶‍🌫️ 涣散", v: "涣散", activeClass: "bg-stone-100 border-stone-300 text-stone-700 ring-1 ring-stone-200" }
   ];
 
   useEffect(() => {
@@ -466,7 +491,6 @@ function App() {
           const genAI = new GoogleGenerativeAI(userApiKey);
           const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
           const todayStr = new Date().toLocaleDateString();
-          // 获取当前时间（HH:MM）
           const now = new Date();
           const currentTime = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
 
@@ -492,17 +516,16 @@ function App() {
           请生成一份 JSON 格式的复盘与计划。
           
           【逻辑要求 1：复盘 (Stats)】
-          - 请分析【今天】、【昨天】、【前天】的数据。
-          - 生成 stats 时，必须使用用户输入的**原始具体事项名称**作为 category（如"学Blender"），不要归类为"学习"。如果数据为空，返回空数组，不要编造。
-          - 返回 "daily_reviews" 数组。
+          - 分析【今天】、【昨天】、【前天】的数据。
+          - **关键原则：诚实统计**。如果某天日历数据为空，则 stats 返回空数组 []，analysis 说明"无记录"。
+          - **绝对禁止编造**：不要自动填充"睡眠"或"工作"等未在日历中出现的活动。
+          - category 必须使用用户输入的原始名称。
 
           【逻辑要求 2：智能过渡 (Smart Transition)】
-          - 既然用户正在做 "${userContext.currentActivity}"，请在**第一个计划任务开始前**，根据该任务的性质和用户当前状态，插入一个短暂的**过渡动作**。
-          - 将此过渡动作放入第一个 block 的 sub_schedule 中。
+          - 在第一个任务开始前，插入一个基于 "${userContext.currentActivity}" 的短暂过渡动作（sub_schedule）。
 
           【逻辑要求 3：计划执行 (关键)】
-          - **起始时间：第一个任务的开始时间必须晚于 ${currentTime}。**
-          - 如果当前时间非整点，请留出 5-10 分钟缓冲期再开始第一个任务。
+          - **起始时间：第一个任务必须晚于 ${currentTime}。**
           - 严格执行 Plan 中的绑定时长。
           - 负面状态必须插入[心情提升]或[身体修复]。
           - 凌晨归前一天。
@@ -552,59 +575,65 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFBF0] text-slate-700 font-sans pb-32 selection:bg-rose-100 selection:text-rose-900">
-      <div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-slate-100 z-30 px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-tr from-rose-300 to-orange-300 p-2 rounded-xl shadow-sm">
-                <BrainCircuit className="text-white w-5 h-5" />
+    <div className="min-h-screen bg-[#FFFBF0] text-slate-800 font-sans pb-32 selection:bg-rose-100 selection:text-rose-900">
+      <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-b border-slate-100 z-30 px-5 h-18 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-tr from-rose-400 to-orange-400 p-2.5 rounded-2xl shadow-md">
+                <BrainCircuit className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-lg font-bold text-slate-700 tracking-tight">Gemini LifeOS</h1>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Gemini LifeOS</h1>
           </div>
           {activeTab === 'report' && (
-             <button onClick={() => { setActiveTab('input'); setStep(1); }} className="text-sm font-bold text-slate-500 bg-slate-100 px-4 py-2 rounded-full">
+             <button onClick={() => { setActiveTab('input'); setStep(1); }} className="text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-5 py-2.5 rounded-full transition-colors">
                新的一天
              </button>
           )}
       </div>
 
-      <main className="pt-24 px-4 max-w-md mx-auto space-y-8">
+      <main className="pt-28 px-5 max-w-md mx-auto space-y-8">
         
         {/* Key Card */}
-        <div className="bg-white/60 rounded-3xl shadow-sm border border-slate-100 overflow-hidden backdrop-blur-sm">
+        <div className="bg-white/80 rounded-[2rem] shadow-lg shadow-slate-200/50 border border-white overflow-hidden backdrop-blur-md">
             {showKeyInput ? (
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <label className="text-sm font-bold text-slate-500">Gemini API Key</label>
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-xs text-rose-500 flex items-center bg-rose-50 px-3 py-1.5 rounded-full font-bold">
+                        <label className="text-base font-bold text-slate-600">Gemini API Key</label>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-xs text-rose-500 flex items-center bg-rose-50 px-3 py-1.5 rounded-full font-bold hover:bg-rose-100 transition-colors">
                             获取 Key <ChevronRight className="w-3 h-3" />
                         </a>
                     </div>
-                    <input type="password" value={userApiKey} onChange={handleKeyChange} placeholder="AIza..." className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-base focus:ring-2 focus:ring-rose-200 outline-none transition-all" />
-                    {userApiKey && <button onClick={() => setShowKeyInput(false)} className="mt-4 w-full bg-gradient-to-r from-rose-400 to-orange-400 text-white text-sm font-bold py-3.5 rounded-2xl shadow-lg shadow-rose-100">保存</button>}
+                    <input type="password" value={userApiKey} onChange={handleKeyChange} placeholder="粘贴 AIza 开头的 Key..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all placeholder:text-slate-400" />
+                    {userApiKey && <button onClick={() => setShowKeyInput(false)} className="mt-5 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-white text-base font-bold py-4 rounded-2xl shadow-lg shadow-rose-200 active:scale-95 transition-transform">保存并继续</button>}
                 </div>
             ) : (
-                <div onClick={() => setShowKeyInput(true)} className="p-4 px-5 flex items-center justify-between active:bg-slate-50 cursor-pointer">
-                    <div className="flex items-center gap-3 text-emerald-500"><CheckCircle className="w-5 h-5" /><span className="text-sm font-bold">已连接大脑</span></div>
-                    <Settings className="w-5 h-5 text-slate-300" />
+                <div onClick={() => setShowKeyInput(true)} className="p-5 flex items-center justify-between active:bg-slate-50 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-3 text-emerald-600">
+                        <div className="bg-emerald-100 p-1.5 rounded-full"><CheckCircle className="w-5 h-5" /></div>
+                        <span className="text-base font-bold">大脑已连接</span>
+                    </div>
+                    <Settings className="w-6 h-6 text-slate-300" />
                 </div>
             )}
         </div>
 
         {/* Messages */}
         {statusMsg.text && (
-          <div className={`fixed top-20 left-4 right-4 z-40 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-xl animate-in fade-in slide-in-from-top-2 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-            {statusMsg.type === 'error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
+          <div className={`fixed top-24 left-5 right-5 z-50 p-4 rounded-2xl flex items-center gap-3 text-base font-bold shadow-2xl animate-in fade-in slide-in-from-top-4 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+            {statusMsg.type === 'error' ? <AlertCircle className="w-6 h-6 shrink-0"/> : <CheckCircle className="w-6 h-6 shrink-0"/>}
             {statusMsg.text}
           </div>
         )}
 
         {/* Energy Shield Modal */}
         {shieldAdvice && (
-          <div className="fixed top-24 left-4 right-4 z-50 animate-bounce-in">
-             <div className="bg-white/95 backdrop-blur-xl border border-rose-100 p-6 rounded-3xl shadow-2xl ring-1 ring-rose-100 flex items-start gap-4">
-                 <div className="bg-rose-50 p-3 rounded-full text-rose-400"><ShieldCheck className="w-6 h-6" /></div>
-                 <div className="flex-1"><h4 className="font-bold text-rose-500 text-base mb-1">能量急救</h4><p className="text-sm text-slate-600 leading-relaxed">{shieldAdvice}</p></div>
-                 <button onClick={() => setShieldAdvice(null)} className="text-slate-300 p-1 hover:text-slate-500"><X className="w-5 h-5" /></button>
+          <div className="fixed top-28 left-5 right-5 z-50 animate-bounce-in">
+             <div className="bg-white/95 backdrop-blur-xl border border-rose-100 p-6 rounded-[2rem] shadow-2xl ring-4 ring-rose-50 flex items-start gap-4">
+                 <div className="bg-rose-100 p-3 rounded-full text-rose-500"><ShieldCheck className="w-8 h-8" /></div>
+                 <div className="flex-1">
+                    <h4 className="font-bold text-rose-600 text-lg mb-2">✨ 能量急救包</h4>
+                    <p className="text-base text-slate-700 leading-relaxed font-medium">{shieldAdvice}</p>
+                 </div>
+                 <button onClick={() => setShieldAdvice(null)} className="text-slate-400 p-2 hover:text-slate-600 bg-slate-50 rounded-full"><X className="w-5 h-5" /></button>
              </div>
           </div>
         )}
@@ -612,35 +641,35 @@ function App() {
         {activeTab === 'input' && (
           <div className="space-y-8 pb-10">
             {/* Step 1 */}
-            <section className={`transition-all duration-500 ${step === 1 ? 'opacity-100' : 'opacity-60 scale-95'}`}>
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-                            <span className="bg-rose-100 text-rose-500 w-7 h-7 rounded-full flex items-center justify-center text-sm">1</span>
-                            日历数据
+            <section className={`transition-all duration-500 ${step === 1 ? 'opacity-100 translate-y-0' : 'opacity-40 scale-95 translate-y-4'}`}>
+                <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
+                    <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
+                            <span className="bg-rose-100 text-rose-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">1</span>
+                            日历数据源
                         </h3>
-                        {!dataInput && <button onClick={handlePaste} className="text-xs bg-slate-50 text-slate-500 px-4 py-2 rounded-full font-bold active:scale-95 transition-transform border border-slate-100">粘贴</button>}
+                        {!dataInput && <button onClick={handlePaste} className="text-xs bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full font-bold active:scale-95 transition-transform border border-indigo-100 hover:bg-indigo-100">粘贴剪贴板</button>}
                     </div>
-                    <div className="relative">
-                        <textarea ref={textareaRef} value={dataInput} onChange={(e) => setDataInput(e.target.value)} placeholder="请运行 iOS 快捷指令..." className="w-full h-32 bg-[#F8F9FA] border-0 rounded-2xl p-4 text-base text-slate-600 focus:ring-2 focus:ring-rose-200 outline-none resize-none placeholder:text-slate-300" />
-                        {dataInput && <div className="absolute bottom-3 right-3 text-xs text-emerald-500 font-bold bg-emerald-50 px-3 py-1.5 rounded-full flex items-center gap-1"><CheckCircle className="w-3 h-3"/> 已获取</div>}
+                    <div className="relative group">
+                        <textarea ref={textareaRef} value={dataInput} onChange={(e) => setDataInput(e.target.value)} placeholder="请先运行 iOS 快捷指令，然后点右上角粘贴..." className="w-full h-36 bg-[#F8FAFC] border-2 border-transparent focus:border-rose-300 rounded-3xl p-5 text-base text-slate-700 outline-none resize-none placeholder:text-slate-400 transition-all" />
+                        {dataInput && <div className="absolute bottom-4 right-4 text-xs text-emerald-600 font-bold bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm"><CheckCircle className="w-3.5 h-3.5"/> 已获取</div>}
                     </div>
-                    {step === 1 && dataInput && <button onClick={() => setStep(2)} className="mt-6 w-full bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-base">下一步：确认状态 <ArrowRight className="w-5 h-5" /></button>}
+                    {step === 1 && dataInput && <button onClick={() => setStep(2)} className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4.5 rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">下一步：确认状态 <ArrowRight className="w-5 h-5" /></button>}
                 </div>
             </section>
 
             {/* Step 2 */}
             {step >= 2 && (
-                <section ref={step2Ref} className="animate-in slide-in-from-bottom-8 duration-500 fade-in">
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-                            <span className="bg-amber-100 text-amber-500 w-7 h-7 rounded-full flex items-center justify-center text-sm">2</span>
-                            <h3 className="text-base font-bold text-slate-700">当前状态</h3>
+                <section ref={step2Ref} className="animate-in slide-in-from-bottom-12 duration-700 fade-in fill-mode-forwards">
+                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white space-y-8">
+                        <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
+                            <span className="bg-amber-100 text-amber-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">2</span>
+                            <h3 className="text-xl font-extrabold text-slate-800">当前状态</h3>
                         </div>
                         
                         <div>
                             <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">正在做什么?</label>
-                            <input type="text" value={userContext.currentActivity} onChange={(e) => setUserContext({...userContext, currentActivity: e.target.value})} placeholder="如: 发呆、坐地铁" className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-4 text-base text-slate-700 focus:ring-2 focus:ring-amber-200 outline-none transition-all" />
+                            <input type="text" value={userContext.currentActivity} onChange={(e) => setUserContext({...userContext, currentActivity: e.target.value})} placeholder="如: 刚起床、坐地铁、发呆" className="w-full bg-[#F8FAFC] border-2 border-transparent focus:border-amber-300 rounded-2xl p-4 text-lg text-slate-800 outline-none transition-all placeholder:text-slate-400" />
                         </div>
                         <div className="space-y-6">
                             <div>
@@ -648,7 +677,7 @@ function App() {
                                 <div className="flex flex-wrap gap-3">
                                         {physicalOptions.map(opt => (
                                             <button key={opt.v} onClick={() => toggleState('physicalState', opt.v)} 
-                                                className={`px-4 py-2.5 rounded-2xl text-sm font-bold transition-all border ${userContext.physicalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8F9FA] border-transparent text-slate-400 hover:bg-slate-100'}`}>
+                                                className={`px-5 py-3 rounded-2xl text-base font-bold transition-all border-2 ${userContext.physicalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-transparent text-slate-400 hover:bg-slate-50'}`}>
                                                 {opt.l}
                                             </button>
                                         ))}
@@ -659,7 +688,7 @@ function App() {
                                 <div className="flex flex-wrap gap-3">
                                         {mentalOptions.map(opt => (
                                             <button key={opt.v} onClick={() => toggleState('mentalState', opt.v)} 
-                                                className={`px-4 py-2.5 rounded-2xl text-sm font-bold transition-all border ${userContext.mentalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8F9FA] border-transparent text-slate-400 hover:bg-slate-100'}`}>
+                                                className={`px-5 py-3 rounded-2xl text-base font-bold transition-all border-2 ${userContext.mentalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-transparent text-slate-400 hover:bg-slate-50'}`}>
                                                 {opt.l}
                                             </button>
                                         ))}
@@ -668,81 +697,100 @@ function App() {
                         </div>
                         <div>
                             <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">预估睡觉时间</label>
-                            <input type="time" value={userContext.sleepTime} onChange={(e) => setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-4 text-base text-slate-700 focus:ring-2 focus:ring-blue-200 outline-none" />
+                            <input type="time" value={userContext.sleepTime} onChange={(e) => setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8FAFC] border-2 border-transparent focus:border-blue-300 rounded-2xl p-4 text-xl text-slate-800 outline-none text-center font-mono" />
                         </div>
-                        {step === 2 && <button onClick={() => setStep(3)} className="w-full bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-base">下一步：完善计划 <ArrowRight className="w-5 h-5" /></button>}
+                        {step === 2 && <button onClick={() => setStep(3)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4.5 rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">下一步：完善计划 <ArrowRight className="w-5 h-5" /></button>}
                     </div>
                 </section>
             )}
 
             {/* Step 3 */}
             {step >= 3 && (
-                <section ref={step3Ref} className="space-y-8 animate-in slide-in-from-bottom-8 duration-500 fade-in">
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <section ref={step3Ref} className="space-y-8 animate-in slide-in-from-bottom-12 duration-700 fade-in pb-20">
+                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-                                <span className="bg-violet-100 text-violet-500 w-7 h-7 rounded-full flex items-center justify-center text-sm">3</span>
+                            <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
+                                <span className="bg-violet-100 text-violet-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">3</span>
                                 今日计划
                             </h3>
-                            <button onClick={addTask} className="text-xs font-bold text-violet-500 bg-violet-50 px-4 py-2 rounded-full flex items-center gap-1"><Plus className="w-4 h-4" /> 加一项</button>
+                            <button onClick={addTask} className="text-xs font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 px-4 py-2.5 rounded-full flex items-center gap-1.5 transition-colors"><Plus className="w-4 h-4" /> 加一项</button>
                         </div>
                         <div className="space-y-5">
                             {userContext.tasks.map((task, index) => (
-                                <div key={task.id} className="bg-[#FDFDFD] p-5 rounded-2xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] relative group">
-                                    <div className="mb-4 flex gap-2 items-center">
-                                        <input type="text" value={task.name} onChange={(e) => updateTask(task.id, 'name', e.target.value)} placeholder="事项名称 (如: 写报告)" className="w-full bg-transparent border-b border-slate-100 pb-2 text-base font-medium focus:border-violet-300 outline-none placeholder:text-slate-300" />
-                                        <button onClick={() => handleSmartEstimate(task.id, index)} className="p-2.5 bg-violet-50 rounded-xl text-violet-500 hover:bg-violet-100 active:scale-90 transition-all" title="AI 智能估时">
+                                <div key={task.id} className="bg-[#FDFDFD] p-5 rounded-3xl border border-slate-100 shadow-sm relative group hover:border-violet-200 transition-colors">
+                                    <div className="mb-5 flex gap-3 items-center">
+                                        <input type="text" value={task.name} onChange={(e) => updateTask(task.id, 'name', e.target.value)} placeholder="输入事项名称 (如: 写年度总结)" className="w-full bg-transparent border-b-2 border-slate-100 pb-2 text-lg font-bold text-slate-800 focus:border-violet-400 outline-none placeholder:text-slate-300 placeholder:font-normal transition-colors" />
+                                        <button onClick={() => handleSmartEstimate(task.id, index)} className="p-3 bg-violet-50 rounded-2xl text-violet-500 hover:bg-violet-100 active:scale-90 transition-all shadow-sm" title="AI 智能估时">
                                             {estimatingIndex === index ? <Loader2 className="w-5 h-5 animate-spin"/> : <Wand2 className="w-5 h-5"/>}
                                         </button>
                                     </div>
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs font-bold text-slate-400 shrink-0">计划时间</span>
-                                            <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-2 border border-slate-100 flex-1">
-                                                <input type="number" value={task.durationHour} onChange={(e) => updateTask(task.id, 'durationHour', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
-                                                <span className="text-xs text-slate-400">时</span>
-                                                <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                                                <input type="number" value={task.durationMin} onChange={(e) => updateTask(task.id, 'durationMin', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
-                                                <span className="text-xs text-slate-400">分</span>
-                                                <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                                                <input type="number" value={task.durationSec} onChange={(e) => updateTask(task.id, 'durationSec', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
-                                                <span className="text-xs text-slate-400 mr-1">秒</span>
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-bold text-slate-400 pl-1">计划耗时</span>
+                                            <div className="flex items-center gap-2 bg-slate-50 rounded-2xl p-2 border border-slate-100">
+                                                <div className="flex-1 flex items-center justify-center">
+                                                    <input type="number" value={task.durationHour} onChange={(e) => updateTask(task.id, 'durationHour', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
+                                                    <span className="text-xs text-slate-400 mr-2">时</span>
+                                                </div>
+                                                <div className="w-px h-6 bg-slate-200"></div>
+                                                <div className="flex-1 flex items-center justify-center">
+                                                    <input type="number" value={task.durationMin} onChange={(e) => updateTask(task.id, 'durationMin', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
+                                                    <span className="text-xs text-slate-400 mr-2">分</span>
+                                                </div>
+                                                <div className="w-px h-6 bg-slate-200"></div>
+                                                <div className="flex-1 flex items-center justify-center">
+                                                    <input type="number" value={task.durationSec} onChange={(e) => updateTask(task.id, 'durationSec', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
+                                                    <span className="text-xs text-slate-400 mr-2">秒</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <Link2 className="w-4 h-4 text-slate-400 shrink-0" />
-                                            <select value={task.workflowId} onChange={(e) => updateTask(task.id, 'workflowId', e.target.value)} className="flex-1 bg-slate-50 border border-slate-100 rounded-xl p-3 text-base text-slate-500 outline-none appearance-none">
-                                                <option value="">🚫 不绑定 (普通任务)</option>
-                                                {userContext.pomodoroSettings.map(s => <option key={s.id} value={s.id}>{s.name} ({s.work}m/{s.rest}m)</option>)}
-                                            </select>
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-bold text-slate-400 pl-1">工作流模式</span>
+                                            <div className="relative">
+                                                <select value={task.workflowId} onChange={(e) => updateTask(task.id, 'workflowId', e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 pr-10 text-base text-slate-600 font-medium outline-none appearance-none">
+                                                    <option value="">🚫 普通任务 (不绑定)</option>
+                                                    {userContext.pomodoroSettings.map(s => <option key={s.id} value={s.id}>⏱ {s.name} ({s.work}m/{s.rest}m)</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"/>
+                                            </div>
                                         </div>
                                     </div>
-                                    {userContext.tasks.length > 1 && <button onClick={() => removeTask(task.id)} className="absolute -top-2 -right-2 bg-white text-rose-300 border border-rose-100 rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-4 h-4"/></button>}
+                                    {userContext.tasks.length > 1 && <button onClick={() => removeTask(task.id)} className="absolute -top-3 -right-3 bg-white text-rose-400 border border-rose-100 rounded-full p-2 shadow-md opacity-100 hover:bg-rose-50 transition-all"><X className="w-5 h-5"/></button>}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
                         <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-base font-bold text-slate-700 flex items-center gap-2"><Timer className="w-5 h-5 text-blue-400" /> 工作流预设</h3>
-                        <button onClick={addPomodoro} className="text-xs text-blue-500 bg-blue-50 px-4 py-2 rounded-full font-bold">+ 预设</button>
+                        <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2"><Timer className="w-5 h-5 text-blue-500" /> 工作流预设</h3>
+                        <button onClick={addPomodoro} className="text-xs text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full font-bold transition-colors">+ 新增</button>
                         </div>
                         <div className="space-y-4">
                             {userContext.pomodoroSettings.map((s) => (
-                                <div key={s.id} className="flex items-center gap-3 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-50">
-                                    <input value={s.name} onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} className="w-24 bg-transparent text-base font-bold text-slate-600 outline-none border-b border-transparent focus:border-blue-200" />
-                                    <div className="flex items-center gap-1 bg-white rounded-xl px-3 py-2 shadow-sm border border-slate-100"><span className="text-xs text-slate-400">忙</span><input type="number" value={s.work} onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} className="w-12 text-center text-base font-bold text-slate-600 outline-none bg-transparent" /><span className="text-xs text-slate-300">m</span></div>
-                                    <div className="flex items-center gap-1 bg-white rounded-xl px-3 py-2 shadow-sm border border-slate-100"><span className="text-xs text-slate-400">休</span><input type="number" value={s.rest} onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} className="w-12 text-center text-base font-bold text-slate-600 outline-none bg-transparent" /><span className="text-xs text-slate-300">m</span></div>
-                                    {userContext.pomodoroSettings.length > 1 && <button onClick={() => removePomodoro(s.id)} className="text-slate-300 ml-auto p-2"><X className="w-4 h-4"/></button>}
+                                <div key={s.id} className="flex flex-col sm:flex-row items-center gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-50">
+                                    <input value={s.name} onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} className="w-full sm:w-32 bg-transparent text-base font-bold text-slate-700 outline-none border-b-2 border-transparent focus:border-blue-200 placeholder:text-slate-300" placeholder="名称" />
+                                    <div className="flex gap-3 w-full">
+                                        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 py-2.5 shadow-sm border border-slate-100">
+                                            <span className="text-xs font-bold text-slate-400">忙</span>
+                                            <input type="number" value={s.work} onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} className="w-full text-center text-lg font-bold text-slate-700 outline-none bg-transparent" />
+                                            <span className="text-xs font-bold text-slate-300">m</span>
+                                        </div>
+                                        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 py-2.5 shadow-sm border border-slate-100">
+                                            <span className="text-xs font-bold text-slate-400">休</span>
+                                            <input type="number" value={s.rest} onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} className="w-full text-center text-lg font-bold text-slate-700 outline-none bg-transparent" />
+                                            <span className="text-xs font-bold text-slate-300">m</span>
+                                        </div>
+                                    </div>
+                                    {userContext.pomodoroSettings.length > 1 && <button onClick={() => removePomodoro(s.id)} className="text-slate-300 hover:text-red-400 p-2"><Trash2 className="w-5 h-5"/></button>}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold py-5 rounded-3xl shadow-xl shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">
-                        {isAnalyzing ? <Loader2 className="w-6 h-6 animate-spin"/> : <Sparkles className="w-6 h-6"/>}
-                        {isAnalyzing ? "正在编织你的一天..." : "生成今日行动指南"}
+                    <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold py-5 rounded-[2rem] shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3 text-xl">
+                        {isAnalyzing ? <Loader2 className="w-7 h-7 animate-spin"/> : <Sparkles className="w-7 h-7"/>}
+                        {isAnalyzing ? "正在精心编织..." : "生成今日行动指南"}
                     </button>
                 </section>
             )}
@@ -751,27 +799,27 @@ function App() {
 
         {/* Report View */}
         {activeTab === 'report' && analysisResult && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-8 pb-32 fade-in">
+          <div className="space-y-8 animate-in slide-in-from-bottom-12 pb-40 fade-in">
             
             {/* Daily Reviews */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-               <div className="flex items-center justify-between mb-6 bg-slate-50 p-1.5 rounded-2xl">
-                  <button onClick={() => setReviewTab('dayBefore')} className={`flex-1 text-sm font-bold py-3 rounded-xl transition-all ${reviewTab==='dayBefore'?'bg-white shadow-sm text-slate-800':'text-slate-400'}`}>前天</button>
-                  <button onClick={() => setReviewTab('yesterday')} className={`flex-1 text-sm font-bold py-3 rounded-xl transition-all ${reviewTab==='yesterday'?'bg-white shadow-sm text-amber-600':'text-slate-400'}`}>昨天</button>
-                  <button onClick={() => setReviewTab('today')} className={`flex-1 text-sm font-bold py-3 rounded-xl transition-all ${reviewTab==='today'?'bg-white shadow-sm text-indigo-600':'text-slate-400'}`}>今天</button>
+            <div className="bg-white rounded-[2.5rem] p-7 shadow-lg shadow-slate-200/50 border border-white">
+               <div className="flex items-center justify-between mb-8 bg-slate-50 p-1.5 rounded-2xl">
+                  <button onClick={() => setReviewTab('dayBefore')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='dayBefore'?'bg-white shadow-sm text-slate-800':'text-slate-400'}`}>前天</button>
+                  <button onClick={() => setReviewTab('yesterday')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='yesterday'?'bg-white shadow-sm text-amber-600':'text-slate-400'}`}>昨天</button>
+                  <button onClick={() => setReviewTab('today')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='today'?'bg-white shadow-sm text-indigo-600':'text-slate-400'}`}>今天</button>
                </div>
                {(() => {
                    const review = getCurrentReview();
-                   if (!review) return <div className="text-center text-slate-300 py-10">暂无该日数据</div>;
+                   if (!review) return <div className="text-center text-slate-400 py-12 text-lg font-medium">暂无该日数据</div>;
                    return (
-                       <div className="animate-in fade-in zoom-in-95 duration-300">
-                           <div className="text-center mb-6">
-                               <h4 className="text-base font-bold text-slate-700 flex items-center justify-center gap-2"><Calendar className="w-5 h-5 text-slate-400" />{review.date}</h4>
+                       <div className="animate-in fade-in zoom-in-95 duration-500">
+                           <div className="text-center mb-8">
+                               <h4 className="text-xl font-bold text-slate-700 flex items-center justify-center gap-3"><Calendar className="w-6 h-6 text-slate-400" />{review.date}</h4>
                            </div>
                            
                            <SimplePieChart data={review.stats} />
 
-                           <div className="mt-8 bg-[#F8FAFC] p-5 rounded-3xl border border-slate-50 text-sm text-slate-600 leading-8 text-justify">
+                           <div className="mt-10 bg-[#F8FAFC] p-6 rounded-3xl border border-slate-50 text-base text-slate-600 leading-8 text-justify tracking-wide">
                                {review.analysis}
                            </div>
                        </div>
@@ -781,73 +829,74 @@ function App() {
 
             {/* Today's Plan */}
             {analysisResult.today_plan && (
-                <div className="bg-white rounded-3xl shadow-lg shadow-indigo-50/50 border border-indigo-50/50 overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-indigo-100/50 border border-white overflow-hidden">
                     <div className="p-8 bg-gradient-to-br from-[#E0F2F1] to-[#E8EAF6] relative">
-                        <div className="flex items-center justify-between mb-4 opacity-80">
+                        <div className="flex items-center justify-between mb-5 opacity-80">
                             <div className="flex items-center gap-2">
-                                <Sunrise className="w-5 h-5 text-slate-600" />
-                                <span className="text-sm font-bold uppercase tracking-wider text-slate-600">{analysisResult.today_plan.date}</span>
+                                <Sunrise className="w-6 h-6 text-slate-700" />
+                                <span className="text-base font-bold uppercase tracking-wider text-slate-700">{analysisResult.today_plan.date}</span>
                             </div>
                             
                             {/* BGM 推荐 */}
                             <div className="flex items-center gap-2">
-                                {bgmAdvice && <span className="text-xs bg-white/60 px-3 py-1.5 rounded-full text-indigo-500 font-bold animate-in fade-in">{bgmAdvice}</span>}
-                                <button onClick={handleGetBGM} disabled={bgmLoading} className="bg-white/80 p-2 rounded-full text-indigo-500 shadow-sm active:scale-90">
-                                    {bgmLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Music className="w-4 h-4"/>}
+                                {bgmAdvice && <span className="text-xs bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-indigo-600 font-bold animate-in fade-in shadow-sm">{bgmAdvice}</span>}
+                                <button onClick={handleGetBGM} disabled={bgmLoading} className="bg-white/80 p-2.5 rounded-full text-indigo-600 shadow-sm active:scale-90 hover:bg-white transition-all">
+                                    {bgmLoading ? <Loader2 className="w-5 h-5 animate-spin"/> : <Music className="w-5 h-5"/>}
                                 </button>
                             </div>
                         </div>
-                        <p className="text-base font-medium leading-relaxed text-slate-700">"{analysisResult.today_plan.overall_advice}"</p>
+                        <p className="text-lg font-medium leading-relaxed text-slate-800">"{analysisResult.today_plan.overall_advice}"</p>
                     </div>
 
                     <div className="p-6 space-y-6">
                         {analysisResult.today_plan.blocks?.map((block, bIdx) => (
-                            <div key={bIdx} className="relative pl-5 border-l-2 border-slate-100">
-                                <div className={`p-5 rounded-3xl ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative group`}>
+                            <div key={bIdx} className="relative pl-6 border-l-4 border-slate-100">
+                                <div className={`p-6 rounded-3xl ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative group shadow-sm`}>
                                     
-                                    {/* Delete Button */}
                                     <button 
                                         onClick={() => handleDeleteBlock(bIdx)}
-                                        className="absolute -top-3 -right-3 bg-white text-slate-300 hover:text-red-400 border border-slate-100 rounded-full p-2 shadow-sm z-10"
+                                        className="absolute -top-3 -right-3 bg-white text-slate-300 hover:text-red-400 border border-slate-100 rounded-full p-2.5 shadow-md z-10"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-5 h-5" />
                                     </button>
 
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-xl text-sm font-mono font-bold opacity-80 backdrop-blur-sm">
-                                            <Clock className="w-4 h-4" /> {block.time}
+                                        <div className="flex items-center gap-2 bg-white/60 px-3.5 py-2 rounded-2xl text-base font-mono font-bold opacity-90 backdrop-blur-sm shadow-sm">
+                                            <Clock className="w-5 h-5" /> {block.time}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {(block.type === 'focus' || block.type === 'routine') && !breakdownStates[bIdx] && (
-                                                <button onClick={() => handleMagicBreakdown(block, bIdx)} className="bg-white/60 p-2 rounded-xl text-indigo-400 shadow-sm active:scale-90">
-                                                    {loadingBreakdown === bIdx ? <Loader2 className="w-4 h-4 animate-spin"/> : <Sparkles className="w-4 h-4"/>}
+                                                <button onClick={() => handleMagicBreakdown(block, bIdx)} className="bg-white/70 p-2.5 rounded-xl text-indigo-500 shadow-sm active:scale-90 hover:bg-white transition-all">
+                                                    {loadingBreakdown === bIdx ? <Loader2 className="w-5 h-5 animate-spin"/> : <Sparkles className="w-5 h-5"/>}
                                                 </button>
                                             )}
-                                            <span className="text-xs font-bold uppercase opacity-50 bg-white/40 px-3 py-1.5 rounded-full">{block.type}</span>
+                                            <span className="text-xs font-bold uppercase opacity-60 bg-white/50 px-3 py-1.5 rounded-full tracking-wide">{block.type}</span>
                                         </div>
                                     </div>
                                     
-                                    <h4 className="font-bold text-base mb-3 text-slate-800/90">{block.activity}</h4>
+                                    <h4 className="font-bold text-xl mb-3 text-slate-800/90">{block.activity}</h4>
 
                                     {block.sub_schedule && block.sub_schedule.length > 0 ? (
-                                        <div className="space-y-3 mt-4 bg-white/40 p-4 rounded-2xl">
+                                        <div className="space-y-3 mt-5 bg-white/50 p-5 rounded-2xl border border-white/20">
                                             {block.sub_schedule.map((sub, sIdx) => (
-                                                <div key={sIdx} className="flex gap-3 text-sm opacity-90 items-start">
-                                                    <span className="font-mono opacity-50 min-w-[70px] pt-0.5">{sub.time}</span>
-                                                    <span className={`${sub.label.includes('过渡') ? 'text-indigo-600 font-bold' : ''}`}>{sub.label}</span>
-                                                    {sub.label.includes('过渡') && <MoveRight className="w-4 h-4 text-indigo-400 mt-1"/>}
+                                                <div key={sIdx} className="flex gap-4 text-sm opacity-90 items-start">
+                                                    <span className="font-mono opacity-60 min-w-[75px] pt-0.5 font-bold">{sub.time}</span>
+                                                    <div className="flex-1">
+                                                        <span className={`leading-relaxed font-medium ${sub.label.includes('过渡') ? 'text-indigo-600 font-bold' : ''}`}>{sub.label}</span>
+                                                    </div>
+                                                    {sub.label.includes('过渡') && <MoveRight className="w-5 h-5 text-indigo-400 mt-0.5"/>}
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm opacity-80 leading-relaxed font-medium">{block.desc}</p>
+                                        <p className="text-base opacity-80 leading-relaxed font-medium">{block.desc}</p>
                                     )}
 
                                     {block.actionable_tips && block.actionable_tips.length > 0 && (
-                                        <div className="mt-4 pt-3 border-t border-black/5 flex flex-wrap gap-2">
+                                        <div className="mt-5 pt-4 border-t border-black/5 flex flex-wrap gap-2.5">
                                             {block.actionable_tips.map((tip, tIdx) => (
-                                                <span key={tIdx} className="text-xs font-medium px-3 py-1.5 bg-white/60 rounded-xl flex items-center gap-1.5 text-slate-600">
-                                                    {block.type === 'rest' ? <Heart className="w-3.5 h-3.5 text-emerald-500"/> : <CheckCircle className="w-3.5 h-3.5 opacity-50"/>}
+                                                <span key={tIdx} className="text-sm font-bold px-3.5 py-2 bg-white/70 rounded-xl flex items-center gap-2 text-slate-600 shadow-sm">
+                                                    {block.type === 'rest' ? <Heart className="w-4 h-4 text-emerald-500"/> : <CheckCircle className="w-4 h-4 opacity-50"/>}
                                                     {tip}
                                                 </span>
                                             ))}
@@ -855,10 +904,13 @@ function App() {
                                     )}
 
                                     {breakdownStates[bIdx] && (
-                                        <div className="mt-4 bg-white/80 p-4 rounded-2xl text-sm space-y-2 border border-white/50 animate-in fade-in">
-                                            <div className="text-xs font-bold text-indigo-400 flex items-center gap-1 mb-2"><Sparkles className="w-4 h-4"/> 魔法微步骤</div>
+                                        <div className="mt-5 bg-white/90 p-5 rounded-2xl text-sm space-y-3 border border-white shadow-sm animate-in fade-in">
+                                            <div className="text-xs font-bold text-indigo-500 flex items-center gap-2 mb-3 uppercase tracking-wider"><Sparkles className="w-4 h-4"/> 魔法微步骤</div>
                                             {breakdownStates[bIdx].map((step, i) => (
-                                                <div key={i} className="flex gap-3 text-slate-600"><span className="text-indigo-300">•</span> {step}</div>
+                                                <div key={i} className="flex gap-3 text-slate-700 items-start">
+                                                    <div className="mt-1.5 w-2 h-2 rounded-full bg-indigo-300 shrink-0"></div>
+                                                    <span className="leading-relaxed font-medium">{step}</span>
+                                                </div>
                                             ))}
                                         </div>
                                     )}
@@ -871,31 +923,33 @@ function App() {
 
             {/* Future Diary */}
             {analysisResult.today_plan && (
-                <div ref={diaryRef} className="bg-gradient-to-br from-slate-800 to-indigo-900 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden">
+                <div ref={diaryRef} className="bg-gradient-to-br from-slate-800 to-indigo-950 rounded-[2.5rem] p-8 shadow-2xl text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 opacity-10">
-                        <Feather className="w-40 h-40 -mr-4 -mt-4" />
+                        <Feather className="w-48 h-48 -mr-8 -mt-8" />
                     </div>
                     <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold flex items-center gap-2"><Moon className="w-6 h-6 text-indigo-300" /> 今晚的日记</h3>
-                            <button onClick={handleFutureDiary} disabled={diaryLoading} className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full font-bold transition-all flex items-center gap-2">
-                                {diaryLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Sparkles className="w-4 h-4"/>}
-                                {diaryContent ? '重新生成' : '生成愿景'}
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-2xl font-bold flex items-center gap-3"><Moon className="w-7 h-7 text-indigo-300" /> 今晚的日记</h3>
+                            <button onClick={handleFutureDiary} disabled={diaryLoading} className="text-sm bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 border border-white/10">
+                                {diaryLoading ? <Loader2 className="w-5 h-5 animate-spin"/> : <Sparkles className="w-5 h-5"/>}
+                                {diaryContent ? '重写' : '预演'}
                             </button>
                         </div>
                         {diaryContent ? (
-                            <div className="bg-white/10 rounded-2xl p-6 text-base leading-8 tracking-wide font-medium text-indigo-50 animate-in fade-in slide-in-from-bottom-2">{diaryContent}</div>
+                            <div className="bg-white/10 rounded-3xl p-7 text-lg leading-9 tracking-wide font-medium text-indigo-50 animate-in fade-in slide-in-from-bottom-4 font-serif">
+                                {diaryContent}
+                            </div>
                         ) : (
-                            <div className="text-center py-8 text-indigo-200/60 text-sm">点击生成按钮，预览今晚完成任务后的美好心情...</div>
+                            <div className="text-center py-12 text-indigo-200/60 text-base font-medium">点击生成按钮，提前感受今晚完成任务后的满足感...</div>
                         )}
                     </div>
                 </div>
             )}
 
             {/* Save Button */}
-            <div className="flex justify-center pb-8">
-                <button onClick={handleSavePlan} className="bg-slate-800 text-white font-bold py-4 px-10 rounded-3xl shadow-xl active:scale-95 transition-all flex items-center gap-3 text-base">
-                    <Save className="w-5 h-5" /> 保存并完成
+            <div className="flex justify-center pb-12">
+                <button onClick={handleSavePlan} className="bg-slate-800 text-white font-bold py-5 px-12 rounded-full shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center gap-3 text-lg hover:bg-slate-900">
+                    <Save className="w-6 h-6" /> 保存并完成
                 </button>
             </div>
           </div>
@@ -904,17 +958,17 @@ function App() {
 
       {/* Floating Status Bar */}
       {(userContext.physicalState.length > 0 || userContext.mentalState.length > 0) && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-30 animate-in slide-in-from-bottom-10 fade-in duration-500">
-              <div className="bg-white/90 backdrop-blur-md border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-6 py-3 flex items-center gap-3 text-xs font-bold text-slate-600">
+          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 z-30 animate-in slide-in-from-bottom-20 fade-in duration-700">
+              <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-full px-6 py-3.5 flex items-center gap-4 text-sm font-bold text-slate-600">
                   {userContext.physicalState.length > 0 && (
-                      <div className="flex gap-1">{userContext.physicalState.slice(0,2).map(s=><span key={s} className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full">{s}</span>)}</div>
+                      <div className="flex gap-1.5">{userContext.physicalState.slice(0,2).map(s=><span key={s} className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">{s}</span>)}</div>
                   )}
-                  {(userContext.physicalState.length > 0 && userContext.mentalState.length > 0) && <div className="w-px h-4 bg-slate-200"></div>}
+                  {(userContext.physicalState.length > 0 && userContext.mentalState.length > 0) && <div className="w-px h-5 bg-slate-300"></div>}
                   {userContext.mentalState.length > 0 && (
-                      <div className="flex gap-1">{userContext.mentalState.slice(0,2).map(s=><span key={s} className="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full">{s}</span>)}</div>
+                      <div className="flex gap-1.5">{userContext.mentalState.slice(0,2).map(s=><span key={s} className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100">{s}</span>)}</div>
                   )}
               </div>
-              <button onClick={handleEnergyShield} disabled={shieldLoading} className="bg-rose-400 text-white p-3.5 rounded-full shadow-lg shadow-rose-200 active:scale-90 transition-transform hover:bg-rose-500">
+              <button onClick={handleEnergyShield} disabled={shieldLoading} className="bg-rose-500 text-white p-4 rounded-full shadow-xl shadow-rose-200 active:scale-90 transition-transform hover:bg-rose-600 ring-4 ring-rose-100">
                   {shieldLoading ? <Loader2 className="w-6 h-6 animate-spin"/> : <ShieldCheck className="w-6 h-6"/>}
               </button>
           </div>
