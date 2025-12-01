@@ -122,11 +122,11 @@ const sanitizeData = (data) => {
   return safeData;
 };
 
-// --- 饼图组件 (归一化版) ---
+// --- 饼图组件 ---
 const SimplePieChart = ({ data }) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-3xl border-2 border-slate-100 border-dashed">
+        <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-3xl border-2 border-slate-100 border-dashed w-full">
             <PieIcon className="w-10 h-10 text-slate-300 mb-3" />
             <span className="text-base text-slate-400 font-medium">暂无时间记录</span>
         </div>
@@ -137,10 +137,8 @@ const SimplePieChart = ({ data }) => {
     '#A78BFA', '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A3A3A3', '#818CF8', '#FB923C'
   ];
 
-  // 1. 计算当前数据的总占比 (可能是 20%, 50% 等)
-  const totalPercentage = data.reduce((acc, item) => acc + (parseFloat(item.percentage) || 0), 0);
-  
   let cumulativePercent = 0;
+  const totalPercentage = data.reduce((acc, item) => acc + (parseFloat(item.percentage) || 0), 0);
 
   const getCoordinatesForPercent = (percent) => {
     const x = Math.cos(2 * Math.PI * percent);
@@ -153,15 +151,11 @@ const SimplePieChart = ({ data }) => {
     const rawPercentage = parseFloat(slice.percentage) || 0;
     if (rawPercentage <= 0) return null;
 
-    // 2. 归一化：计算这项任务在“已记录总时间”里的占比 (0.0 - 1.0)
-    // 这样就能保证所有扇形加起来是一个完整的圆 (100%)
     const normalizedPercent = totalPercentage > 0 ? (rawPercentage / totalPercentage) : 0;
-
     const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
     cumulativePercent += normalizedPercent;
     const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
     
-    // 如果占比接近 100%，画一个完整的圆
     if (normalizedPercent > 0.999) {
       return <circle key={index} cx="0" cy="0" r="1" fill={color} />;
     }
@@ -178,30 +172,29 @@ const SimplePieChart = ({ data }) => {
   });
 
   return (
-    <div className="flex flex-col items-center justify-center py-6">
-      <div className="flex items-center justify-center gap-8 w-full">
-          <div className="w-36 h-36 relative shrink-0">
-            <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-md">
-              {slices}
-            </svg>
-          </div>
-          <div className="flex-1 min-w-[140px] space-y-3">
-            {data.map((item, idx) => {
-              const rawPercentage = parseFloat(item.percentage) || 0;
-              // 计算显示的百分比：也是基于“已记录时间”的占比
-              const displayPercent = totalPercentage > 0 ? ((rawPercentage / totalPercentage) * 100).toFixed(1) : 0;
-              
-              return (
-                <div key={idx} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full shadow-sm shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></div>
-                    <span className="text-slate-700 font-bold text-sm truncate max-w-[110px]" title={item.category}>{item.category}</span>
-                  </div>
-                  <span className="text-slate-500 font-mono font-bold text-sm">{displayPercent}%</span>
-                </div>
-              );
-            })}
-          </div>
+    <div className="flex flex-row items-start justify-center py-6 gap-8">
+      {/* Chart - Left */}
+      <div className="w-32 h-32 sm:w-36 sm:h-36 relative shrink-0">
+        <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-md">
+          {slices}
+        </svg>
+      </div>
+      
+      {/* Legend - Right */}
+      <div className="flex-1 min-w-[120px] space-y-2">
+        {data.map((item, idx) => {
+          const rawPercentage = parseFloat(item.percentage) || 0;
+          const displayPercent = totalPercentage > 0 ? ((rawPercentage / totalPercentage) * 100).toFixed(1) : 0;
+          return (
+            <div key={idx} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-3 h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></div>
+                <span className="text-slate-600 font-medium truncate" title={item.category}>{item.category}</span>
+              </div>
+              <span className="text-slate-500 font-mono font-bold ml-2">{displayPercent}%</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -243,7 +236,6 @@ function App() {
   const [step, setStep] = useState(1); 
   const [reviewTab, setReviewTab] = useState('yesterday');
 
-  // Features State
   const [breakdownStates, setBreakdownStates] = useState({}); 
   const [loadingBreakdown, setLoadingBreakdown] = useState(null); 
   const [shieldLoading, setShieldLoading] = useState(false);
@@ -272,22 +264,24 @@ function App() {
   const step3Ref = useRef(null);
   const diaryRef = useRef(null);
 
+  // 身体感受选项
   const physicalOptions = [
-    { l: "⚡️ 充沛", v: "充沛", activeClass: "bg-indigo-100 border-indigo-300 text-indigo-800 ring-1 ring-indigo-200" },
-    { l: "🙂 正常", v: "正常", activeClass: "bg-slate-100 border-slate-300 text-slate-800 ring-1 ring-slate-200" },
-    { l: "🥱 疲惫", v: "疲惫", activeClass: "bg-amber-100 border-amber-300 text-amber-800 ring-1 ring-amber-200" },
-    { l: "💥 腰痛", v: "腰痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" },
-    { l: "🤕 头痛", v: "头痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" },
-    { l: "🤢 腹痛", v: "腹痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800 ring-1 ring-rose-200" }
+    { l: "⚡️ 充沛", v: "充沛", activeClass: "bg-indigo-100 border-indigo-300 text-indigo-800" },
+    { l: "🙂 正常", v: "正常", activeClass: "bg-slate-100 border-slate-300 text-slate-800" },
+    { l: "🥱 疲惫", v: "疲惫", activeClass: "bg-amber-100 border-amber-300 text-amber-800" },
+    { l: "💥 腰痛", v: "腰痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800" },
+    { l: "🤕 头痛", v: "头痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800" },
+    { l: "🤢 腹痛", v: "腹痛", activeClass: "bg-rose-100 border-rose-300 text-rose-800" }
   ];
 
+  // 精神状态选项
   const mentalOptions = [
-    { l: "🧠 专注", v: "专注", activeClass: "bg-violet-100 border-violet-300 text-violet-800 ring-1 ring-violet-200" },
-    { l: "🌊 平静", v: "平静", activeClass: "bg-sky-100 border-sky-300 text-sky-800 ring-1 ring-sky-200" },
-    { l: "😐 一般", v: "一般", activeClass: "bg-slate-100 border-slate-300 text-slate-800 ring-1 ring-slate-200" },
-    { l: "🔥 焦虑", v: "焦虑", activeClass: "bg-orange-100 border-orange-300 text-orange-800 ring-1 ring-orange-200" },
-    { l: "🕳️ 空虚", v: "空虚", activeClass: "bg-gray-200 border-gray-400 text-gray-700 ring-1 ring-gray-300" },
-    { l: "😶‍🌫️ 涣散", v: "涣散", activeClass: "bg-stone-100 border-stone-300 text-stone-700 ring-1 ring-stone-200" }
+    { l: "🧠 专注", v: "专注", activeClass: "bg-violet-100 border-violet-300 text-violet-800" },
+    { l: "🌊 平静", v: "平静", activeClass: "bg-sky-100 border-sky-300 text-sky-800" },
+    { l: "😐 一般", v: "一般", activeClass: "bg-slate-100 border-slate-300 text-slate-800" },
+    { l: "🔥 焦虑", v: "焦虑", activeClass: "bg-orange-100 border-orange-300 text-orange-800" },
+    { l: "🕳️ 空虚", v: "空虚", activeClass: "bg-gray-200 border-gray-400 text-gray-700" },
+    { l: "😶‍🌫️ 涣散", v: "涣散", activeClass: "bg-stone-100 border-stone-300 text-stone-700" }
   ];
 
   useEffect(() => {
@@ -304,11 +298,10 @@ function App() {
     if (savedResult) {
         try {
             const parsed = JSON.parse(savedResult);
-            if(parsed && (parsed.daily_reviews || parsed.today_plan)) {
-                setAnalysisResult(parsed);
-                const savedTab = localStorage.getItem('gemini_lifeos_tab');
-                if (savedTab) setActiveTab(savedTab);
-            }
+            const safe = sanitizeData(parsed);
+            setAnalysisResult(safe);
+            const savedTab = localStorage.getItem('gemini_lifeos_tab');
+            if (savedTab) setActiveTab(savedTab);
         } catch(e) { console.error("Restore failed"); }
     }
   }, []);
@@ -394,8 +387,6 @@ function App() {
       if (textareaRef.current) textareaRef.current.focus();
     }
   };
-
-  // --- Gemini API Features ---
 
   const handleMagicBreakdown = async (block, index) => {
       const finalKey = userApiKey;
@@ -563,7 +554,11 @@ function App() {
           setReviewTab('yesterday'); 
       } catch (e) { 
           console.error(e); 
-          showMessage(`请求失败: ${e.message}`, "error"); 
+          if (e.message.includes('401') || e.message.includes('API Key')) {
+              showMessage("API Key 无效，请检查设置", "error");
+          } else {
+              showMessage(`请求失败: ${e.message}`, "error"); 
+          }
       } finally { 
           setIsAnalyzing(false); 
       }
@@ -575,120 +570,133 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFBF0] text-slate-800 font-sans pb-32 selection:bg-rose-100 selection:text-rose-900">
-      <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-b border-slate-100 z-30 px-5 h-18 flex items-center justify-between shadow-sm">
+    <div className="min-h-screen bg-[#FFFBF0] text-slate-800 font-sans pb-40 selection:bg-[#FFDEE2] selection:text-[#D63384]">
+      {/* Background Image - Anya Forger Theme (Collage) */}
+      <div className="fixed inset-0 -z-10 bg-[#FFFBF0]">
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 opacity-[0.07] pointer-events-none">
+              <img src="https://i.pinimg.com/564x/35/04/24/350424b21db7942c444c66c617332244.jpg" className="w-full h-full object-cover" alt="anya1" />
+              <img src="https://i.pinimg.com/564x/e7/6d/76/e76d7666663419b92302a9123247a618.jpg" className="w-full h-full object-cover" alt="anya2" />
+              <img src="https://i.pinimg.com/564x/6a/56/22/6a562241087b3560c2d99e30c78805f2.jpg" className="w-full h-full object-cover" alt="anya3" />
+              <img src="https://i.pinimg.com/564x/c5/5a/33/c55a332b628741096159ce65e095890d.jpg" className="w-full h-full object-cover" alt="anya4" />
+          </div>
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
+      </div>
+
+      <div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-b border-[#FFE4E1] z-30 px-6 h-20 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-rose-400 to-orange-400 p-2.5 rounded-2xl shadow-md">
-                <BrainCircuit className="text-white w-6 h-6" />
+            <div className="bg-gradient-to-tr from-[#FFB7B2] to-[#FFDAC1] p-2.5 rounded-2xl shadow-inner">
+                <BrainCircuit className="text-white w-7 h-7" />
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Gemini LifeOS</h1>
+            <h1 className="text-2xl font-black text-slate-700 tracking-tight">LifeOS</h1>
           </div>
           {activeTab === 'report' && (
-             <button onClick={() => { setActiveTab('input'); setStep(1); }} className="text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-5 py-2.5 rounded-full transition-colors">
-               新的一天
+             <button onClick={() => { setActiveTab('input'); setStep(1); }} className="text-base font-bold text-[#FF8FA3] bg-[#FFF0F5] hover:bg-[#FFE4E1] px-6 py-2.5 rounded-full transition-colors">
+               New Day
              </button>
           )}
       </div>
 
-      <main className="pt-28 px-5 max-w-md mx-auto space-y-8">
+      <main className="pt-32 px-6 max-w-md mx-auto space-y-10">
         
         {/* Key Card */}
-        <div className="bg-white/80 rounded-[2rem] shadow-lg shadow-slate-200/50 border border-white overflow-hidden backdrop-blur-md">
+        <div className="bg-white/80 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(255,183,178,0.3)] border-2 border-[#FFF5F5] overflow-hidden backdrop-blur-md">
             {showKeyInput ? (
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <label className="text-base font-bold text-slate-600">Gemini API Key</label>
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-xs text-rose-500 flex items-center bg-rose-50 px-3 py-1.5 rounded-full font-bold hover:bg-rose-100 transition-colors">
-                            获取 Key <ChevronRight className="w-3 h-3" />
+                <div className="p-8 bg-gradient-to-b from-white to-[#FFF9F5]">
+                    <div className="flex justify-between items-center mb-6">
+                        <label className="text-lg font-bold text-slate-500">API Key</label>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-xs text-[#FF8FA3] flex items-center bg-[#FFF0F5] px-4 py-2 rounded-full font-bold hover:bg-[#FFE4E1] transition-colors">
+                            Get Key <ChevronRight className="w-4 h-4" />
                         </a>
                     </div>
-                    <input type="password" value={userApiKey} onChange={handleKeyChange} placeholder="粘贴 AIza 开头的 Key..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all placeholder:text-slate-400" />
-                    {userApiKey && <button onClick={() => setShowKeyInput(false)} className="mt-5 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-white text-base font-bold py-4 rounded-2xl shadow-lg shadow-rose-200 active:scale-95 transition-transform">保存并继续</button>}
+                    <input type="password" value={userApiKey} onChange={handleKeyChange} placeholder="Paste AIza key..." className="w-full bg-white border-2 border-[#FFE4E1] rounded-2xl p-4 text-lg focus:ring-4 focus:ring-[#FFE4E1] focus:border-[#FFB7B2] outline-none transition-all placeholder:text-slate-300" />
+                    {userApiKey && <button onClick={() => setShowKeyInput(false)} className="mt-6 w-full bg-[#FFB7B2] hover:bg-[#FF9AA2] text-white text-lg font-bold py-4 rounded-2xl shadow-lg shadow-[#FFB7B2]/40 active:scale-95 transition-transform">Save & Continue</button>}
                 </div>
             ) : (
-                <div onClick={() => setShowKeyInput(true)} className="p-5 flex items-center justify-between active:bg-slate-50 cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3 text-emerald-600">
-                        <div className="bg-emerald-100 p-1.5 rounded-full"><CheckCircle className="w-5 h-5" /></div>
-                        <span className="text-base font-bold">大脑已连接</span>
+                <div onClick={() => setShowKeyInput(true)} className="p-6 flex items-center justify-between active:bg-[#FFF0F5] cursor-pointer transition-colors group">
+                    <div className="flex items-center gap-4 text-[#B5EAD7]">
+                        <div className="bg-[#E0F2F1] p-2 rounded-full group-hover:scale-110 transition-transform"><CheckCircle className="w-6 h-6" /></div>
+                        <span className="text-lg font-bold text-slate-600">Brain Connected</span>
                     </div>
-                    <Settings className="w-6 h-6 text-slate-300" />
+                    <Settings className="w-6 h-6 text-slate-300 group-hover:text-[#FFB7B2] transition-colors" />
                 </div>
             )}
         </div>
 
         {/* Messages */}
         {statusMsg.text && (
-          <div className={`fixed top-24 left-5 right-5 z-50 p-4 rounded-2xl flex items-center gap-3 text-base font-bold shadow-2xl animate-in fade-in slide-in-from-top-4 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
-            {statusMsg.type === 'error' ? <AlertCircle className="w-6 h-6 shrink-0"/> : <CheckCircle className="w-6 h-6 shrink-0"/>}
+          <div className={`fixed top-28 left-6 right-6 z-50 p-5 rounded-3xl flex items-center gap-4 text-lg font-bold shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] animate-in fade-in slide-in-from-top-6 ${statusMsg.type === 'error' ? 'bg-[#FFEBEE] text-[#EF5350] border-2 border-[#FFCDD2]' : 'bg-[#E8F5E9] text-[#66BB6A] border-2 border-[#C8E6C9]'}`}>
+            {statusMsg.type === 'error' ? <AlertCircle className="w-7 h-7 shrink-0"/> : <CheckCircle className="w-7 h-7 shrink-0"/>}
             {statusMsg.text}
           </div>
         )}
 
         {/* Energy Shield Modal */}
         {shieldAdvice && (
-          <div className="fixed top-28 left-5 right-5 z-50 animate-bounce-in">
-             <div className="bg-white/95 backdrop-blur-xl border border-rose-100 p-6 rounded-[2rem] shadow-2xl ring-4 ring-rose-50 flex items-start gap-4">
-                 <div className="bg-rose-100 p-3 rounded-full text-rose-500"><ShieldCheck className="w-8 h-8" /></div>
-                 <div className="flex-1">
-                    <h4 className="font-bold text-rose-600 text-lg mb-2">✨ 能量急救包</h4>
-                    <p className="text-base text-slate-700 leading-relaxed font-medium">{shieldAdvice}</p>
+          <div className="fixed top-32 left-6 right-6 z-50 animate-bounce-in">
+             <div className="bg-white/90 backdrop-blur-2xl border-2 border-[#FFB7B2] p-8 rounded-[2.5rem] shadow-[0_30px_60px_-20px_rgba(255,183,178,0.5)] flex items-start gap-5 relative overflow-hidden">
+                 <div className="absolute -right-10 -top-10 w-32 h-32 bg-[#FFDEE2] rounded-full blur-3xl opacity-50"></div>
+                 <div className="bg-[#FFDEE2] p-4 rounded-full text-[#FF8FA3] shrink-0 z-10"><ShieldCheck className="w-8 h-8" /></div>
+                 <div className="flex-1 z-10">
+                    <h4 className="font-black text-[#FF8FA3] text-xl mb-3">能量急救包</h4>
+                    <p className="text-lg text-slate-600 leading-relaxed font-medium">{shieldAdvice}</p>
                  </div>
-                 <button onClick={() => setShieldAdvice(null)} className="text-slate-400 p-2 hover:text-slate-600 bg-slate-50 rounded-full"><X className="w-5 h-5" /></button>
+                 <button onClick={() => setShieldAdvice(null)} className="text-slate-300 p-2 hover:text-slate-500 bg-[#F8FAFC] rounded-full z-10"><X className="w-6 h-6" /></button>
              </div>
           </div>
         )}
 
         {activeTab === 'input' && (
-          <div className="space-y-8 pb-10">
+          <div className="space-y-10 pb-12">
             {/* Step 1 */}
-            <section className={`transition-all duration-500 ${step === 1 ? 'opacity-100 translate-y-0' : 'opacity-40 scale-95 translate-y-4'}`}>
-                <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
-                            <span className="bg-rose-100 text-rose-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">1</span>
-                            日历数据源
+            <section className={`transition-all duration-700 ${step === 1 ? 'opacity-100 translate-y-0' : 'opacity-40 scale-95 translate-y-4 grayscale'}`}>
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border-2 border-[#F0F4F8]">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-2xl font-black text-slate-700 flex items-center gap-4">
+                            <span className="bg-[#FFB7B2] text-white w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-md shadow-[#FFB7B2]/40">1</span>
+                            日历数据
                         </h3>
-                        {!dataInput && <button onClick={handlePaste} className="text-xs bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full font-bold active:scale-95 transition-transform border border-indigo-100 hover:bg-indigo-100">粘贴剪贴板</button>}
+                        {!dataInput && <button onClick={handlePaste} className="text-sm bg-[#E0F7FA] text-[#26C6DA] px-5 py-2.5 rounded-2xl font-bold active:scale-95 transition-transform border-2 border-[#B2EBF2] hover:bg-[#B2EBF2]/50">粘贴</button>}
                     </div>
                     <div className="relative group">
-                        <textarea ref={textareaRef} value={dataInput} onChange={(e) => setDataInput(e.target.value)} placeholder="请先运行 iOS 快捷指令，然后点右上角粘贴..." className="w-full h-36 bg-[#F8FAFC] border-2 border-transparent focus:border-rose-300 rounded-3xl p-5 text-base text-slate-700 outline-none resize-none placeholder:text-slate-400 transition-all" />
-                        {dataInput && <div className="absolute bottom-4 right-4 text-xs text-emerald-600 font-bold bg-emerald-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm"><CheckCircle className="w-3.5 h-3.5"/> 已获取</div>}
+                        <textarea ref={textareaRef} value={dataInput} onChange={(e) => setDataInput(e.target.value)} placeholder="Paste calendar data here..." className="w-full h-40 bg-[#F8FAFC] border-2 border-[#E2E8F0] focus:border-[#FFB7B2] rounded-3xl p-6 text-lg text-slate-600 outline-none resize-none placeholder:text-slate-300 transition-all" />
+                        {dataInput && <div className="absolute bottom-5 right-5 text-sm text-[#66BB6A] font-bold bg-[#E8F5E9] px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm border border-[#C8E6C9]"><CheckCircle className="w-4 h-4"/> 已获取</div>}
                     </div>
-                    {step === 1 && dataInput && <button onClick={() => setStep(2)} className="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4.5 rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">下一步：确认状态 <ArrowRight className="w-5 h-5" /></button>}
+                    {step === 1 && dataInput && <button onClick={() => setStep(2)} className="mt-8 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-5 rounded-3xl shadow-xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3 text-xl">下一步 <ArrowRight className="w-6 h-6" /></button>}
                 </div>
             </section>
 
-            {/* Step 2 */}
+            {/* Step 2 - Grid Layout Updated */}
             {step >= 2 && (
-                <section ref={step2Ref} className="animate-in slide-in-from-bottom-12 duration-700 fade-in fill-mode-forwards">
-                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
-                            <span className="bg-amber-100 text-amber-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">2</span>
-                            <h3 className="text-xl font-extrabold text-slate-800">当前状态</h3>
+                <section ref={step2Ref} className="animate-in slide-in-from-bottom-16 duration-700 fade-in fill-mode-forwards">
+                    <div className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border-2 border-[#F0F4F8] space-y-10">
+                        <div className="flex items-center gap-4 border-b-2 border-[#F1F5F9] pb-6">
+                            <span className="bg-[#FFDAC1] text-white w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-black shadow-md shadow-[#FFDAC1]/40">2</span>
+                            <h3 className="text-2xl font-black text-slate-700">当前状态</h3>
                         </div>
                         
                         <div>
-                            <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">正在做什么?</label>
-                            <input type="text" value={userContext.currentActivity} onChange={(e) => setUserContext({...userContext, currentActivity: e.target.value})} placeholder="如: 刚起床、坐地铁、发呆" className="w-full bg-[#F8FAFC] border-2 border-transparent focus:border-amber-300 rounded-2xl p-4 text-lg text-slate-800 outline-none transition-all placeholder:text-slate-400" />
+                            <label className="text-base font-bold text-slate-400 block mb-4 pl-2">正在做什么?</label>
+                            <input type="text" value={userContext.currentActivity} onChange={(e) => setUserContext({...userContext, currentActivity: e.target.value})} placeholder="如: 刚起床" className="w-full bg-[#F8FAFC] border-2 border-[#E2E8F0] focus:border-[#FFDAC1] rounded-3xl p-5 text-xl text-slate-700 outline-none transition-all placeholder:text-slate-300" />
                         </div>
-                        <div className="space-y-6">
+                        
+                        <div className="space-y-8">
                             <div>
-                                <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">身体感受 (多选)</label>
-                                <div className="flex flex-wrap gap-3">
+                                <label className="text-base font-bold text-slate-400 block mb-4 pl-2">身体感受</label>
+                                <div className="grid grid-cols-3 gap-3">
                                         {physicalOptions.map(opt => (
                                             <button key={opt.v} onClick={() => toggleState('physicalState', opt.v)} 
-                                                className={`px-5 py-3 rounded-2xl text-base font-bold transition-all border-2 ${userContext.physicalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-transparent text-slate-400 hover:bg-slate-50'}`}>
+                                                className={`py-3.5 rounded-2xl text-base font-bold transition-all border-2 truncate min-w-0 ${userContext.physicalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-[#E2E8F0] text-slate-400 hover:bg-slate-50'}`}>
                                                 {opt.l}
                                             </button>
                                         ))}
                                 </div>
                             </div>
                             <div>
-                                <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">精神状态 (多选)</label>
-                                <div className="flex flex-wrap gap-3">
+                                <label className="text-base font-bold text-slate-400 block mb-4 pl-2">精神状态</label>
+                                <div className="grid grid-cols-3 gap-3">
                                         {mentalOptions.map(opt => (
                                             <button key={opt.v} onClick={() => toggleState('mentalState', opt.v)} 
-                                                className={`px-5 py-3 rounded-2xl text-base font-bold transition-all border-2 ${userContext.mentalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-transparent text-slate-400 hover:bg-slate-50'}`}>
+                                                className={`py-3.5 rounded-2xl text-base font-bold transition-all border-2 truncate min-w-0 ${userContext.mentalState.includes(opt.v) ? opt.activeClass : 'bg-[#F8FAFC] border-[#E2E8F0] text-slate-400 hover:bg-slate-50'}`}>
                                                 {opt.l}
                                             </button>
                                         ))}
@@ -696,101 +704,120 @@ function App() {
                             </div>
                         </div>
                         <div>
-                            <label className="text-sm font-bold text-slate-500 block mb-3 pl-1">预估睡觉时间</label>
-                            <input type="time" value={userContext.sleepTime} onChange={(e) => setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8FAFC] border-2 border-transparent focus:border-blue-300 rounded-2xl p-4 text-xl text-slate-800 outline-none text-center font-mono" />
+                            <label className="text-base font-bold text-slate-400 block mb-4 pl-2">预估睡觉时间</label>
+                            <input type="time" value={userContext.sleepTime} onChange={(e) => setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8FAFC] border-2 border-[#E2E8F0] focus:border-[#C7CEEA] rounded-3xl p-5 text-2xl text-slate-700 outline-none text-center font-mono tracking-widest" />
                         </div>
-                        {step === 2 && <button onClick={() => setStep(3)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4.5 rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">下一步：完善计划 <ArrowRight className="w-5 h-5" /></button>}
+                        {step === 2 && <button onClick={() => setStep(3)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-5 rounded-3xl shadow-xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3 text-xl">下一步 <ArrowRight className="w-6 h-6" /></button>}
                     </div>
                 </section>
             )}
 
             {/* Step 3 */}
             {step >= 3 && (
-                <section ref={step3Ref} className="space-y-8 animate-in slide-in-from-bottom-12 duration-700 fade-in pb-20">
-                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-3">
-                                <span className="bg-violet-100 text-violet-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black">3</span>
+                <section ref={step3Ref} className="space-y-10 animate-in slide-in-from-bottom-16 duration-700 fade-in pb-24">
+                    <div className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border-2 border-[#F0F4F8]">
+                        <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-2xl font-black text-slate-700 flex items-center gap-4">
+                                <span className="bg-[#C7CEEA] text-white w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-black shadow-md shadow-[#C7CEEA]/40">3</span>
                                 今日计划
                             </h3>
-                            <button onClick={addTask} className="text-xs font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 px-4 py-2.5 rounded-full flex items-center gap-1.5 transition-colors"><Plus className="w-4 h-4" /> 加一项</button>
+                            <button onClick={addTask} className="text-sm font-bold text-[#9FA8DA] bg-[#E8EAF6] hover:bg-[#C5CAE9] px-5 py-3 rounded-2xl flex items-center gap-2 transition-colors border-2 border-[#C5CAE9]/20"><Plus className="w-5 h-5" /> 加一项</button>
                         </div>
-                        <div className="space-y-5">
+                        <div className="space-y-6">
                             {userContext.tasks.map((task, index) => (
-                                <div key={task.id} className="bg-[#FDFDFD] p-5 rounded-3xl border border-slate-100 shadow-sm relative group hover:border-violet-200 transition-colors">
-                                    <div className="mb-5 flex gap-3 items-center">
-                                        <input type="text" value={task.name} onChange={(e) => updateTask(task.id, 'name', e.target.value)} placeholder="输入事项名称 (如: 写年度总结)" className="w-full bg-transparent border-b-2 border-slate-100 pb-2 text-lg font-bold text-slate-800 focus:border-violet-400 outline-none placeholder:text-slate-300 placeholder:font-normal transition-colors" />
-                                        <button onClick={() => handleSmartEstimate(task.id, index)} className="p-3 bg-violet-50 rounded-2xl text-violet-500 hover:bg-violet-100 active:scale-90 transition-all shadow-sm" title="AI 智能估时">
-                                            {estimatingIndex === index ? <Loader2 className="w-5 h-5 animate-spin"/> : <Wand2 className="w-5 h-5"/>}
+                                <div key={task.id} className="bg-[#FAFAFA] p-6 rounded-[2rem] border-2 border-[#F1F5F9] relative group hover:border-[#E2E8F0] transition-colors">
+                                    <div className="mb-6 flex gap-4 items-center">
+                                        <input type="text" value={task.name} onChange={(e) => updateTask(task.id, 'name', e.target.value)} placeholder="事项名称" className="w-full bg-transparent border-b-2 border-[#E2E8F0] pb-3 text-xl font-bold text-slate-800 focus:border-[#C7CEEA] outline-none placeholder:text-slate-300 placeholder:font-normal transition-colors" />
+                                        <button onClick={() => handleSmartEstimate(task.id, index)} className="p-3.5 bg-[#EDE7F6] rounded-2xl text-[#9575CD] hover:bg-[#D1C4E9] active:scale-90 transition-all shadow-sm border-2 border-[#D1C4E9]/20" title="AI 智能估时">
+                                            {estimatingIndex === index ? <Loader2 className="w-6 h-6 animate-spin"/> : <Wand2 className="w-6 h-6"/>}
                                         </button>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col gap-2">
-                                            <span className="text-xs font-bold text-slate-400 pl-1">计划耗时</span>
-                                            <div className="flex items-center gap-2 bg-slate-50 rounded-2xl p-2 border border-slate-100">
+                                    <div className="space-y-5">
+                                        <div className="flex flex-col gap-3">
+                                            <span className="text-sm font-bold text-slate-400 pl-1">计划耗时</span>
+                                            <div className="flex items-center gap-3 bg-white rounded-2xl p-3 border-2 border-[#F1F5F9]">
                                                 <div className="flex-1 flex items-center justify-center">
-                                                    <input type="number" value={task.durationHour} onChange={(e) => updateTask(task.id, 'durationHour', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
-                                                    <span className="text-xs text-slate-400 mr-2">时</span>
+                                                    <input type="number" value={task.durationHour} onChange={(e) => updateTask(task.id, 'durationHour', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-xl font-bold text-slate-700 outline-none" />
+                                                    <span className="text-sm text-slate-400 mr-2 font-bold">时</span>
                                                 </div>
-                                                <div className="w-px h-6 bg-slate-200"></div>
+                                                <div className="w-0.5 h-8 bg-slate-100"></div>
                                                 <div className="flex-1 flex items-center justify-center">
-                                                    <input type="number" value={task.durationMin} onChange={(e) => updateTask(task.id, 'durationMin', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
-                                                    <span className="text-xs text-slate-400 mr-2">分</span>
+                                                    <input type="number" value={task.durationMin} onChange={(e) => updateTask(task.id, 'durationMin', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-xl font-bold text-slate-700 outline-none" />
+                                                    <span className="text-sm text-slate-400 mr-2 font-bold">分</span>
                                                 </div>
-                                                <div className="w-px h-6 bg-slate-200"></div>
+                                                <div className="w-0.5 h-8 bg-slate-100"></div>
                                                 <div className="flex-1 flex items-center justify-center">
-                                                    <input type="number" value={task.durationSec} onChange={(e) => updateTask(task.id, 'durationSec', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-lg font-bold text-slate-700 outline-none" />
-                                                    <span className="text-xs text-slate-400 mr-2">秒</span>
+                                                    <input type="number" value={task.durationSec} onChange={(e) => updateTask(task.id, 'durationSec', e.target.value)} placeholder="0" className="w-full text-center bg-transparent text-xl font-bold text-slate-700 outline-none" />
+                                                    <span className="text-sm text-slate-400 mr-2 font-bold">秒</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col gap-2">
-                                            <span className="text-xs font-bold text-slate-400 pl-1">工作流模式</span>
+                                        <div className="flex flex-col gap-3">
+                                            <span className="text-sm font-bold text-slate-400 pl-1">工作流模式</span>
                                             <div className="relative">
-                                                <select value={task.workflowId} onChange={(e) => updateTask(task.id, 'workflowId', e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 pr-10 text-base text-slate-600 font-medium outline-none appearance-none">
+                                                <select value={task.workflowId} onChange={(e) => updateTask(task.id, 'workflowId', e.target.value)} className="w-full bg-white border-2 border-[#F1F5F9] rounded-2xl p-4 pr-12 text-lg text-slate-600 font-bold outline-none appearance-none focus:border-[#C7CEEA] transition-colors">
                                                     <option value="">🚫 普通任务 (不绑定)</option>
                                                     {userContext.pomodoroSettings.map(s => <option key={s.id} value={s.id}>⏱ {s.name} ({s.work}m/{s.rest}m)</option>)}
                                                 </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"/>
+                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 pointer-events-none"/>
                                             </div>
                                         </div>
                                     </div>
-                                    {userContext.tasks.length > 1 && <button onClick={() => removeTask(task.id)} className="absolute -top-3 -right-3 bg-white text-rose-400 border border-rose-100 rounded-full p-2 shadow-md opacity-100 hover:bg-rose-50 transition-all"><X className="w-5 h-5"/></button>}
+                                    {userContext.tasks.length > 1 && <button onClick={() => removeTask(task.id)} className="absolute top-4 right-4 bg-white text-[#FF8FA3] border-2 border-[#FFE4E1] rounded-full p-2.5 shadow-lg opacity-100 hover:bg-[#FFF0F5] transition-all z-10"><Trash2 className="w-5 h-5"/></button>}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] p-7 shadow-xl shadow-slate-200/40 border border-white">
+                    <div className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border-2 border-[#F0F4F8]">
                         <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2"><Timer className="w-5 h-5 text-blue-500" /> 工作流预设</h3>
-                        <button onClick={addPomodoro} className="text-xs text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full font-bold transition-colors">+ 新增</button>
+                        <h3 className="text-xl font-black text-slate-700 flex items-center gap-3"><Timer className="w-6 h-6 text-[#64B5F6]" /> 工作流预设</h3>
+                        <button onClick={addPomodoro} className="text-xs text-[#64B5F6] bg-[#E3F2FD] hover:bg-[#BBDEFB] px-5 py-2.5 rounded-full font-bold transition-colors">+ 新增</button>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                             {userContext.pomodoroSettings.map((s) => (
-                                <div key={s.id} className="flex flex-col sm:flex-row items-center gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-50">
-                                    <input value={s.name} onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} className="w-full sm:w-32 bg-transparent text-base font-bold text-slate-700 outline-none border-b-2 border-transparent focus:border-blue-200 placeholder:text-slate-300" placeholder="名称" />
-                                    <div className="flex gap-3 w-full">
-                                        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 py-2.5 shadow-sm border border-slate-100">
-                                            <span className="text-xs font-bold text-slate-400">忙</span>
-                                            <input type="number" value={s.work} onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} className="w-full text-center text-lg font-bold text-slate-700 outline-none bg-transparent" />
-                                            <span className="text-xs font-bold text-slate-300">m</span>
+                                <div key={s.id} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-5 rounded-[2rem] border-2 border-[#F1F5F9] relative">
+                                    <input 
+                                        value={s.name} 
+                                        onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} 
+                                        className="w-full sm:w-40 bg-[#F1F5F9] px-4 py-3 rounded-2xl text-lg font-bold text-slate-700 outline-none border-2 border-transparent focus:border-[#64B5F6] placeholder:text-slate-300 transition-all relative z-10" 
+                                        placeholder="名称" 
+                                    />
+                                    <div className="flex gap-4 w-full">
+                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group-focus-within:border-[#64B5F6] transition-colors">
+                                            <span className="text-sm font-bold text-slate-400 shrink-0">忙</span>
+                                            <input 
+                                                type="number" 
+                                                value={s.work} 
+                                                onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} 
+                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-10" 
+                                            />
+                                            <span className="text-xs font-bold text-slate-400 shrink-0">min</span>
                                         </div>
-                                        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 py-2.5 shadow-sm border border-slate-100">
-                                            <span className="text-xs font-bold text-slate-400">休</span>
-                                            <input type="number" value={s.rest} onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} className="w-full text-center text-lg font-bold text-slate-700 outline-none bg-transparent" />
-                                            <span className="text-xs font-bold text-slate-300">m</span>
+                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group-focus-within:border-[#64B5F6] transition-colors">
+                                            <span className="text-sm font-bold text-slate-400 shrink-0">休</span>
+                                            <input 
+                                                type="number" 
+                                                value={s.rest} 
+                                                onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} 
+                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-10" 
+                                            />
+                                            <span className="text-xs font-bold text-slate-400 shrink-0">min</span>
                                         </div>
                                     </div>
-                                    {userContext.pomodoroSettings.length > 1 && <button onClick={() => removePomodoro(s.id)} className="text-slate-300 hover:text-red-400 p-2"><Trash2 className="w-5 h-5"/></button>}
+                                    {userContext.pomodoroSettings.length > 1 && (
+                                        <button onClick={() => removePomodoro(s.id)} className="text-slate-300 hover:text-[#FF8FA3] p-2 transition-colors relative z-10">
+                                            <Trash2 className="w-6 h-6"/>
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold py-5 rounded-[2rem] shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3 text-xl">
-                        {isAnalyzing ? <Loader2 className="w-7 h-7 animate-spin"/> : <Sparkles className="w-7 h-7"/>}
-                        {isAnalyzing ? "正在精心编织..." : "生成今日行动指南"}
+                    <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-6 rounded-[2.5rem] shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3 text-2xl">
+                        {isAnalyzing ? <Loader2 className="w-8 h-8 animate-spin"/> : <Sparkles className="w-8 h-8"/>}
+                        {isAnalyzing ? "生成今日行动指南" : "生成今日行动指南"}
                     </button>
                 </section>
             )}
@@ -799,27 +826,28 @@ function App() {
 
         {/* Report View */}
         {activeTab === 'report' && analysisResult && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-12 pb-40 fade-in">
+          <div className="space-y-10 animate-in slide-in-from-bottom-16 pb-48 fade-in">
             
             {/* Daily Reviews */}
-            <div className="bg-white rounded-[2.5rem] p-7 shadow-lg shadow-slate-200/50 border border-white">
-               <div className="flex items-center justify-between mb-8 bg-slate-50 p-1.5 rounded-2xl">
-                  <button onClick={() => setReviewTab('dayBefore')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='dayBefore'?'bg-white shadow-sm text-slate-800':'text-slate-400'}`}>前天</button>
-                  <button onClick={() => setReviewTab('yesterday')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='yesterday'?'bg-white shadow-sm text-amber-600':'text-slate-400'}`}>昨天</button>
-                  <button onClick={() => setReviewTab('today')} className={`flex-1 text-sm font-bold py-3.5 rounded-xl transition-all ${reviewTab==='today'?'bg-white shadow-sm text-indigo-600':'text-slate-400'}`}>今天</button>
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-lg shadow-slate-200/50 border-2 border-[#F0F4F8]">
+               <h2 className="text-2xl font-black text-slate-700 mb-6">复盘</h2>
+               <div className="flex items-center justify-between mb-10 bg-[#F8FAFC] p-2 rounded-3xl border border-[#E2E8F0]">
+                  <button onClick={() => setReviewTab('dayBefore')} className={`flex-1 text-base font-bold py-4 rounded-2xl transition-all ${reviewTab==='dayBefore'?'bg-white shadow-md text-slate-800':'text-slate-400'}`}>前天</button>
+                  <button onClick={() => setReviewTab('yesterday')} className={`flex-1 text-base font-bold py-4 rounded-2xl transition-all ${reviewTab==='yesterday'?'bg-white shadow-md text-[#FFB7B2]':'text-slate-400'}`}>昨天</button>
+                  <button onClick={() => setReviewTab('today')} className={`flex-1 text-base font-bold py-4 rounded-2xl transition-all ${reviewTab==='today'?'bg-white shadow-md text-[#C7CEEA]':'text-slate-400'}`}>今天</button>
                </div>
                {(() => {
                    const review = getCurrentReview();
-                   if (!review) return <div className="text-center text-slate-400 py-12 text-lg font-medium">暂无该日数据</div>;
+                   if (!review) return <div className="text-center text-slate-400 py-16 text-xl font-medium">暂无该日数据</div>;
                    return (
                        <div className="animate-in fade-in zoom-in-95 duration-500">
-                           <div className="text-center mb-8">
-                               <h4 className="text-xl font-bold text-slate-700 flex items-center justify-center gap-3"><Calendar className="w-6 h-6 text-slate-400" />{review.date}</h4>
+                           <div className="text-center mb-10">
+                               <h4 className="text-xl font-bold text-slate-700 flex items-center justify-center gap-3"><Calendar className="w-6 h-6 text-slate-300" />{review.date}</h4>
                            </div>
                            
                            <SimplePieChart data={review.stats} />
 
-                           <div className="mt-10 bg-[#F8FAFC] p-6 rounded-3xl border border-slate-50 text-base text-slate-600 leading-8 text-justify tracking-wide">
+                           <div className="mt-12 bg-[#F8FAFC] p-8 rounded-[2rem] border border-[#E2E8F0] text-base text-slate-600 leading-9 text-justify tracking-wide font-medium">
                                {review.analysis}
                            </div>
                        </div>
@@ -829,74 +857,75 @@ function App() {
 
             {/* Today's Plan */}
             {analysisResult.today_plan && (
-                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-indigo-100/50 border border-white overflow-hidden">
-                    <div className="p-8 bg-gradient-to-br from-[#E0F2F1] to-[#E8EAF6] relative">
-                        <div className="flex items-center justify-between mb-5 opacity-80">
-                            <div className="flex items-center gap-2">
-                                <Sunrise className="w-6 h-6 text-slate-700" />
-                                <span className="text-base font-bold uppercase tracking-wider text-slate-700">{analysisResult.today_plan.date}</span>
+                <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-[#C7CEEA]/30 border-2 border-white overflow-hidden">
+                    <div className="p-10 bg-gradient-to-br from-[#E8EAF6] to-[#E3F2FD] relative">
+                        <div className="flex items-center justify-between mb-6 opacity-70">
+                            <div className="flex items-center gap-3">
+                                <Sunrise className="w-6 h-6 text-slate-600" />
+                                <span className="text-base font-black uppercase tracking-widest text-slate-600">{analysisResult.today_plan.date}</span>
                             </div>
                             
-                            {/* BGM 推荐 */}
-                            <div className="flex items-center gap-2">
+                            {/* BGM */}
+                            <div className="flex items-center gap-3">
                                 {bgmAdvice && <span className="text-xs bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-indigo-600 font-bold animate-in fade-in shadow-sm">{bgmAdvice}</span>}
                                 <button onClick={handleGetBGM} disabled={bgmLoading} className="bg-white/80 p-2.5 rounded-full text-indigo-600 shadow-sm active:scale-90 hover:bg-white transition-all">
                                     {bgmLoading ? <Loader2 className="w-5 h-5 animate-spin"/> : <Music className="w-5 h-5"/>}
                                 </button>
                             </div>
                         </div>
-                        <p className="text-lg font-medium leading-relaxed text-slate-800">"{analysisResult.today_plan.overall_advice}"</p>
+                        <h2 className="text-2xl font-black text-slate-800 mb-3">今日计划</h2>
+                        <p className="text-xl font-bold leading-relaxed text-slate-800/80 italic">"{analysisResult.today_plan.overall_advice}"</p>
                     </div>
 
                     <div className="p-6 space-y-6">
                         {analysisResult.today_plan.blocks?.map((block, bIdx) => (
-                            <div key={bIdx} className="relative pl-6 border-l-4 border-slate-100">
-                                <div className={`p-6 rounded-3xl ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative group shadow-sm`}>
+                            <div key={bIdx} className="relative">
+                                <div className={`p-6 rounded-[2rem] ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative group shadow-sm border border-transparent`}>
                                     
                                     <button 
                                         onClick={() => handleDeleteBlock(bIdx)}
-                                        className="absolute -top-3 -right-3 bg-white text-slate-300 hover:text-red-400 border border-slate-100 rounded-full p-2.5 shadow-md z-10"
+                                        className="absolute top-4 right-4 bg-white text-slate-300 hover:text-[#FF8FA3] border-2 border-[#F1F5F9] rounded-full p-3 shadow-md z-10"
                                     >
                                         <Trash2 className="w-5 h-5" />
                                     </button>
 
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-2 bg-white/60 px-3.5 py-2 rounded-2xl text-base font-mono font-bold opacity-90 backdrop-blur-sm shadow-sm">
+                                        <div className="flex items-center gap-3 bg-white/60 px-4 py-2.5 rounded-2xl text-lg font-mono font-bold opacity-90 backdrop-blur-sm shadow-sm whitespace-nowrap">
                                             <Clock className="w-5 h-5" /> {block.time}
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-3">
                                             {(block.type === 'focus' || block.type === 'routine') && !breakdownStates[bIdx] && (
-                                                <button onClick={() => handleMagicBreakdown(block, bIdx)} className="bg-white/70 p-2.5 rounded-xl text-indigo-500 shadow-sm active:scale-90 hover:bg-white transition-all">
+                                                <button onClick={() => handleMagicBreakdown(block, bIdx)} className="bg-white/70 p-3 rounded-2xl text-[#818CF8] shadow-sm active:scale-90 hover:bg-white transition-all">
                                                     {loadingBreakdown === bIdx ? <Loader2 className="w-5 h-5 animate-spin"/> : <Sparkles className="w-5 h-5"/>}
                                                 </button>
                                             )}
-                                            <span className="text-xs font-bold uppercase opacity-60 bg-white/50 px-3 py-1.5 rounded-full tracking-wide">{block.type}</span>
+                                            <span className="text-xs font-black uppercase opacity-50 bg-white/50 px-4 py-2 rounded-full tracking-widest">{block.type}</span>
                                         </div>
                                     </div>
                                     
-                                    <h4 className="font-bold text-xl mb-3 text-slate-800/90">{block.activity}</h4>
+                                    <h4 className="font-black text-2xl mb-4 text-slate-800/90">{block.activity}</h4>
 
                                     {block.sub_schedule && block.sub_schedule.length > 0 ? (
-                                        <div className="space-y-3 mt-5 bg-white/50 p-5 rounded-2xl border border-white/20">
+                                        <div className="space-y-4 mt-6 bg-white/50 p-6 rounded-3xl border border-white/30">
                                             {block.sub_schedule.map((sub, sIdx) => (
-                                                <div key={sIdx} className="flex gap-4 text-sm opacity-90 items-start">
-                                                    <span className="font-mono opacity-60 min-w-[75px] pt-0.5 font-bold">{sub.time}</span>
+                                                <div key={sIdx} className="flex gap-5 text-base opacity-90 items-start">
+                                                    <span className="font-mono opacity-60 min-w-[80px] pt-1 font-bold whitespace-nowrap">{sub.time}</span>
                                                     <div className="flex-1">
-                                                        <span className={`leading-relaxed font-medium ${sub.label.includes('过渡') ? 'text-indigo-600 font-bold' : ''}`}>{sub.label}</span>
+                                                        <span className={`leading-relaxed font-bold ${sub.label.includes('过渡') ? 'text-indigo-600' : ''}`}>{sub.label}</span>
                                                     </div>
-                                                    {sub.label.includes('过渡') && <MoveRight className="w-5 h-5 text-indigo-400 mt-0.5"/>}
+                                                    {sub.label.includes('过渡') && <MoveRight className="w-6 h-6 text-indigo-400 mt-1"/>}
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-base opacity-80 leading-relaxed font-medium">{block.desc}</p>
+                                        <p className="text-lg opacity-80 leading-relaxed font-medium">{block.desc}</p>
                                     )}
 
                                     {block.actionable_tips && block.actionable_tips.length > 0 && (
-                                        <div className="mt-5 pt-4 border-t border-black/5 flex flex-wrap gap-2.5">
+                                        <div className="mt-6 pt-5 border-t border-black/5 flex flex-wrap gap-3">
                                             {block.actionable_tips.map((tip, tIdx) => (
-                                                <span key={tIdx} className="text-sm font-bold px-3.5 py-2 bg-white/70 rounded-xl flex items-center gap-2 text-slate-600 shadow-sm">
-                                                    {block.type === 'rest' ? <Heart className="w-4 h-4 text-emerald-500"/> : <CheckCircle className="w-4 h-4 opacity-50"/>}
+                                                <span key={tIdx} className="text-sm font-bold px-4 py-2.5 bg-white/70 rounded-2xl flex items-center gap-2 text-slate-600 shadow-sm">
+                                                    {block.type === 'rest' ? <Heart className="w-4 h-4 text-[#34D399]"/> : <CheckCircle className="w-4 h-4 opacity-50"/>}
                                                     {tip}
                                                 </span>
                                             ))}
@@ -904,12 +933,12 @@ function App() {
                                     )}
 
                                     {breakdownStates[bIdx] && (
-                                        <div className="mt-5 bg-white/90 p-5 rounded-2xl text-sm space-y-3 border border-white shadow-sm animate-in fade-in">
-                                            <div className="text-xs font-bold text-indigo-500 flex items-center gap-2 mb-3 uppercase tracking-wider"><Sparkles className="w-4 h-4"/> 魔法微步骤</div>
+                                        <div className="mt-6 bg-white/90 p-6 rounded-3xl text-base space-y-3 border border-white shadow-sm animate-in fade-in">
+                                            <div className="text-xs font-black text-[#818CF8] flex items-center gap-2 mb-4 uppercase tracking-widest"><Sparkles className="w-5 h-5"/> 魔法微步骤</div>
                                             {breakdownStates[bIdx].map((step, i) => (
-                                                <div key={i} className="flex gap-3 text-slate-700 items-start">
-                                                    <div className="mt-1.5 w-2 h-2 rounded-full bg-indigo-300 shrink-0"></div>
-                                                    <span className="leading-relaxed font-medium">{step}</span>
+                                                <div key={i} className="flex gap-4 text-slate-700 items-start">
+                                                    <div className="mt-2 w-2.5 h-2.5 rounded-full bg-[#C7CEEA] shrink-0"></div>
+                                                    <span className="leading-relaxed font-bold">{step}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -923,33 +952,33 @@ function App() {
 
             {/* Future Diary */}
             {analysisResult.today_plan && (
-                <div ref={diaryRef} className="bg-gradient-to-br from-slate-800 to-indigo-950 rounded-[2.5rem] p-8 shadow-2xl text-white relative overflow-hidden">
+                <div ref={diaryRef} className="bg-gradient-to-br from-slate-800 to-[#1E1B4B] rounded-[3rem] p-10 shadow-2xl text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 opacity-10">
-                        <Feather className="w-48 h-48 -mr-8 -mt-8" />
+                        <Feather className="w-56 h-56 -mr-10 -mt-10" />
                     </div>
                     <div className="relative z-10">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-2xl font-bold flex items-center gap-3"><Moon className="w-7 h-7 text-indigo-300" /> 今晚的日记</h3>
-                            <button onClick={handleFutureDiary} disabled={diaryLoading} className="text-sm bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 border border-white/10">
+                            <h3 className="text-3xl font-black flex items-center gap-4"><Moon className="w-8 h-8 text-[#C7CEEA]" /> 今晚的日记</h3>
+                            <button onClick={handleFutureDiary} disabled={diaryLoading} className="text-sm bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full font-bold transition-all flex items-center gap-3 border border-white/10">
                                 {diaryLoading ? <Loader2 className="w-5 h-5 animate-spin"/> : <Sparkles className="w-5 h-5"/>}
                                 {diaryContent ? '重写' : '预演'}
                             </button>
                         </div>
                         {diaryContent ? (
-                            <div className="bg-white/10 rounded-3xl p-7 text-lg leading-9 tracking-wide font-medium text-indigo-50 animate-in fade-in slide-in-from-bottom-4 font-serif">
+                            <div className="bg-white/10 rounded-[2rem] p-8 text-xl leading-loose tracking-wide font-medium text-[#E0E7FF] animate-in fade-in slide-in-from-bottom-4 font-serif">
                                 {diaryContent}
                             </div>
                         ) : (
-                            <div className="text-center py-12 text-indigo-200/60 text-base font-medium">点击生成按钮，提前感受今晚完成任务后的满足感...</div>
+                            <div className="text-center py-16 text-[#C7CEEA]/60 text-lg font-medium">点击生成按钮，提前感受今晚完成任务后的满足感...</div>
                         )}
                     </div>
                 </div>
             )}
 
             {/* Save Button */}
-            <div className="flex justify-center pb-12">
-                <button onClick={handleSavePlan} className="bg-slate-800 text-white font-bold py-5 px-12 rounded-full shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center gap-3 text-lg hover:bg-slate-900">
-                    <Save className="w-6 h-6" /> 保存并完成
+            <div className="flex justify-center pb-16">
+                <button onClick={handleSavePlan} className="bg-slate-800 text-white font-black py-6 px-16 rounded-full shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center gap-4 text-xl hover:bg-slate-900">
+                    <Save className="w-7 h-7" /> 保存并完成
                 </button>
             </div>
           </div>
@@ -958,18 +987,18 @@ function App() {
 
       {/* Floating Status Bar */}
       {(userContext.physicalState.length > 0 || userContext.mentalState.length > 0) && (
-          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 z-30 animate-in slide-in-from-bottom-20 fade-in duration-700">
-              <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-full px-6 py-3.5 flex items-center gap-4 text-sm font-bold text-slate-600">
+          <div className="fixed bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-5 z-30 animate-in slide-in-from-bottom-20 fade-in duration-700 w-max max-w-[90vw]">
+              <div className="bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_10px_40px_rgba(0,0,0,0.15)] rounded-full px-8 py-4 flex items-center gap-5 text-base font-bold text-slate-600">
                   {userContext.physicalState.length > 0 && (
-                      <div className="flex gap-1.5">{userContext.physicalState.slice(0,2).map(s=><span key={s} className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">{s}</span>)}</div>
+                      <div className="flex gap-2">{userContext.physicalState.slice(0,2).map(s=><span key={s} className="bg-[#E8EAF6] text-[#3F51B5] px-3 py-1.5 rounded-full border border-[#C5CAE9] whitespace-nowrap">{s}</span>)}</div>
                   )}
-                  {(userContext.physicalState.length > 0 && userContext.mentalState.length > 0) && <div className="w-px h-5 bg-slate-300"></div>}
+                  {(userContext.physicalState.length > 0 && userContext.mentalState.length > 0) && <div className="w-0.5 h-6 bg-slate-300"></div>}
                   {userContext.mentalState.length > 0 && (
-                      <div className="flex gap-1.5">{userContext.mentalState.slice(0,2).map(s=><span key={s} className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100">{s}</span>)}</div>
+                      <div className="flex gap-2">{userContext.mentalState.slice(0,2).map(s=><span key={s} className="bg-[#FFF3E0] text-[#EF6C00] px-3 py-1.5 rounded-full border border-[#FFE0B2] whitespace-nowrap">{s}</span>)}</div>
                   )}
               </div>
-              <button onClick={handleEnergyShield} disabled={shieldLoading} className="bg-rose-500 text-white p-4 rounded-full shadow-xl shadow-rose-200 active:scale-90 transition-transform hover:bg-rose-600 ring-4 ring-rose-100">
-                  {shieldLoading ? <Loader2 className="w-6 h-6 animate-spin"/> : <ShieldCheck className="w-6 h-6"/>}
+              <button onClick={handleEnergyShield} disabled={shieldLoading} className="bg-[#FF8FA3] text-white p-5 rounded-full shadow-xl shadow-[#FF8FA3]/40 active:scale-90 transition-transform hover:bg-[#F06292] ring-4 ring-[#FFDEE2]">
+                  {shieldLoading ? <Loader2 className="w-7 h-7 animate-spin"/> : <ShieldCheck className="w-7 h-7"/>}
               </button>
           </div>
       )}
