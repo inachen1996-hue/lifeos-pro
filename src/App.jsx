@@ -8,9 +8,31 @@ import {
 } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 图标映射
+// --- 防崩溃组件 ---
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 text-center">
+          <div className="text-rose-500 font-bold mb-2">哎呀，显示出了点小问题</div>
+          <button onClick={() => window.location.reload()} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm">
+            刷新页面重试
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// 安全的图标获取函数 (防止 category 为空时崩溃)
 const getCategoryIcon = (category) => {
-  const cat = category.toLowerCase();
+  const cat = (category || "").toLowerCase(); // 加强防御
   if (cat.includes('睡') || cat.includes('sleep')) return <Moon className="w-4 h-4" />;
   if (cat.includes('工') || cat.includes('work')) return <Briefcase className="w-4 h-4" />;
   if (cat.includes('学') || cat.includes('study') || cat.includes('读')) return <BookOpen className="w-4 h-4" />;
@@ -24,16 +46,17 @@ const getCategoryIcon = (category) => {
 // 马卡龙色系样式
 const getBlockStyle = (type) => {
   switch (type) {
-    case 'focus': return 'bg-[#E0F7FA]/80 border-[#B2EBF2] text-cyan-800 shadow-sm'; // 薄荷蓝
-    case 'rest': return 'bg-[#E8F5E9]/80 border-[#C8E6C9] text-emerald-800 shadow-sm'; // 抹茶绿
-    case 'recovery': return 'bg-[#FCE4EC]/80 border-[#F8BBD0] text-pink-800 shadow-sm'; // 樱花粉
-    case 'routine': return 'bg-[#FFF3E0]/80 border-[#FFE0B2] text-orange-800 shadow-sm'; // 奶油橘
-    case 'fun': return 'bg-[#F3E5F5]/80 border-[#E1BEE7] text-purple-800 shadow-sm'; // 香芋紫
+    case 'focus': return 'bg-[#E0F7FA]/80 border-[#B2EBF2] text-cyan-800 shadow-sm';
+    case 'rest': return 'bg-[#E8F5E9]/80 border-[#C8E6C9] text-emerald-800 shadow-sm';
+    case 'recovery': return 'bg-[#FCE4EC]/80 border-[#F8BBD0] text-pink-800 shadow-sm';
+    case 'routine': return 'bg-[#FFF3E0]/80 border-[#FFE0B2] text-orange-800 shadow-sm';
+    case 'fun': return 'bg-[#F3E5F5]/80 border-[#E1BEE7] text-purple-800 shadow-sm';
     default: return 'bg-slate-50 border-slate-200 text-slate-700';
   }
 };
 
-export default function App() {
+// 这里的 export default 被移除，改为普通函数
+function App() {
   const [dataInput, setDataInput] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -42,7 +65,7 @@ export default function App() {
   
   // UI 状态
   const [showKeyInput, setShowKeyInput] = useState(false);
-  const [step, setStep] = useState(1); // 1: Calendar, 2: Status, 3: Plan
+  const [step, setStep] = useState(1); 
 
   // 功能状态
   const [breakdownStates, setBreakdownStates] = useState({}); 
@@ -56,7 +79,6 @@ export default function App() {
     physicalState: [], 
     mentalState: [],   
     sleepTime: '23:00',
-    // 更新：增加 durationHour 字段
     tasks: [{ id: Date.now(), name: '', durationHour: '', durationMin: '', durationSec: '', workflowId: '' }],
     pomodoroSettings: [
       { id: 1, name: '通用专注', work: 25, rest: 5 },
@@ -104,14 +126,9 @@ export default function App() {
       localStorage.setItem('gemini_lifeos_context', JSON.stringify(toSave));
   }, [userContext.sleepTime, userContext.pomodoroSettings, userContext.tasks]);
 
-  // 滚动到新步骤
   useEffect(() => {
-      if (step === 2 && step2Ref.current) {
-          step2Ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      if (step === 3 && step3Ref.current) {
-          step3Ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      if (step === 2 && step2Ref.current) step2Ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (step === 3 && step3Ref.current) step3Ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [step]);
 
   const showMessage = (text, type = 'error') => {
@@ -153,7 +170,7 @@ export default function App() {
     }
   };
 
-  // Gemini API Logic
+  // Gemini API: Magic Breakdown
   const handleMagicBreakdown = async (block, index) => {
       const finalKey = userApiKey;
       if (!finalKey) return showMessage("需要 API Key", "error");
@@ -163,11 +180,19 @@ export default function App() {
           const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
           const prompt = `拆解任务: "${block.activity}"。状态: 身体${userContext.physicalState}, 精神${userContext.mentalState}。返回3-5个极简微步骤字符串数组JSON。`;
           const result = await model.generateContent(prompt);
-          const steps = JSON.parse(result.response.text());
+          
+          // 强化清洗逻辑
+          let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+          const first = text.indexOf('[');
+          const last = text.lastIndexOf(']');
+          if (first !== -1 && last !== -1) text = text.substring(first, last+1);
+          
+          const steps = JSON.parse(text);
           setBreakdownStates(prev => ({...prev, [index]: steps}));
-      } catch (e) { showMessage("拆解失败", "error"); } finally { setLoadingBreakdown(null); }
+      } catch (e) { showMessage("拆解失败，请重试", "error"); } finally { setLoadingBreakdown(null); }
   };
 
+  // Gemini API: Energy Shield
   const handleEnergyShield = async () => {
       const finalKey = userApiKey;
       if (!finalKey) return showMessage("需要 API Key", "error");
@@ -177,12 +202,13 @@ export default function App() {
       try {
           const genAI = new GoogleGenerativeAI(finalKey);
           const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
-          const prompt = `用户状态告急：身体${userContext.physicalState}，精神${userContext.mentalState}。给出一个1分钟能做的急救建议（呼吸/拉伸/心理暗示），50字以内，语气温柔。`;
+          const prompt = `用户状态告急：身体${userContext.physicalState}，精神${userContext.mentalState}。给出一个1分钟能做的急救建议，50字以内，语气温柔。`;
           const result = await model.generateContent(prompt);
           setShieldAdvice(result.response.text());
       } catch (e) { showMessage("启动失败", "error"); } finally { setShieldLoading(false); }
   };
 
+  // Gemini API: Main Analysis
   const handleAnalyze = async () => {
       if (!dataInput.trim()) return showMessage("请先粘贴日历数据", "error");
       if (!userApiKey) return showMessage("请配置 API Key", "error");
@@ -193,23 +219,47 @@ export default function App() {
           const todayStr = new Date().toLocaleDateString();
           const structuredTasks = userContext.tasks.filter(t => t.name.trim()).map(t => {
               const flow = userContext.pomodoroSettings.find(p => String(p.id) === String(t.workflowId));
-              // 构造时分秒
               const durationStr = `${t.durationHour || 0}时${t.durationMin || 0}分${t.durationSec || 0}秒`;
-              return `- 事项: "${t.name}", 耗时: "${durationStr}" ${flow ? `(绑定: ${flow.name} ${flow.work}m/${flow.rest}m)` : ''}`;
+              const flowInfo = flow ? `(绑定: ${flow.name} ${flow.work}m/${flow.rest}m)` : '(普通任务，无番茄钟绑定)';
+              return `- 事项: "${t.name}", 耗时: "${durationStr}" ${flowInfo}`;
           }).join('\n');
+          
           const prompt = `你是一位敏锐的时间管理专家。今天是 ${todayStr}。
           日历数据: ${dataInput}
           状态: 身体${userContext.physicalState}，精神${userContext.mentalState}，预计睡觉${userContext.sleepTime}。
           待办Plan: ${structuredTasks || "无"}
-          逻辑: 1.严格执行Plan中绑定的工作流时长。2.负面状态必须插入[心情提升]或[身体修复]活动。3.凌晨归前一天。
+          逻辑: 
+          1. 严格执行Plan中的绑定。如果任务绑定了工作流，必须按工作流时长拆解；如果任务未绑定，则正常安排即可。
+          2. 负面状态必须插入[心情提升]或[身体修复]活动。
+          3. 凌晨归前一天。
           返回JSON: { "daily_reviews": [{ "date": "string", "is_yesterday": bool, "stats": [{"category": "string", "percentage": number, "duration": "string"}], "analysis": "string" }], "today_plan": { "date": "string", "overall_advice": "string", "blocks": [{ "time": "HH:MM-HH:MM", "type": "focus|rest|routine|fun|recovery", "activity": "string", "desc": "string", "sub_schedule": [{"time":"HH:MM-HH:MM", "label":"string"}], "actionable_tips": ["string"] }] } }`;
+          
           const result = await model.generateContent(prompt);
-          let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-          const first = text.indexOf('{'), last = text.lastIndexOf('}');
-          if (first !== -1 && last !== -1) text = text.substring(first, last+1);
-          setAnalysisResult(JSON.parse(text));
+          
+          // 强化清洗逻辑：只截取最外层的 { ... }
+          let text = result.response.text();
+          text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+          const firstOpen = text.indexOf('{');
+          const lastClose = text.lastIndexOf('}');
+          
+          if (firstOpen !== -1 && lastClose !== -1) {
+              text = text.substring(firstOpen, lastClose + 1);
+          }
+          
+          const parsed = JSON.parse(text);
+          
+          // 数据结构校验，防止渲染时崩溃
+          if (!parsed.daily_reviews) parsed.daily_reviews = [];
+          if (!parsed.today_plan) parsed.today_plan = { blocks: [], overall_advice: '' };
+          
+          setAnalysisResult(parsed);
           setActiveTab('report');
-      } catch (e) { console.error(e); showMessage("分析出错，请重试", "error"); } finally { setIsAnalyzing(false); }
+      } catch (e) { 
+          console.error(e); 
+          showMessage("数据解析失败，请再试一次", "error"); 
+      } finally { 
+          setIsAnalyzing(false); 
+      }
   };
 
   return (
@@ -231,7 +281,7 @@ export default function App() {
 
       <main className="pt-20 px-4 max-w-md mx-auto space-y-6">
         
-        {/* API Key 卡片 (马卡龙风格) */}
+        {/* API Key 卡片 */}
         <div className="bg-white/60 rounded-3xl shadow-sm border border-slate-100 overflow-hidden backdrop-blur-sm">
             {showKeyInput ? (
                 <div className="p-5">
@@ -246,7 +296,7 @@ export default function App() {
                         value={userApiKey}
                         onChange={handleKeyChange}
                         placeholder="AIza..."
-                        className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-sm focus:ring-2 focus:ring-rose-200 outline-none transition-all" 
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-3 text-base focus:ring-2 focus:ring-rose-200 outline-none transition-all" 
                     />
                     {userApiKey && (
                         <button onClick={() => setShowKeyInput(false)} className="mt-4 w-full bg-gradient-to-r from-rose-400 to-orange-400 text-white text-xs font-bold py-3 rounded-xl shadow-lg shadow-rose-100">
@@ -291,7 +341,6 @@ export default function App() {
 
         {activeTab === 'input' && (
           <div className="space-y-8 pb-10">
-            
             {/* Step 1: 日历数据 */}
             <section className={`transition-all duration-500 ${step === 1 ? 'opacity-100' : 'opacity-60 scale-95'}`}>
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
@@ -312,7 +361,7 @@ export default function App() {
                             value={dataInput}
                             onChange={(e) => setDataInput(e.target.value)}
                             placeholder="请运行 iOS 快捷指令..."
-                            className="w-full h-24 bg-[#F8F9FA] border-0 rounded-2xl p-4 text-xs text-slate-600 focus:ring-2 focus:ring-rose-200 outline-none resize-none placeholder:text-slate-300"
+                            className="w-full h-24 bg-[#F8F9FA] border-0 rounded-2xl p-4 text-base text-slate-600 focus:ring-2 focus:ring-rose-200 outline-none resize-none placeholder:text-slate-300"
                         />
                         {dataInput && <div className="absolute bottom-3 right-3 text-[10px] text-emerald-500 font-bold bg-emerald-50 px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle className="w-3 h-3"/> 已获取</div>}
                     </div>
@@ -332,8 +381,6 @@ export default function App() {
                             <span className="bg-amber-100 text-amber-500 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
                             <h3 className="text-sm font-bold text-slate-700">当前状态</h3>
                         </div>
-                        
-                        {/* 正在做 */}
                         <div>
                             <label className="text-[10px] font-bold text-slate-400 block mb-2 pl-1">正在做什么?</label>
                             <input 
@@ -341,11 +388,9 @@ export default function App() {
                                 value={userContext.currentActivity}
                                 onChange={(e) => setUserContext({...userContext, currentActivity: e.target.value})}
                                 placeholder="如: 发呆、坐地铁"
-                                className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-3 text-sm text-slate-700 focus:ring-2 focus:ring-amber-200 outline-none transition-all"
+                                className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-3 text-base text-slate-700 focus:ring-2 focus:ring-amber-200 outline-none transition-all"
                             />
                         </div>
-
-                        {/* 身体 & 精神 */}
                         <div className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 block mb-2 pl-1">身体感受</label>
@@ -362,7 +407,6 @@ export default function App() {
                                         ))}
                                 </div>
                             </div>
-                            
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 block mb-2 pl-1">精神状态</label>
                                 <div className="flex flex-wrap gap-2">
@@ -379,18 +423,15 @@ export default function App() {
                                 </div>
                             </div>
                         </div>
-
-                        {/* 预估睡觉 (移动到这里) */}
                         <div>
                             <label className="text-[10px] font-bold text-slate-400 block mb-2 pl-1">预估睡觉时间</label>
                             <input 
                                 type="time"
                                 value={userContext.sleepTime}
                                 onChange={(e) => setUserContext({...userContext, sleepTime: e.target.value})}
-                                className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-200 outline-none"
+                                className="w-full bg-[#F8F9FA] border-0 rounded-2xl p-3 text-base text-slate-700 focus:ring-2 focus:ring-blue-200 outline-none"
                             />
                         </div>
-
                         {step === 2 && (
                             <button onClick={() => setStep(3)} className="w-full bg-slate-800 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
                                 下一步：完善计划 <ArrowRight className="w-4 h-4" />
@@ -403,8 +444,6 @@ export default function App() {
             {/* Step 3: 计划与工作流 */}
             {step >= 3 && (
                 <section ref={step3Ref} className="space-y-6 animate-in slide-in-from-bottom-8 duration-500 fade-in">
-                    
-                    {/* 任务清单 */}
                     <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
@@ -420,33 +459,30 @@ export default function App() {
                                 <div key={task.id} className="bg-[#FDFDFD] p-4 rounded-2xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] relative group">
                                     <div className="mb-3">
                                         <input type="text" value={task.name} onChange={(e) => updateTask(task.id, 'name', e.target.value)}
-                                            placeholder="事项名称 (如: 写报告)" className="w-full bg-transparent border-b border-slate-100 pb-2 text-sm font-medium focus:border-violet-300 outline-none placeholder:text-slate-300" />
+                                            placeholder="事项名称 (如: 写报告)" className="w-full bg-transparent border-b border-slate-100 pb-2 text-base font-medium focus:border-violet-300 outline-none placeholder:text-slate-300" />
                                     </div>
-                                    
                                     <div className="space-y-3">
-                                        {/* 时分秒输入框 */}
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-bold text-slate-400 shrink-0">计划时间</span>
                                             <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-1.5 border border-slate-100 flex-1">
                                                 <input type="number" value={task.durationHour} onChange={(e) => updateTask(task.id, 'durationHour', e.target.value)}
-                                                    placeholder="0" className="w-full text-center bg-transparent text-xs outline-none text-slate-600" />
+                                                    placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
                                                 <span className="text-[10px] text-slate-400">时</span>
                                                 <div className="w-px h-3 bg-slate-200 mx-1"></div>
                                                 <input type="number" value={task.durationMin} onChange={(e) => updateTask(task.id, 'durationMin', e.target.value)}
-                                                    placeholder="0" className="w-full text-center bg-transparent text-xs outline-none text-slate-600" />
+                                                    placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
                                                 <span className="text-[10px] text-slate-400">分</span>
                                                 <div className="w-px h-3 bg-slate-200 mx-1"></div>
                                                 <input type="number" value={task.durationSec} onChange={(e) => updateTask(task.id, 'durationSec', e.target.value)}
-                                                    placeholder="0" className="w-full text-center bg-transparent text-xs outline-none text-slate-600" />
+                                                    placeholder="0" className="w-full text-center bg-transparent text-base outline-none text-slate-600" />
                                                 <span className="text-[10px] text-slate-400 mr-1">秒</span>
                                             </div>
                                         </div>
-
                                         <div className="flex items-center gap-2">
                                             <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                             <select value={task.workflowId} onChange={(e) => updateTask(task.id, 'workflowId', e.target.value)}
-                                                className="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-1.5 text-[10px] text-slate-500 outline-none appearance-none">
-                                                <option value="">默认番茄钟</option>
+                                                className="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-2 text-base text-slate-500 outline-none appearance-none">
+                                                <option value="">🚫 不绑定 (普通任务)</option>
                                                 {userContext.pomodoroSettings.map(s => <option key={s.id} value={s.id}>{s.name} ({s.work}m/{s.rest}m)</option>)}
                                             </select>
                                         </div>
@@ -457,7 +493,6 @@ export default function App() {
                         </div>
                     </div>
 
-                    {/* 工作流配置 */}
                     <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
                         <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
@@ -468,22 +503,17 @@ export default function App() {
                         <div className="space-y-3">
                             {userContext.pomodoroSettings.map((s) => (
                                 <div key={s.id} className="flex items-center gap-3 bg-[#F8FAFC] p-3 rounded-2xl border border-slate-50">
-                                    <input value={s.name} onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} className="w-20 bg-transparent text-xs font-bold text-slate-600 outline-none border-b border-transparent focus:border-blue-200" />
-                                    
-                                    {/* 忙碌时间输入 */}
+                                    <input value={s.name} onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} className="w-24 bg-transparent text-base font-bold text-slate-600 outline-none border-b border-transparent focus:border-blue-200" />
                                     <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-1.5 shadow-sm border border-slate-100">
                                         <span className="text-[10px] text-slate-400">忙</span>
-                                        <input type="number" value={s.work} onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} className="w-8 text-center text-xs font-bold text-slate-600 outline-none bg-transparent" />
+                                        <input type="number" value={s.work} onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} className="w-10 text-center text-base font-bold text-slate-600 outline-none bg-transparent" />
                                         <span className="text-[10px] text-slate-300">m</span>
                                     </div>
-
-                                    {/* 休息时间输入 */}
                                     <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-1.5 shadow-sm border border-slate-100">
                                         <span className="text-[10px] text-slate-400">休</span>
-                                        <input type="number" value={s.rest} onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} className="w-8 text-center text-xs font-bold text-slate-600 outline-none bg-transparent" />
+                                        <input type="number" value={s.rest} onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} className="w-10 text-center text-base font-bold text-slate-600 outline-none bg-transparent" />
                                         <span className="text-[10px] text-slate-300">m</span>
                                     </div>
-
                                     {userContext.pomodoroSettings.length > 1 && <button onClick={() => removePomodoro(s.id)} className="text-slate-300 ml-auto p-1"><X className="w-3 h-3"/></button>}
                                 </div>
                             ))}
@@ -517,7 +547,7 @@ export default function App() {
                   {expandedDays[day.date] && (
                      <div className="space-y-4 animate-in fade-in">
                         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                           {day.stats.map((item, sIdx) => (
+                           {day.stats?.map((item, sIdx) => (
                               <div key={sIdx} className="flex-shrink-0 bg-[#F8FAFC] p-3 rounded-2xl min-w-[90px] border border-slate-50">
                                  <div className="flex items-center gap-1.5 mb-1.5 text-xs text-slate-400">{getCategoryIcon(item.category)} {item.category}</div>
                                  <div className="font-bold text-sm text-slate-700">{item.duration}</div>
@@ -543,7 +573,7 @@ export default function App() {
                     </div>
 
                     <div className="p-5 space-y-5">
-                        {analysisResult.today_plan.blocks.map((block, bIdx) => (
+                        {analysisResult.today_plan.blocks?.map((block, bIdx) => (
                             <div key={bIdx} className="relative pl-4 border-l-2 border-slate-100">
                                 <div className={`p-4 rounded-2xl ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01]`}>
                                     <div className="flex justify-between items-start mb-3">
@@ -617,5 +647,13 @@ export default function App() {
           </div>
       )}
     </div>
+  );
+}
+
+export default function AppWrapper() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   );
 }
