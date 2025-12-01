@@ -122,7 +122,7 @@ const sanitizeData = (data) => {
   return safeData;
 };
 
-// --- 饼图组件 ---
+// --- 饼图组件 (左右排列) ---
 const SimplePieChart = ({ data }) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
       return (
@@ -763,7 +763,10 @@ function App() {
                                             </div>
                                         </div>
                                     </div>
-                                    {userContext.tasks.length > 1 && <button onClick={() => removeTask(task.id)} className="absolute top-4 right-4 bg-white text-[#FF8FA3] border-2 border-[#FFE4E1] rounded-full p-2.5 shadow-lg opacity-100 hover:bg-[#FFF0F5] transition-all z-10"><Trash2 className="w-5 h-5"/></button>}
+                                    {/* 修复：删除按钮彻底移到卡片外部右侧，悬停显示 */}
+                                    <button onClick={() => removeTask(task.id)} className="absolute -right-14 top-1/2 -translate-y-1/2 bg-white text-[#FF8FA3] hover:text-red-500 border-2 border-[#FFE4E1] hover:border-red-200 rounded-full p-3 shadow-md opacity-0 group-hover:opacity-100 transition-all z-10">
+                                        <Trash2 className="w-5 h-5"/>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -776,7 +779,7 @@ function App() {
                         </div>
                         <div className="space-y-5">
                             {userContext.pomodoroSettings.map((s) => (
-                                <div key={s.id} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-5 rounded-[2rem] border-2 border-[#F1F5F9] relative">
+                                <div key={s.id} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-5 rounded-[2rem] border-2 border-[#F1F5F9] relative group">
                                     <input 
                                         value={s.name} 
                                         onChange={(e) => updatePomodoro(s.id, 'name', e.target.value)} 
@@ -784,30 +787,31 @@ function App() {
                                         placeholder="名称" 
                                     />
                                     <div className="flex gap-4 w-full">
-                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group-focus-within:border-[#64B5F6] transition-colors">
+                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group focus-within:border-[#64B5F6] focus-within:bg-white transition-all">
                                             <span className="text-sm font-bold text-slate-400 shrink-0">忙</span>
                                             <input 
                                                 type="number" 
                                                 value={s.work} 
                                                 onChange={(e) => updatePomodoro(s.id, 'work', e.target.value)} 
-                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-10" 
+                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-20" 
                                             />
                                             <span className="text-xs font-bold text-slate-400 shrink-0">min</span>
                                         </div>
-                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group-focus-within:border-[#64B5F6] transition-colors">
+                                        <div className="flex-1 flex items-center gap-3 bg-[#F1F5F9] rounded-2xl px-4 py-3 shadow-inner border border-slate-200 relative group focus-within:border-[#64B5F6] focus-within:bg-white transition-all">
                                             <span className="text-sm font-bold text-slate-400 shrink-0">休</span>
                                             <input 
                                                 type="number" 
                                                 value={s.rest} 
                                                 onChange={(e) => updatePomodoro(s.id, 'rest', e.target.value)} 
-                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-10" 
+                                                className="w-full text-center text-xl font-black text-slate-700 outline-none bg-transparent relative z-20" 
                                             />
                                             <span className="text-xs font-bold text-slate-400 shrink-0">min</span>
                                         </div>
                                     </div>
+                                    {/* 修复：删除按钮彻底移到卡片外部右侧，悬停显示 */}
                                     {userContext.pomodoroSettings.length > 1 && (
-                                        <button onClick={() => removePomodoro(s.id)} className="text-slate-300 hover:text-[#FF8FA3] p-2 transition-colors relative z-10">
-                                            <Trash2 className="w-6 h-6"/>
+                                        <button onClick={() => removePomodoro(s.id)} className="absolute -right-14 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[#FF8FA3] bg-white border-2 border-slate-100 p-3 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all z-10">
+                                            <Trash2 className="w-5 h-5"/>
                                         </button>
                                     )}
                                 </div>
@@ -879,16 +883,9 @@ function App() {
 
                     <div className="p-6 space-y-6">
                         {analysisResult.today_plan.blocks?.map((block, bIdx) => (
-                            <div key={bIdx} className="relative">
-                                <div className={`p-6 rounded-[2rem] ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative group shadow-sm border border-transparent`}>
+                            <div key={bIdx} className="relative group">
+                                <div className={`p-6 rounded-[2rem] ${getBlockStyle(block.type)} transition-transform hover:scale-[1.01] relative shadow-sm border border-transparent`}>
                                     
-                                    <button 
-                                        onClick={() => handleDeleteBlock(bIdx)}
-                                        className="absolute top-4 right-4 bg-white text-slate-300 hover:text-[#FF8FA3] border-2 border-[#F1F5F9] rounded-full p-3 shadow-md z-10"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-center gap-3 bg-white/60 px-4 py-2.5 rounded-2xl text-lg font-mono font-bold opacity-90 backdrop-blur-sm shadow-sm whitespace-nowrap">
                                             <Clock className="w-5 h-5" /> {block.time}
@@ -944,6 +941,13 @@ function App() {
                                         </div>
                                     )}
                                 </div>
+                                {/* 修复：删除按钮彻底移到卡片外部右侧，悬停显示 */}
+                                <button 
+                                    onClick={() => handleDeleteBlock(bIdx)}
+                                    className="absolute -right-14 top-1/2 -translate-y-1/2 bg-white text-slate-300 hover:text-[#FF8FA3] border-2 border-slate-100 rounded-full p-3 shadow-md opacity-0 group-hover:opacity-100 transition-all z-10"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
                             </div>
                         ))}
                     </div>
