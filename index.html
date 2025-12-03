@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.8</title>
+    <title>LifeOS Pro - Macaron v2.8.1</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -182,13 +182,32 @@
                 // Monday = 1, Sunday = 7
                 let day = normalizedNow.getDay(); 
                 if (day === 0) day = 7;
-                return day; // If Monday, x1. If Tuesday, x2.
+                return day; 
             }
             
             if (scope === 'monthly') {
-                return normalizedNow.getDate(); // If 1st, x1. If 3rd, x3.
+                return normalizedNow.getDate(); 
             }
             return 1;
+        };
+
+        // NEW: Date Range Calculator for Display
+        const calculateDateRangeDisplay = (historyText) => {
+            if (!historyText) return null;
+            const matches = historyText.match(/\d{4}-\d{1,2}-\d{1,2}/g);
+            if (!matches || matches.length === 0) return null;
+            
+            const dates = matches.map(d => new Date(d).getTime()).sort((a,b) => a-b);
+            const start = new Date(dates[0]);
+            const end = new Date(dates[dates.length - 1]);
+            
+            // Format: YYYY年M月D日H时m分 (defaulting H:m to 00:00 for start, 23:59 for end if not parsed, 
+            // but for simplicity and user request, let's format the date part nicely. 
+            // If timestamps exist in logs, we could parse them, but raw regex is safer for basic range).
+            
+            const fmt = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+            // Fake times for visual consistency with request if actual times aren't extracted
+            return `${fmt(start)} 00:00 - ${fmt(end)} 23:59`;
         };
 
         // Core function to extract logs within ANY date range (inclusive)
@@ -328,7 +347,7 @@
           const [loading, setLoading] = useState({ state: false, text: '', progress: 0, taskType: '', scope: '' });
           const [msg, setMsg] = useState({ type: '', text: '' });
 
-          // --- State: Data (LAZY INIT to fix wipe bug) ---
+          // --- State: Data ---
           const [fullHistory, setFullHistory] = useState(() => localStorage.getItem('lifeos_pro_history_v2') || '');
           const [tempInput, setTempInput] = useState('');
           const [parsedItems, setParsedItems] = useState([]); 
@@ -339,8 +358,19 @@
               return saved ? JSON.parse(saved) : {};
           });
           
-          const [archivedRange, setArchivedRange] = useState(null);
+          // Persistence for Review & Plan (New)
+          const [reviewResults, setReviewResults] = useState(() => {
+              const saved = localStorage.getItem('lifeos_pro_reviews');
+              return saved ? JSON.parse(saved) : { today: null, yesterday: null, weekly: null, monthly: null };
+          });
+          
+          const [todayPlan, setTodayPlan] = useState(() => {
+              const saved = localStorage.getItem('lifeos_pro_plan');
+              return saved ? JSON.parse(saved) : null;
+          });
 
+          const [reviewScope, setReviewScope] = useState('today');
+          
           const [allocations, setAllocations] = useState(() => {
               const saved = localStorage.getItem('lifeos_pro_allocations_v2');
               return saved ? JSON.parse(saved) : {
@@ -349,10 +379,6 @@
           });
           
           const [isOrganizing, setIsOrganizing] = useState(false);
-
-          // State: Review
-          const [reviewScope, setReviewScope] = useState('today');
-          const [reviewResults, setReviewResults] = useState({ today: null, yesterday: null, weekly: null, monthly: null });
 
           // State: Status
           const [userState, setUserState] = useState({ physical: 'normal', mental: 'calm' });
@@ -366,18 +392,16 @@
           });
           const [planInput, setPlanInput] = useState('');
 
-          // State: Plan
-          const [todayPlan, setTodayPlan] = useState(null);
-
           // --- Persistence Effects ---
-          useEffect(() => { 
-              if (userApiKey) localStorage.setItem('lifeos_pro_key', userApiKey); 
-          }, [userApiKey]);
-          
+          useEffect(() => { if (userApiKey) localStorage.setItem('lifeos_pro_key', userApiKey); }, [userApiKey]);
           useEffect(() => { localStorage.setItem('lifeos_pro_allocations_v2', JSON.stringify(allocations)); }, [allocations]);
           useEffect(() => { localStorage.setItem('lifeos_pro_history_v2', fullHistory); }, [fullHistory]);
           useEffect(() => { localStorage.setItem('lifeos_pro_bio_v2', JSON.stringify(bioState)); }, [bioState]);
           useEffect(() => { localStorage.setItem('lifeos_pro_category_map', JSON.stringify(categoryMap)); }, [categoryMap]);
+          
+          // New Persistence
+          useEffect(() => { localStorage.setItem('lifeos_pro_reviews', JSON.stringify(reviewResults)); }, [reviewResults]);
+          useEffect(() => { localStorage.setItem('lifeos_pro_plan', JSON.stringify(todayPlan)); }, [todayPlan]);
 
           const showToast = (text, type = 'success') => { setMsg({ type, text }); setTimeout(() => setMsg({ type: '', text: '' }), 3000); };
           const toggleBio = (key) => setBioState(prev => ({ ...prev, [key]: !prev[key] }));
@@ -389,9 +413,9 @@
              const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
              
              const descCleaner = (str) => str
-                .replace(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2})?)|(\d{4}-\d{1,2}-\d{1,2})/g, '') // dates
-                .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '') // emoji
-                .replace(/[｜|\[\]\(\)\【\】]/g, '') // symbols
+                .replace(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2})?)|(\d{4}-\d{1,2}-\d{1,2})/g, '') 
+                .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '') 
+                .replace(/[｜|\[\]\(\)\【\】]/g, '') 
                 .trim();
 
              const allItems = [];
@@ -411,14 +435,13 @@
                      else if (line.includes('学习') || line.includes('study') || line.includes('阅读')) cat = 'study';
                      else if (line.includes('睡觉') || line.includes('sleep')) cat = 'sleep';
                      else if (line.includes('休息') || line.includes('rest')) cat = 'rest';
-                     else if (line.includes('健身') || line.includes('运动') || line.includes('跑步') || line.includes('gym') || line.includes('workout') || line.includes('瑜伽')) cat = 'health'; // Added Health
+                     else if (line.includes('健身') || line.includes('运动') || line.includes('跑步') || line.includes('gym') || line.includes('workout') || line.includes('瑜伽')) cat = 'health'; 
                      else if (line.includes('游戏') || line.includes('娱乐')) cat = 'entertainment';
                  }
 
                  const item = { id: Date.now() + idx, original: line, date: date, desc: cleanDesc, category: cat };
                  allItems.push(item);
 
-                 // De-duplication Logic
                  if (cleanDesc && !uniqueReviewMap.has(cleanDesc) && !categoryMap[cleanDesc]) {
                      uniqueReviewMap.set(cleanDesc, item);
                  }
@@ -441,33 +464,25 @@
               if (rawLinesBuffer.length === 0) return;
               const newMap = { ...categoryMap };
               
-              // Only update map for non-trash items
               parsedItems.forEach(item => { 
                   if (item.desc && item.category !== 'trash') {
                       newMap[item.desc] = item.category; 
                   }
               });
 
-              let minDate = rawLinesBuffer[0].date, maxDate = rawLinesBuffer[0].date;
               const finalLines = [];
               
               rawLinesBuffer.forEach(item => {
                   const finalCategory = newMap[item.desc] || item.category;
-                  
-                  // Trash Logic: Skip items marked as trash
                   if (finalCategory === 'trash') return;
 
                   const prefix = `[${finalCategory.toUpperCase()}]`; 
-                  if (item.date < minDate) minDate = item.date;
-                  if (item.date > maxDate) maxDate = item.date;
                   finalLines.push(`${prefix} ${item.original}`);
               });
 
               setCategoryMap(newMap);
-              // Only append if there are valid lines
               if (finalLines.length > 0) {
                   setFullHistory(prev => (prev ? prev + "\n" + finalLines.join('\n') : finalLines.join('\n')));
-                  setArchivedRange(`${minDate} ~ ${maxDate}`);
                   showToast(`成功归档 ${finalLines.length} 条记录`);
               } else {
                   showToast('所有条目均已作废，无数据写入');
@@ -500,7 +515,7 @@
             let p = 10;
             const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
 
-            // Fetch data using fixed strict date logic
+            // Fixed: Data consistency by using same normalization logic
             const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
             const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
             const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
@@ -525,8 +540,9 @@
                 
                 Task: 
                 1. Analyze time usage for Current Period.
-                2. Compare with Previous Period (Week-over-Week or Month-over-Month).
-                3. **SUMMARY Style**: Use OBJECTIVE declarative sentences in Chinese (e.g. "本周工作时长达30小时，较上周增加10%"). NO Emotional/Subjective fluff.
+                2. Compare with Previous Period.
+                3. **SUMMARY Style**: Use OBJECTIVE declarative sentences in Chinese.
+                4. **SLEEP INFERENCE (CRITICAL)**: If there are NO log entries between 01:00 AM and 11:00 AM on any given day in the data, automatically assume the user was asleep during that gap. Calculate Sleep hours accordingly if missing.
                 
                 Output JSON:
                 {
@@ -554,9 +570,6 @@
               const genAI = new GoogleGenerativeAI(userApiKey);
               const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
 
-              const isPain = ['back_pain', 'stomach_pain'].includes(userState.physical);
-              const isNegativeState = isPain || ['tired'].includes(userState.physical) || ['anxious', 'scattered'].includes(userState.mental);
-
               const prompt = `
                 Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}
                 User Bio: ${JSON.stringify(bioState)}
@@ -569,9 +582,6 @@
                 1. **Special Task Duration = PURE FOCUS TIME**: 
                    - Interpret user's input duration (e.g., "1 hour") as **PURE FOCUS**.
                    - **ADD BREAKS** on top of this time.
-                   - Example Calculation: "Work 1h" = 60m focus.
-                     * Block Structure: 25m Focus + 5m Break + 25m Focus + 5m Break + 10m Focus.
-                     * Total Block Duration: 70 mins.
                 2. **Pomodoro Split**:
                    - For ALL Work/Study blocks, generate "sub_blocks".
                    - Pattern: Focus (25m) -> Break (5m).
@@ -670,6 +680,14 @@
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative">
                 <div className="flex justify-between items-center mb-4">
                    <h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Database className="w-6 h-6 text-slate-400"/> 数据源</h2>
+                   
+                   {/* Data Range Display */}
+                   {fullHistory && (
+                        <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
+                            范围: {calculateDateRangeDisplay(fullHistory) || "暂无日期"}
+                        </div>
+                   )}
+
                    <div className="flex gap-2">
                        <button onClick={()=>parseRawInput(tempInput)} className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">识别条目</button>
                        <button onClick={handleOrganizeData} disabled={isOrganizing} className="text-xs font-bold bg-macaron-purple text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-200 transition-colors flex items-center gap-1">
@@ -677,17 +695,14 @@
                        </button>
                    </div>
                 </div>
-                {archivedRange && (
-                    <div className="mb-4 bg-emerald-50 text-emerald-600 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 animate-in">
-                        <CheckCircle className="w-4 h-4"/> 已归档: {archivedRange}
-                    </div>
-                )}
+                
                 <textarea 
                   className="w-full h-32 bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base font-mono text-slate-600 focus:border-macaron-blue outline-none resize-none mb-3"
                   placeholder="粘贴日程 (例如: 2023-10-27: 开会 2h)..."
                   value={tempInput}
                   onChange={(e) => setTempInput(e.target.value)}
                 />
+                
                 {parsedItems.length > 0 && (
                     <div className="mt-6 border-t border-slate-100 pt-4 animate-in">
                         <h3 className="text-base font-bold text-macaron-dark mb-3 flex items-center gap-2"><PenTool className="w-4 h-4"/> 归类校对 <span className="text-xs font-normal text-slate-400">(自动隐藏已记忆条目)</span></h3>
@@ -696,14 +711,11 @@
                                 <div key={item.id} className={`flex flex-col p-3 rounded-xl border transition-all ${item.category === 'trash' ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-slate-50 border-slate-100'}`}>
                                     <div className="flex justify-between">
                                         <div className="text-xs text-slate-400 mb-1 font-mono">{item.date}</div>
-                                        {/* Added Trash Button */}
                                         <button onClick={() => updateReviewItemCategory(item.id, 'trash')} className={`p-1 rounded-full ${item.category === 'trash' ? 'bg-red-100 text-red-500' : 'text-slate-300 hover:bg-slate-100'}`}>
                                             <Ban className="w-4 h-4"/>
                                         </button>
                                     </div>
                                     <div className={`text-sm font-medium mb-2 truncate ${item.category === 'trash' ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{item.original}</div>
-                                    
-                                    {/* Hide buttons if trash, or show to allow recovery */}
                                     <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar opacity-100 transition-opacity">
                                         {CATEGORIES.map(cat => (
                                             <button 
@@ -722,12 +734,6 @@
                             <Save className="w-5 h-5"/> 确认归档并记忆
                         </button>
                     </div>
-                )}
-                {parsedItems.length === 0 && rawLinesBuffer.length > 0 && (
-                     <div className="mt-4 p-4 bg-emerald-50 rounded-2xl text-emerald-600 text-center font-bold text-sm">
-                         所有条目均已自动匹配历史习惯，点击下方确认归档
-                         <button onClick={handleConfirmArchive} className="mt-2 w-full py-3 bg-emerald-500 text-white rounded-xl">直接归档</button>
-                     </div>
                 )}
               </div>
             </div>
@@ -956,7 +962,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.7</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.8.1</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
