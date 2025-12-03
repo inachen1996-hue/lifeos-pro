@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.6</title>
+    <title>LifeOS Pro - Macaron v2.7</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,7 +115,7 @@
           Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw, Eye, EyeOff, Key,
           Hourglass, Bath, UtensilsCrossed, FileText, Percent, UserCheck, MessageSquarePlus,
           Sun, MoonStar, User, ArrowLeftRight, FileJson, RotateCcw, PenTool, Check, CheckSquare,
-          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle
+          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle, TrendingUp as IconTrendingUp
         } from 'https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0';
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -150,7 +150,7 @@
         const getTodayDate = () => formatDate(new Date());
         const getCurrentTimeStr = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
         
-        // BUG FIX: Ensure dates start at 00:00:00 to match parsed log dates (which are date-only)
+        // Date Helpers
         const getMonday = (d) => {
           d = new Date(d);
           d.setHours(0,0,0,0);
@@ -163,43 +163,57 @@
             return new Date(d.getFullYear(), d.getMonth(), 1); 
         };
 
-        const getHistoryContext = (fullHistory, scope) => {
+        // NEW: Core function to extract logs within ANY date range
+        const getLogsInDateRange = (fullHistory, startDate, endDate) => {
             if (!fullHistory) return "";
             const lines = fullHistory.split('\n');
-            let startDate = new Date('2000-01-01');
-            let endDate = new Date('2099-12-31');
-            const today = new Date();
-            today.setHours(23, 59, 59, 999); // End of today
-
-            if (scope === 'today') {
-                startDate = new Date(getTodayDate());
-                endDate = today;
-            } else if (scope === 'yesterday') {
-                const y = new Date(); y.setDate(y.getDate() - 1);
-                startDate = new Date(formatDate(y));
-                endDate = new Date(formatDate(y) + 'T23:59:59');
-            } else if (scope === 'weekly') {
-                startDate = getMonday(new Date()); // Ensure fresh date for calc
-                endDate = today;
-            } else if (scope === 'monthly') {
-                startDate = getStartOfMonth();
-                endDate = today;
-            }
-
             const filteredLines = [];
             const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
-            let isKeeping = false;
 
             for (let line of lines) {
                 const match = line.match(dateRegex);
                 if (match) {
-                    const lineDate = new Date(match[1]); // This defaults to 00:00:00 local/UTC depending on browser impl, usually local 00:00
+                    const lineDate = new Date(match[1]);
+                    // Set time to check date part only accurately, or respect range boundaries
                     if (lineDate >= startDate && lineDate <= endDate) {
-                        isKeeping = true; filteredLines.push(line);
-                    } else { isKeeping = false; }
-                } else if (isKeeping) { filteredLines.push(line); }
+                        filteredLines.push(line);
+                    }
+                }
             }
-            return filteredLines.join('\n').slice(0, 50000); 
+            return filteredLines.join('\n').slice(0, 50000); // Limit context size
+        };
+
+        // NEW: Calculate Date Ranges for Scope (Current & Previous)
+        const getDateRangesForScope = (scope) => {
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            
+            let currentStart, currentEnd = today;
+            let prevStart, prevEnd;
+
+            if (scope === 'today') {
+                currentStart = new Date(); currentStart.setHours(0,0,0,0);
+                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 1);
+                prevEnd = new Date(prevStart); prevEnd.setHours(23,59,59,999);
+            } else if (scope === 'yesterday') {
+                const y = new Date(); y.setDate(y.getDate() - 1);
+                currentStart = new Date(y); currentStart.setHours(0,0,0,0);
+                currentEnd = new Date(y); currentEnd.setHours(23,59,59,999);
+                
+                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 1);
+                prevEnd = new Date(prevStart); prevEnd.setHours(23,59,59,999);
+            } else if (scope === 'weekly') {
+                currentStart = getMonday(new Date());
+                
+                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 7);
+                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1); prevEnd.setHours(23,59,59,999);
+            } else if (scope === 'monthly') {
+                currentStart = getStartOfMonth();
+                
+                prevStart = new Date(currentStart); prevStart.setMonth(prevStart.getMonth() - 1);
+                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1); prevEnd.setHours(23,59,59,999);
+            }
+            return { currentStart, currentEnd, prevStart, prevEnd };
         };
 
         const getTargetMultiplier = (scope) => {
@@ -216,18 +230,8 @@
         };
 
         const getDateRangeDisplay = (scope) => {
-            const today = new Date();
-            let startStr = '', endStr = formatDate(today);
-            if (scope === 'today') startStr = endStr;
-            else if (scope === 'yesterday') {
-                const y = new Date(); y.setDate(y.getDate() - 1);
-                startStr = endStr = formatDate(y);
-            } else if (scope === 'weekly') {
-                startStr = formatDate(getMonday(today));
-            } else if (scope === 'monthly') {
-                startStr = formatDate(getStartOfMonth());
-            }
-            return `${startStr} ~ ${endStr}`;
+            const { currentStart, currentEnd } = getDateRangesForScope(scope);
+            return `${formatDate(currentStart)} ~ ${formatDate(currentEnd)}`;
         };
 
         const callGeminiWithRetry = async (model, prompt, retries = 3) => {
@@ -252,7 +256,7 @@
             { id: 'sleep', label: '睡眠', color: 'bg-macaron-purple', text: 'text-purple-700' },
             { id: 'life', label: '生活', color: 'bg-macaron-orange', text: 'text-orange-700' },
             { id: 'entertainment', label: '娱乐', color: 'bg-macaron-yellow', text: 'text-yellow-700' },
-            { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-500' } // Added Trash
+            { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-500' }
         ];
 
         // --- Components ---
@@ -425,7 +429,6 @@
               rawLinesBuffer.forEach(item => {
                   const finalCategory = newMap[item.desc] || item.category;
                   
-                  // Trash Logic: Skip items marked as trash
                   if (finalCategory === 'trash') return;
 
                   const prefix = `[${finalCategory.toUpperCase()}]`; 
@@ -469,13 +472,11 @@
             let p = 10;
             const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
 
-            const relevantHistory = getHistoryContext(fullHistory, scope);
-            const today = new Date();
-            const dates = {
-                today: getTodayDate(),
-                thisWeekStart: formatDate(getMonday(today)),
-                thisMonthStart: formatDate(getStartOfMonth()),
-            };
+            // NEW: Fetch two distinct datasets
+            const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
+            const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
+            const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
+
             const mapStr = JSON.stringify(categoryMap);
 
             try {
@@ -484,22 +485,27 @@
               const prompt = `
                 Role: Caring Life Analyst.
                 Scope: ${scope.toUpperCase()}
-                Data: """${relevantHistory}"""
                 Targets: ${JSON.stringify(allocations)}
-                Dates: ${JSON.stringify(dates)}
-                Task: Analyze time usage.
-                Requirements:
-                1. Apply Category Habits.
-                2. Comparisons (vs yesterday/last week).
-                3. **SUMMARY Style**: Use declarative sentences to describe objective facts in Chinese (e.g. "本周工作时长达30小时，较上周增加10%"). Avoid emotional fluff in summary.
-                4. **Insights**: Include strengths and shortcomings.
+                
+                **User Category Map (Habits)**: ${mapStr}
+                
+                **Data Set 1 (Current Period)**:
+                """${currentData}"""
+                
+                **Data Set 2 (Previous Period for Comparison)**:
+                """${prevData}"""
+                
+                Task: 
+                1. Analyze time usage for Current Period.
+                2. Compare with Previous Period (Week-over-Week or Month-over-Month).
+                3. **SUMMARY Style**: Use declarative sentences to describe objective facts in Chinese (e.g. "本周工作时长达30小时，较上周增加10%").
                 
                 Output JSON:
                 {
                   "summary": "String (Objective Fact)",
                   "actual_allocation": { "work": number, "study": number, "rest": number, "sleep": number, "life": number, "entertainment": number },
                   "insights": ["Insight 1", "Insight 2"],
-                  "growth_metric": { "label": "String", "value": "String", "trend": "up|down|neutral" },
+                  "growth_metric": { "label": "String (e.g. 周环比)", "value": "String (e.g. +10%)", "trend": "up|down|neutral" },
                   "key_metric": { "label": "String", "value": "String" }
                 }
               `;
@@ -737,7 +743,8 @@
                     <div className="mb-8 space-y-4">
                         <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
                             <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">{data.growth_metric?.label || "趋势"}</div>
-                            <div className={`text-3xl font-black ${data.growth_metric?.trend === 'up' ? 'text-emerald-500' : data.growth_metric?.trend === 'down' ? 'text-rose-400' : 'text-slate-600'}`}>
+                            <div className={`text-3xl font-black flex items-center gap-2 ${data.growth_metric?.trend === 'up' ? 'text-emerald-500' : data.growth_metric?.trend === 'down' ? 'text-rose-400' : 'text-slate-600'}`}>
+                                {data.growth_metric?.trend === 'up' && <IconTrendingUp className="w-6 h-6"/>}
                                 {data.growth_metric?.value || "--"}
                             </div>
                         </div>
@@ -932,7 +939,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.6</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.7</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
