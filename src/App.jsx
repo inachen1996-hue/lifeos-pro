@@ -9,12 +9,13 @@ import {
   Battery, BatteryCharging, BatteryFull, BatteryWarning, Lightbulb, Database,
   Layout, BookMarked, Eraser, Zap, Utensils, TrendingUp, TrendingDown, Minus,
   ToggleLeft, ToggleRight, Scale, Sofa, Telescope, Footprints, Droplets, Edit3,
-  Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw
+  Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw, Eye, EyeOff, Key,
+  Hourglass, Bath, UtensilsCrossed
 } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // 解构 React Hooks
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 
 // --- 错误边界 ---
 class ErrorBoundary extends React.Component {
@@ -45,7 +46,15 @@ class ErrorBoundary extends React.Component {
 }
 
 // --- 辅助函数 ---
-const validateApiKey = (key) => key && /^[\x00-\x7F]*$/.test(key.trim());
+const cleanApiKey = (key) => {
+  if (!key) return '';
+  return key.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '');
+};
+
+const validateApiKey = (key) => {
+  const cleaned = cleanApiKey(key);
+  return cleaned.startsWith('AIza') && cleaned.length > 20;
+};
 
 const formatDate = (date) => {
   const d = new Date(date);
@@ -68,12 +77,43 @@ const getCurrentTimeStr = () => {
   return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
+// 计算清醒时长逻辑 (解决跨天问题)
+const calculateAwakeInfo = (wakeStr, sleepStr) => {
+  if (!wakeStr || !sleepStr) return { durationText: '', isNextDay: false, totalMinutes: 0 };
+
+  const [wakeH, wakeM] = wakeStr.split(':').map(Number);
+  const [sleepH, sleepM] = sleepStr.split(':').map(Number);
+  
+  let wakeMinutes = wakeH * 60 + wakeM;
+  let sleepMinutes = sleepH * 60 + sleepM;
+  let isNextDay = false;
+
+  if (sleepMinutes < wakeMinutes) {
+    sleepMinutes += 24 * 60;
+    isNextDay = true;
+  }
+
+  const diff = sleepMinutes - wakeMinutes;
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+
+  return {
+    durationText: `${hours}小时${mins > 0 ? ` ${mins}分` : ''}`,
+    isNextDay,
+    totalMinutes: diff,
+    debugStr: `Wake: ${wakeStr}, Sleep: ${sleepStr} (${isNextDay ? 'Next Day' : 'Same Day'})`
+  };
+};
+
 const callGeminiWithRetry = async (model, prompt, retries = 3, initialDelay = 1000) => {
   for (let i = 0; i < retries; i++) {
     try {
       const result = await model.generateContent(prompt);
       return result; 
     } catch (error) {
+      if (error.message.includes('403') || error.message.includes('PERMISSION_DENIED')) {
+        throw new Error("API Key 无效或无权限 (403)。请检查 Key 是否正确。");
+      }
       if (i === retries - 1) throw error;
       await new Promise(resolve => setTimeout(resolve, initialDelay * Math.pow(2, i)));
     }
@@ -129,31 +169,81 @@ const sanitizeData = (data) => {
 const SimplePieChart = ({ data }) => {
   if (!data || !Array.isArray(data) || data.length === 0) return <div className="text-center text-slate-300 py-12">暂无时间分布数据</div>;
   const colors = ['#A78BFA', '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#F87171'];
-  let cumulativePercent = 0;
-  const slices = data.map((slice, index) => {
-    const percentage = parseFloat(slice.percentage) || 0;
-    if (percentage <= 0) return null;
-    const startX = Math.cos(2 * Math.PI * cumulativePercent);
-    const startY = Math.sin(2 * Math.PI * cumulativePercent);
-    cumulativePercent += percentage / 100;
-    const endX = Math.cos(2 * Math.PI * cumulativePercent);
-    const endY = Math.sin(2 * Math.PI * cumulativePercent);
-    const largeArcFlag = percentage > 50 ? 1 : 0;
-    if (percentage >= 100) return <circle key={index} cx="0" cy="0" r="1" fill={colors[index % colors.length]} />;
-    const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
-    return <path key={index} d={pathData} fill={colors[index % colors.length]} />;
+  
+  let maxPercent = -1;
+  let maxIndex = -1;
+  data.forEach((item, idx) => {
+    const p = parseFloat(item.percentage) || 0;
+    if (p > maxPercent) { maxPercent = p; maxIndex = idx; }
   });
+
+  let cumulativePercent = 0;
+  const totalPercentage = data.reduce((acc, item) => acc + (parseFloat(item.percentage) || 0), 0);
+
+  const slices = data.map((slice, index) => {
+    const rawPercentage = parseFloat(slice.percentage) || 0;
+    if (rawPercentage <= 0) return null;
+    const normalizedPercent = totalPercentage > 0 ? (rawPercentage / totalPercentage) : 0;
+    
+    const startAngle = 2 * Math.PI * cumulativePercent;
+    const endAngle = 2 * Math.PI * (cumulativePercent + normalizedPercent);
+    
+    const startX = Math.cos(startAngle);
+    const startY = Math.sin(startAngle);
+    const endX = Math.cos(endAngle);
+    const endY = Math.sin(endAngle);
+    
+    const largeArcFlag = normalizedPercent > 0.5 ? 1 : 0;
+    
+    let textElement = null;
+    if (index === maxIndex && normalizedPercent > 0.1) { 
+       const midAngle = startAngle + (endAngle - startAngle) / 2;
+       const textX = Math.cos(midAngle) * 0.6; 
+       const textY = Math.sin(midAngle) * 0.6;
+       textElement = (
+         <text 
+           x={textX} 
+           y={textY} 
+           fill="white" 
+           fontSize="0.2" 
+           fontWeight="bold" 
+           textAnchor="middle" 
+           dominantBaseline="middle"
+           style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.3)' }}
+           transform={`rotate(90 ${textX} ${textY})`}
+         >
+           {slice.category}
+         </text>
+       );
+    }
+
+    cumulativePercent += normalizedPercent;
+
+    if (normalizedPercent >= 0.999) return <circle key={index} cx="0" cy="0" r="1" fill={colors[index % colors.length]} />;
+
+    const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
+    
+    return (
+      <g key={index}>
+        <path d={pathData} fill={colors[index % colors.length]} stroke="white" strokeWidth="0.02"/>
+        {textElement}
+      </g>
+    );
+  });
+
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="w-32 h-32 relative"><svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90">{slices}</svg></div>
+      <div className="w-40 h-40 relative">
+        <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-md">{slices}</svg>
+      </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full">
         {data.map((item, idx) => (
           <div key={idx} className="flex justify-between text-sm items-center">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{backgroundColor: colors[idx % colors.length]}}></div>
+              <div className="w-3 h-3 rounded-full shadow-sm" style={{backgroundColor: colors[idx % colors.length]}}></div>
               <span className="text-slate-600 truncate max-w-[80px]" title={item.category}>{item.category}</span>
             </div>
-            <span className="font-mono text-slate-400">{item.percentage}%</span>
+            <span className="font-mono text-slate-400 font-bold">{item.percentage}%</span>
           </div>
         ))}
       </div>
@@ -197,11 +287,13 @@ function App() {
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0); 
+  const [loadingText, setLoadingText] = useState("准备中..."); 
   const [isAutoGenerating, setIsAutoGenerating] = useState(false);
   const [isSuggestingMode, setIsSuggestingMode] = useState(false); 
   const [modeSuggestion, setModeSuggestion] = useState(null); 
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
   const [showKeyInput, setShowKeyInput] = useState(false);
+  const [isKeyVisible, setIsKeyVisible] = useState(false); 
   
   // Review Update State
   const [updateReviewInput, setUpdateReviewInput] = useState('');
@@ -212,16 +304,24 @@ function App() {
   const [workloadMode, setWorkloadMode] = useState('medium'); 
   const [planVersion, setPlanVersion] = useState('smart'); 
 
-  // 默认任务
+  // 默认任务 & 用户状态 (新增：洗漱/吃饭 状态)
   const [userContext, setUserContext] = useState({
     currentActivity: '',
     physicalState: [], 
     mentalState: [], 
-    wakeTime: '08:00', 
-    sleepTime: '23:30', 
+    wakeTime: '11:00', 
+    sleepTime: '02:00', 
+    hasWashed: false, // 已洗漱
+    hasLunch: false,  // 已午饭
+    hasDinner: false, // 已晚饭
     tasks: [{ id: Date.now(), name: '', durationHour: 0, durationMin: 30, workflowId: '' }],
     pomodoroSettings: [{ id: 1, name: '通用专注', work: 25, rest: 5 }]
   });
+
+  // 计算清醒时间展示
+  const awakeInfo = React.useMemo(() => 
+    calculateAwakeInfo(userContext.wakeTime, userContext.sleepTime), 
+  [userContext.wakeTime, userContext.sleepTime]);
 
   const textareaRef = useRef(null);
   const step2Ref = useRef(null);
@@ -266,6 +366,10 @@ function App() {
       ...prev,
       tasks: prev.tasks.map(t => t.id === id ? { ...t, [field]: value } : t)
     }));
+  };
+
+  const toggleBioState = (field) => {
+    setUserContext(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
   const saveToHistory = (result, inputData) => {
@@ -352,7 +456,7 @@ function App() {
         Task: 
         1. Analyze this input.
         2. Generate 'analysis': summary of completed tasks (in Chinese).
-        3. Generate 'stats': Time distribution percentage (e.g. Work, Rest, Sleep).
+        3. Generate 'stats': Time distribution percentage.
         **IMPORTANT**: Use standard Chinese categories for 'stats' -> category (e.g. "工作/学习", "休息", "睡眠", "娱乐").
         
         Return JSON (Chinese): 
@@ -477,19 +581,26 @@ function App() {
   const handleAnalyze = async () => {
     if (!dataInput.trim() || !userApiKey) return showMessage("请完善输入", "error");
     setIsAnalyzing(true);
-    setLoadingProgress(0);
+    setLoadingProgress(5);
+    setLoadingText("连接大脑...");
 
-    // 优化：进度条模拟逻辑
-    // 使用渐进式增长：前30%较快，中间变慢，最后接近95%时极慢，永远不自动到100%
     const progressInterval = setInterval(() => {
       setLoadingProgress(prev => {
-        if (prev >= 95) return prev; // Cap at 95%
-        const remaining = 95 - prev;
-        // 每次增加剩余量的 5% 或至少 0.5，模拟渐进
-        const increment = Math.max(0.5, remaining * 0.05);
-        return prev + increment;
+        if (prev >= 95) return prev; 
+        if (prev < 30) return prev + 2; 
+        if (prev < 70) return prev + 1; 
+        return prev + 0.2; 
       });
-    }, 200); // Update more frequently for smoothness
+      
+      setLoadingText(prevText => {
+         const currentP = loadingProgress; 
+         if (currentP < 20) return "读取历史记录...";
+         if (currentP < 50) return "分析能量状态...";
+         if (currentP < 80) return "生成最优路径...";
+         return "正在打磨细节...";
+      });
+
+    }, 200);
 
     try {
       const genAI = new GoogleGenerativeAI(userApiKey);
@@ -510,6 +621,10 @@ function App() {
 
       const currentTime = getCurrentTimeStr();
 
+      // Inject Awake Info and Bio Flags
+      const awakeInfoStr = `Wake: ${userContext.wakeTime}, Sleep: ${userContext.sleepTime}. Total Awake Window: ${awakeInfo.durationText}. IsNextDaySleep: ${awakeInfo.isNextDay}`;
+      const bioStatusStr = `Already Washed: ${userContext.hasWashed}, Already Lunch: ${userContext.hasLunch}, Already Dinner: ${userContext.hasDinner}`;
+
       const prompt = `
         Current Time: ${currentTime}, Today: ${getTodayDate()}
         
@@ -519,8 +634,8 @@ function App() {
         **NEW USER INPUT (Current Input Box)**: "${dataInput}"
         
         User Settings: 
-          - Wake: ${userContext.wakeTime} (This is TODAY's wake time, already happened. Use for context only, do not schedule).
-          - Sleep: ${userContext.sleepTime}.
+          - ${awakeInfoStr}
+          - ${bioStatusStr}
           - Mode: ${workloadMode.toUpperCase()}
           - Status: Body[${userContext.physicalState}], Mind[${userContext.mentalState}]
         Tasks: ${taskDetails}
@@ -529,25 +644,26 @@ function App() {
         
         **1. MEMORY & UPDATE LOGIC**:
         - If "New User Input" has data for previous days, generate 'daily_reviews' for them.
-        - Use "Database Memory" as context.
-
+        
         **2. MANDATORY RULES FOR PLAN**:
-        - **Hygiene**: Insert "Wash/Brush" (15-20mins) TWICE: near WakeTime (only if future relative to CurrentTime) and before SleepTime.
+        - **Pomodoro**: ALL 'focus' (Work/Study) blocks **MUST** have 'sub_schedule' (25m work/5m rest cycles).
+        - **Cold Start**: If switching from Rest/Routine to Focus, **INSERT** a 5-10m 'transition' block.
+        - **Continuity**: Group identical tasks. Do NOT interleave.
+        - **Hygiene**: Insert "Wash/Brush" (15-20mins) TWICE. **EXCEPTION**: If 'Already Washed' is true, do NOT schedule the first one.
+        - **Meals**: Schedule Lunch (~12:00) and Dinner (~18:00). **EXCEPTION**: If 'Already Lunch' is true, do NOT schedule lunch. If 'Already Dinner' is true, do NOT schedule dinner.
         - **Long Break**: AFTER 3 consecutive focus blocks (~90mins), INSERT 15-20min "Long Break".
-        - **Batching**: Group identical tasks. No A->B->A interleaving.
-        - **Conflict**: If SleepTime > 00:00 (12am), trigger conflict.
+        - **Conflict**: If SleepTime > 00:00 (12am) AND not explicitly a night owl schedule (handled by awake duration), trigger conflict.
 
         **3. VERSION A: 'smart_advice' & 'blocks' (Healthy)**:
-        - **HARD RULE**: End by 00:00 or UserSleepTime (earlier one).
-        - **ACTION**: DROP low priority tasks if needed.
+        - **HARD RULE**: End by UserSleepTime. If tasks don't fit, DROP them.
         
         **4. VERSION B: 'full_advice' & 'full_blocks' (User)**:
-        - **HARD RULE**: INCLUDE ALL TASKS. Extend time if needed.
+        - **HARD RULE**: INCLUDE ALL TASKS. Extend time past sleep time if needed.
 
         **5. DAILY REVIEW GENERATION**: 
            - Generate 'daily_reviews' item for **EACH** date found in input.
            - **Stats**: Use CHINESE categories (e.g., "工作/学习", "睡眠").
-           - 'today_completed_analysis': Summarize accomplishments + **Evaluate time distribution (e.g., "Good focus ratio", "Too much rest")**.
+           - 'today_completed_analysis': Summarize accomplishments + Evaluate time distribution.
 
         Return JSON (Chinese):
         {
@@ -565,7 +681,6 @@ function App() {
       const parsed = parseJSONSafely(result.response.text());
       const safeData = sanitizeData(parsed);
       
-      // 确保 today_plan 存在，即使 AI 返回空 blocks
       if (!safeData.today_plan.blocks) safeData.today_plan.blocks = [];
       if (!safeData.today_plan.full_blocks) safeData.today_plan.full_blocks = [];
 
@@ -575,13 +690,17 @@ function App() {
       
       const updatedHistory = saveToHistory(safeData, dataInput);
       handleAutoPeriodReview(userApiKey, updatedHistory); 
-      setLoadingProgress(100); // 完成时直接设为 100%
+      setLoadingProgress(100);
+      setLoadingText("完成！");
 
     } catch (e) { 
       showMessage(`分析失败: ${e.message}`, "error"); 
     } finally { 
       clearInterval(progressInterval);
-      setTimeout(() => setLoadingProgress(0), 500); // 稍微延迟消失
+      setTimeout(() => {
+        setLoadingProgress(0);
+        setLoadingText("准备中...");
+      }, 500); 
       setIsAnalyzing(false); 
     }
   };
@@ -630,12 +749,10 @@ function App() {
       const result = await callGeminiWithRetry(model, prompt);
       const periodData = parseJSONSafely(result.response.text());
       
-      // SAFE MERGE: Use functional update to preserve today_plan from previous state
       setAnalysisResult(prev => {
-        // If prev exists, merge reviews into it. If not (e.g. on refresh), create basic structure.
         if (!prev) return { 
            daily_reviews: [], 
-           today_plan: null, // will be loaded from history if needed
+           today_plan: null, 
            weekly_review: periodData.weekly_review, 
            monthly_review: periodData.monthly_review 
         };
@@ -771,23 +888,54 @@ function App() {
       <div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-[#FFE4E1] z-30 px-6 h-20 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-tr from-[#FFB7B2] to-[#FFDAC1] p-2 rounded-xl shadow-inner"><BrainCircuit className="text-white w-6 h-6" /></div>
-          <h1 className="text-xl font-black text-slate-700 tracking-tight">LifeOS <span className="text-[#FFB7B2] font-serif italic text-sm">v5.1</span></h1>
+          <h1 className="text-xl font-black text-slate-700 tracking-tight">LifeOS <span className="text-[#FFB7B2] font-serif italic text-sm">v5.7</span></h1>
         </div>
         <div className="flex gap-2">
            {activeTab !== 'input' && <button onClick={() => { setActiveTab('input'); setStep(1); }} className="text-sm font-bold text-[#FF8FA3] bg-[#FFF0F5] hover:bg-[#FFE4E1] px-4 py-2 rounded-full transition-colors flex items-center gap-2"><Plus className="w-4 h-4"/> 新的一天</button>}
+           <button onClick={() => setShowKeyInput(true)} className="p-2 rounded-full bg-slate-100 text-slate-500"><Settings className="w-5 h-5"/></button>
         </div>
       </div>
 
       <main className="pt-32 px-4 max-w-md mx-auto space-y-8">
         {/* API Key Modal */}
         {showKeyInput && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto p-6 rounded-[2rem] border-2 border-[#FFB7B2] shadow-2xl animate-in zoom-in-95">
-              <h3 className="font-bold text-slate-700 mb-4 text-lg">设置 API Key</h3>
-              <input type="password" value={userApiKey} onChange={(e)=>setUserApiKey(e.target.value.trim())} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 mb-4 focus:border-[#FFB7B2] outline-none text-sm" placeholder="sk-..."/>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto p-6 rounded-[2rem] border-2 border-[#FFB7B2] shadow-2xl animate-in zoom-in-95 relative">
+              <h3 className="font-bold text-slate-700 mb-1 text-lg flex items-center gap-2"><Key className="w-5 h-5 text-[#FFB7B2]"/> 设置 API Key</h3>
+              <p className="text-xs text-slate-400 mb-4">使用 Gemini API 需要密钥 (AIza...)</p>
+              
+              <div className="relative mb-4">
+                <input 
+                  type={isKeyVisible ? "text" : "password"} 
+                  value={userApiKey} 
+                  onChange={(e)=>setUserApiKey(cleanApiKey(e.target.value))} 
+                  className="w-full p-4 pr-12 bg-slate-50 rounded-2xl border-2 border-slate-100 focus:border-[#FFB7B2] outline-none text-sm font-mono text-slate-600" 
+                  placeholder="粘贴 key..."
+                />
+                <button 
+                  onClick={() => setIsKeyVisible(!isKeyVisible)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {isKeyVisible ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                </button>
+              </div>
+
               <div className="flex gap-2">
-                <button onClick={()=>{setUserApiKey('');localStorage.removeItem('gemini_lifeos_key');}} className="p-4 bg-slate-100 rounded-2xl text-slate-500 hover:bg-slate-200"><Eraser className="w-5 h-5"/></button>
-                <button onClick={()=>{if(validateApiKey(userApiKey)){localStorage.setItem('gemini_lifeos_key',userApiKey);setShowKeyInput(false);}else{showMessage("Key格式错误","error")}}} className="flex-1 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-colors">确认保存</button>
+                <button onClick={()=>{setUserApiKey('');localStorage.removeItem('gemini_lifeos_key');}} className="p-4 bg-slate-100 rounded-2xl text-slate-500 hover:bg-slate-200 transition-colors"><Eraser className="w-5 h-5"/></button>
+                <button 
+                  onClick={()=>{
+                    if(validateApiKey(userApiKey)){
+                      localStorage.setItem('gemini_lifeos_key',userApiKey);
+                      setShowKeyInput(false);
+                      showMessage("API Key 已保存", "success");
+                    } else {
+                      showMessage("Key 格式错误 (需AIza开头)", "error");
+                    }
+                  }} 
+                  className="flex-1 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-colors"
+                >
+                  确认保存
+                </button>
               </div>
             </div>
           </div>
@@ -847,17 +995,54 @@ function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">起床时间</label>
-                      <input type="time" value={userContext.wakeTime} onChange={(e)=>setUserContext({...userContext, wakeTime: e.target.value})} className="w-full bg-[#F8FAFC] p-4 rounded-2xl font-bold outline-none border focus:border-[#FFB7B2] transition-colors text-lg" />
+                      <input type="time" value={userContext.wakeTime} onChange={(e)=>setUserContext({...userContext, wakeTime: e.target.value})} className="w-full bg-[#F8FAFC] p-3 rounded-2xl font-bold outline-none border focus:border-[#FFB7B2] transition-colors text-lg" />
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">预计入睡</label>
-                      <input type="time" value={userContext.sleepTime} onChange={(e)=>setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8FAFC] p-4 rounded-2xl font-bold outline-none border focus:border-[#FFB7B2] transition-colors text-lg" />
+                      <input type="time" value={userContext.sleepTime} onChange={(e)=>setUserContext({...userContext, sleepTime: e.target.value})} className="w-full bg-[#F8FAFC] p-3 rounded-2xl font-bold outline-none border focus:border-[#FFB7B2] transition-colors text-lg" />
                     </div>
+                  </div>
+
+                  {/* 清醒时长展示 (动态反馈) */}
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-xs text-slate-300 font-bold flex items-center gap-1"><Hourglass className="w-3 h-3"/> 预计清醒时长</span>
+                    <span className={`text-xs font-black ${awakeInfo.isNextDay ? 'text-indigo-400' : 'text-slate-500'}`}>
+                      {awakeInfo.durationText}
+                      {awakeInfo.isNextDay && <span className="text-[10px] ml-1 bg-indigo-50 px-1.5 rounded text-indigo-300">次日</span>}
+                    </span>
                   </div>
 
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">当前活动</label>
-                    <input value={userContext.currentActivity} onChange={(e)=>setUserContext({...userContext,currentActivity:e.target.value})} className="w-full bg-[#F8FAFC] p-4 rounded-2xl font-bold outline-none" placeholder="当前活动..." />
+                    <input value={userContext.currentActivity} onChange={(e)=>setUserContext({...userContext,currentActivity:e.target.value})} className="w-full bg-[#F8FAFC] p-3 rounded-2xl font-bold outline-none" placeholder="当前活动..." />
+                  </div>
+
+                  {/* 生理状态选择 */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">生理状态</label>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => toggleBioState('hasWashed')}
+                        className={`flex-1 p-3 rounded-2xl font-bold border-2 transition-all flex flex-col items-center gap-1 ${userContext.hasWashed ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-[#F8FAFC] border-[#E2E8F0] text-slate-400'}`}
+                      >
+                        <Bath className="w-5 h-5"/>
+                        <span className="text-xs">已洗漱</span>
+                      </button>
+                      <button 
+                        onClick={() => toggleBioState('hasLunch')}
+                        className={`flex-1 p-3 rounded-2xl font-bold border-2 transition-all flex flex-col items-center gap-1 ${userContext.hasLunch ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-[#F8FAFC] border-[#E2E8F0] text-slate-400'}`}
+                      >
+                        <UtensilsCrossed className="w-5 h-5"/>
+                        <span className="text-xs">已午餐</span>
+                      </button>
+                      <button 
+                        onClick={() => toggleBioState('hasDinner')}
+                        className={`flex-1 p-3 rounded-2xl font-bold border-2 transition-all flex flex-col items-center gap-1 ${userContext.hasDinner ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-[#F8FAFC] border-[#E2E8F0] text-slate-400'}`}
+                      >
+                        <Utensils className="w-5 h-5"/>
+                        <span className="text-xs">已晚餐</span>
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -885,7 +1070,9 @@ function App() {
                         <span className="text-sm font-bold text-slate-600">{getCurrentTimeStr()}</span>
                       </div>
                     </div>
-                    {/* Moved to top as requested in older query */}
+
+                    {modeSuggestion && <div className="bg-indigo-50 border-2 border-indigo-100 p-4 rounded-2xl mb-6 flex gap-3 items-center"><Sparkles className="w-5 h-5 text-indigo-500"/><span className="font-bold text-indigo-700 text-sm">{modeSuggestion.reason}</span></div>}
+                    
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         {workloadOptions.map((opt) => (
                           <button key={opt.id} onClick={() => setWorkloadMode(opt.id)} className={`p-3 rounded-2xl border-2 text-left ${workloadMode === opt.id ? opt.color : 'bg-white border-slate-100 opacity-60'}`}>
@@ -895,8 +1082,6 @@ function App() {
                         ))}
                     </div>
 
-                    {modeSuggestion && <div className="bg-indigo-50 border-2 border-indigo-100 p-4 rounded-2xl mb-6 flex gap-3 items-center"><Sparkles className="w-5 h-5 text-indigo-500"/><span className="font-bold text-indigo-700 text-sm">{modeSuggestion.reason}</span></div>}
-                    
                     <div className="space-y-4 mb-8">
                       {userContext.tasks.map((task, i) => (
                         <div key={task.id} className="bg-[#F8FAFC] p-4 rounded-2xl border border-slate-100">
@@ -919,12 +1104,11 @@ function App() {
                     </div>
 
                     <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-slate-800 text-white font-bold py-6 rounded-[2rem] shadow-xl text-lg flex justify-center items-center gap-2 relative overflow-hidden">
-                      {/* Loading Progress Bar */}
                       {loadingProgress > 0 && (
                         <div className="absolute bottom-0 left-0 h-1 bg-emerald-400 transition-all duration-300 ease-out" style={{width: `${loadingProgress}%`}}></div>
                       )}
                       {isAnalyzing ? <Loader2 className="w-6 h-6 animate-spin"/> : <Sparkles className="w-6 h-6"/>} 
-                      {isAnalyzing ? `生成中 ${loadingProgress.toFixed(0)}%` : "生成指南"}
+                      {isAnalyzing ? `生成中 ${loadingProgress.toFixed(0)}% - ${loadingText}` : "生成指南"}
                     </button>
                  </div>
               </section>
