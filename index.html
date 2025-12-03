@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v3.0</title>
+    <title>LifeOS Pro - Macaron v3.2</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -108,6 +108,7 @@
             const fmt = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
             return `${fmt(start)} - ${fmt(end)}`;
         };
+
         const calculateStatsFromLogs = (logText) => {
             const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0 };
             if (!logText) return stats;
@@ -115,8 +116,15 @@
             const durationRegex = /(\d+(\.\d+)?)\s*(h|m|min|hour)/i; 
             const isoTimeRegex = /(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)\s*(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)/;
             const categoryRegex = /\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH)\]/i;
+            
+            const processedLines = new Set(); 
+
             lines.forEach(line => {
+                if (!line.trim() || processedLines.has(line.trim())) return;
+                processedLines.add(line.trim());
+
                 let hours = 0;
+                // 1. Duration
                 const isoMatch = line.match(isoTimeRegex);
                 if (isoMatch) {
                     const start = new Date(isoMatch[1]).getTime();
@@ -130,15 +138,32 @@
                         hours = unit.startsWith('m') ? val / 60 : val;
                     }
                 }
-                const catMatch = line.match(categoryRegex);
-                if (catMatch && hours > 0) {
-                    const cat = catMatch[1].toLowerCase();
-                    if (stats[cat] !== undefined) stats[cat] += hours;
+
+                // 2. Category (Fallback to Keywords if no tag)
+                if (hours > 0) {
+                    const catMatch = line.match(categoryRegex);
+                    let cat = null;
+                    if (catMatch) {
+                        cat = catMatch[1].toLowerCase();
+                    } else {
+                        // Fallback Keywords (Ensure stats are captured even if not archived properly)
+                        const l = line.toLowerCase();
+                        if (l.includes('工作') || l.includes('work')) cat = 'work';
+                        else if (l.includes('学习') || l.includes('study') || l.includes('阅读')) cat = 'study';
+                        else if (l.includes('休息') || l.includes('rest')) cat = 'rest';
+                        else if (l.includes('睡觉') || l.includes('sleep')) cat = 'sleep';
+                        else if (l.includes('生活') || l.includes('life') || l.includes('饭')) cat = 'life';
+                        else if (l.includes('健身') || l.includes('health') || l.includes('运动')) cat = 'health';
+                        else if (l.includes('娱乐') || l.includes('game')) cat = 'entertainment';
+                    }
+
+                    if (cat && stats[cat] !== undefined) stats[cat] += hours;
                 }
             });
             Object.keys(stats).forEach(k => stats[k] = Math.round(stats[k] * 10) / 10);
             return stats;
         };
+
         const getLogsInDateRange = (fullHistory, startDate, endDate) => {
             if (!fullHistory) return "";
             const lines = fullHistory.split('\n');
@@ -155,6 +180,7 @@
             }
             return filteredLines.join('\n');
         };
+
         const getDiaryEntriesInDateRange = (diaryEntries, startDate, endDate) => {
             if (!diaryEntries || diaryEntries.length === 0) return "";
             const s = normalizeDate(startDate).getTime();
@@ -164,6 +190,7 @@
                 return d >= s && d <= e;
             }).map(entry => `[DIARY] ${entry.date}: ${entry.content}`).join('\n');
         };
+
         const getDateRangesForScope = (scope) => {
             const today = normalizeDate(new Date());
             let currentStart, currentEnd = today;
@@ -179,15 +206,18 @@
             }
             return { currentStart, currentEnd, prevStart, prevEnd };
         };
+
         const getDateRangeDisplay = (scope) => {
             const { currentStart, currentEnd } = getDateRangesForScope(scope);
             return `${formatDate(currentStart)} ~ ${formatDate(currentEnd)}`;
         };
+
         const callGeminiWithRetry = async (model, prompt, retries = 3) => {
           for (let i = 0; i < retries; i++) {
             try { return await model.generateContent(prompt); } catch (error) { if (i === retries - 1) throw error; await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); }
           }
         };
+
         const parseJSONSafely = (text) => {
           try { return JSON.parse(text); } catch (e) { try { return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '')); } catch (e2) { throw new Error("无法解析 AI 返回的数据"); } }
         };
@@ -335,7 +365,7 @@
             if (!userApiKey) { setShowKeyInput(true); return; } if (!tempInput.trim()) return showToast("请输入内容", "error");
             setIsOrganizing(true);
             try {
-              const genAI = new GoogleGenerativeAI(userApiKey); const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
+              const genAI = new GoogleGenerativeAI(userApiKey); const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
               const prompt = `Task: Format logs to: YYYY-MM-DD: [Time Range] Task (Duration).\nInput: "${tempInput}"\nInfer missing info.`;
               const result = await callGeminiWithRetry(model, prompt);
               setTempInput(result.response.text()); parseRawInput(result.response.text()); showToast("整理完成，请下方校对分类");
@@ -344,21 +374,35 @@
 
           const generateReview = async (scope = reviewScope) => {
             if (!userApiKey) { setShowKeyInput(true); return; }
-            setLoading({ state: true, text: '正在用心分析...', progress: 10, taskType: 'review', scope });
-            let p = 10; const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
+            
             const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
             const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
+            
+            if (!currentData.trim()) {
+                showToast("今日暂无数据，无法生成", "error");
+                return;
+            }
+
+            setLoading({ state: true, text: '正在用心分析...', progress: 10, taskType: 'review', scope });
+            let p = 10; const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
+            
             const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
             const currentDiary = getDiaryEntriesInDateRange(diaryEntries, currentStart, currentEnd);
             const jsStats = calculateStatsFromLogs(currentData);
+            
+            // Smart Sleep Fill (01:00-10:30 = 9.5h)
+            const multiplier = getTargetMultiplier(scope);
+            if (jsStats.sleep < 1) {
+                jsStats.sleep = 9.5 * multiplier; // Hardcoded rule as requested
+            }
+
             try {
               const genAI = new GoogleGenerativeAI(userApiKey); const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
-              const prompt = `Role: Caring Life Analyst. Scope: ${scope.toUpperCase()}. Targets: ${JSON.stringify(allocations)}. **Calculated Stats**: ${JSON.stringify(jsStats)}. **Log Details**: """${currentData}""". **User Diary**: """${currentDiary}""". **Previous Data**: """${prevData}""". Task: 1. Analyze time usage. 2. Compare with Previous Period. 3. **SUMMARY Style**: Use OBJECTIVE declarative sentences in Chinese. 4. **SLEEP INFERENCE (IMPORTANT)**: For any day in the date range, if there are NO log entries at all between 01:00 AM and 10:00 AM, assume this period was SLEEP. Mention this inference in insights if relevant. Output JSON: { "summary": "String (Objective Fact)", "insights": ["Insight 1", "Insight 2"] }`;
+              // CRITICAL: Force AI to use jsStats and output Chinese
+              const prompt = `Role: Life Analyst. Scope: ${scope}. Targets: ${JSON.stringify(allocations)}. **STATS (TRUST THESE NUMBERS)**: ${JSON.stringify(jsStats)}. **Logs**: """${currentData}""". **Diary**: """${currentDiary}""". Task: 1. Analyze based on STATS. 2. Compare w/ prev. 3. **SUMMARY**: Chinese declarative sentences ONLY. 4. **Insights**: Strengths & Weaknesses. Output JSON: { "summary": "String", "insights": ["Str1", "Str2"] }`;
               const result = await callGeminiWithRetry(model, prompt);
               const aiData = parseJSONSafely(result.response.text());
-              let finalSleep = jsStats.sleep;
-              if (aiData.actual_allocation && aiData.actual_allocation.sleep > jsStats.sleep) finalSleep = aiData.actual_allocation.sleep;
-              const finalData = { ...aiData, actual_allocation: { ...jsStats, sleep: finalSleep } };
+              const finalData = { ...aiData, actual_allocation: jsStats }; // Override AI stats with JS stats
               setReviewResults(prev => ({ ...prev, [scope]: finalData })); showToast(`${scope}复盘已更新`);
             } catch (e) { showToast('分析失败', 'error'); } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '', scope: '' }); }
           };
@@ -370,7 +414,7 @@
             setActivePage('plan');
             try {
               const genAI = new GoogleGenerativeAI(userApiKey); const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
-              const prompt = `Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}. User Bio: ${JSON.stringify(bioState)}. User State: ${JSON.stringify(userState)}. User Request: "${planInput}". Targets: ${JSON.stringify(allocations)}. Language: Chinese (Mandarin). CRITICAL RULES: 1. **Mode Enforcement**: If Mode is "Rest_Priority": DO NOT schedule deep work/study unless explicitly requested. Fill with light reading, relaxation, sleep prep. If Mode is "Normal": Prioritize unfinished allocation targets. 2. **Special Task Duration**: Treat input duration (e.g. "1h") as **PURE FOCUS**. **ADD BREAKS** on top of this time. 3. **Pomodoro Split**: For ALL Work/Study blocks, generate "sub_blocks". Pattern: Focus (25m) -> Break (5m). Insert "15-20min Long Break" after 4 cycles. 4. **Sleep Boundary**: Plan strictly ends at ${bioState.sleepTime}. 5. **Bio-Check**: If washedMorning=false, insert "Morning Routine". If no food, insert Meal. 6. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions. Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
+              const prompt = `Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}. User Bio: ${JSON.stringify(bioState)}. User State: ${JSON.stringify(userState)}. User Request: "${planInput}". Targets: ${JSON.stringify(allocations)}. Language: Chinese (Mandarin). CRITICAL RULES: 1. **NIGHT MODE**: If time > 21:00, UNLESS user wrote 'overtime/study' in request, FORCE REST MODE (No hard tasks). 2. **STATE**: If user is tired/anxious, FORCE LIGHT LOAD. 3. **Special Task Duration**: Treat input duration (e.g. "1h") as **PURE FOCUS**. **ADD BREAKS**. 4. **Pomodoro**: Work/Study = Focus 25m + Break 5m. 5. **Exercise**: >1hr after meals. 6. **Pain**: If pain, insert relief. Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
               const result = await callGeminiWithRetry(model, prompt);
               setTodayPlan(parseJSONSafely(result.response.text())); showToast('今日计划已生成');
             } catch (e) { showToast('生成失败', 'error'); setActivePage('status'); } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '' }); }
@@ -446,7 +490,7 @@
               <div className="bg-white p-1.5 rounded-2xl shadow-sm flex gap-1 border border-slate-100 sticky top-24 z-30">{['today', 'yesterday', 'weekly', 'monthly'].map(s => (<button key={s} onClick={() => setReviewScope(s)} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${reviewScope === s ? 'bg-macaron-purple text-purple-900 shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}>{s === 'today' ? '今日' : s === 'yesterday' ? '昨日' : s === 'weekly' ? '本周' : '本月'}</button>))}</div>
               <div className="text-center -mb-2"><span className="bg-macaron-cream px-4 py-1 rounded-full text-xs font-bold text-macaron-dark border border-macaron-orange/30">📅 {dateRangeStr}</span></div>
               <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[400px] relative overflow-hidden">
-                {isLoading ? (<div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20"><Loader2 className="w-12 h-12 text-macaron-purple animate-spin mb-4"/><p className="text-slate-500 font-bold text-base animate-pulse">{loading.text}</p></div>) : !data ? (<div className="flex flex-col items-center justify-center h-full p-10 text-center"><div className="w-24 h-24 bg-macaron-cream rounded-full flex items-center justify-center mb-6"><Sparkles className="w-12 h-12 text-macaron-orange"/></div><p className="text-slate-400 mb-8 font-bold text-lg">生成一份治愈的复盘报告吧</p><button onClick={() => generateReview(reviewScope)} className="bg-macaron-blue text-blue-900 px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">开始生成</button></div>) : (<div className="p-8 animate-in"><div className="bg-macaron-cream p-6 rounded-3xl mb-8 border border-orange-100/50 relative"><div className="absolute top-0 left-6 -translate-y-1/2 bg-macaron-orange text-orange-800 px-3 py-1 rounded-full text-xs font-bold">SUMMARY</div><p className="text-base text-slate-600 leading-relaxed font-medium mt-2">"{data.summary}"</p></div>{data.insights && (<div className="mb-8 space-y-3"><h4 className="font-bold text-macaron-dark text-base flex items-center gap-2"><Lightbulb className="w-5 h-5 text-macaron-yellow"/> 洞察时刻</h4>{data.insights.map((insight, i) => (<div key={i} className="flex gap-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100"><span className="text-macaron-purple text-xl leading-none">•</span> {insight}</div>))}</div>)}<div className="space-y-2"><MacaronProgressBar label="工作" target={allocations.work * multiplier} actual={data.actual_allocation?.work || 0} colorBg="bg-indigo-50" colorBar="bg-macaron-blue" /><MacaronProgressBar label="学习" target={allocations.study * multiplier} actual={data.actual_allocation?.study || 0} colorBg="bg-teal-50" colorBar="bg-macaron-green" /><MacaronProgressBar label="休息" target={allocations.rest * multiplier} actual={data.actual_allocation?.rest || 0} colorBg="bg-pink-50" colorBar="bg-macaron-pink" /><MacaronProgressBar label="睡眠" target={allocations.sleep * multiplier} actual={data.actual_allocation?.sleep || 0} colorBg="bg-slate-50" colorBar="bg-macaron-purple" /><MacaronProgressBar label="生活" target={allocations.life * multiplier} actual={data.actual_allocation?.life || 0} colorBg="bg-orange-50" colorBar="bg-macaron-orange" /><MacaronProgressBar label="娱乐" target={allocations.entertainment * multiplier} actual={data.actual_allocation?.entertainment || 0} colorBg="bg-yellow-50" colorBar="bg-macaron-yellow" /><MacaronProgressBar label="健康" target={allocations.health * multiplier} actual={data.actual_allocation?.health || 0} colorBg="bg-emerald-100" colorBar="bg-emerald-200" /></div><button onClick={() => generateReview(reviewScope)} className="w-full mt-8 py-4 bg-slate-100 text-slate-400 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"><RefreshCcw className="w-4 h-4"/> 刷新数据</button></div>)}</div></div>
+                {isLoading ? (<div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20"><Loader2 className="w-12 h-12 text-macaron-purple animate-spin mb-4"/><p className="text-slate-500 font-bold text-base animate-pulse">{loading.text}</p></div>) : !data ? (<div className="flex flex-col items-center justify-center h-full p-10 text-center"><div className="w-24 h-24 bg-macaron-cream rounded-full flex items-center justify-center mb-6"><Sparkles className="w-12 h-12 text-macaron-orange"/></div><p className="text-slate-400 mb-8 font-bold text-lg">生成一份治愈的复盘报告吧</p><button onClick={() => generateReview(reviewScope)} className="bg-macaron-blue text-blue-900 px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">开始生成</button></div>) : (<div className="p-8 animate-in"><div className="flex justify-center mb-6"><button onClick={() => generateReview(reviewScope)} className="bg-slate-100 text-slate-400 px-6 py-2 rounded-full text-xs font-bold hover:bg-slate-200 transition-colors flex items-center gap-1"><RefreshCcw className="w-3 h-3"/> 刷新数据</button></div><div className="bg-macaron-cream p-6 rounded-3xl mb-8 border border-orange-100/50 relative"><div className="absolute top-0 left-6 -translate-y-1/2 bg-macaron-orange text-orange-800 px-3 py-1 rounded-full text-xs font-bold">SUMMARY</div><p className="text-base text-slate-600 leading-relaxed font-medium mt-2">"{data.summary}"</p></div>{data.insights && (<div className="mb-8 space-y-3"><h4 className="font-bold text-macaron-dark text-base flex items-center gap-2"><Lightbulb className="w-5 h-5 text-macaron-yellow"/> 洞察时刻</h4>{data.insights.map((insight, i) => (<div key={i} className="flex gap-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100"><span className="text-macaron-purple text-xl leading-none">•</span> {insight}</div>))}</div>)}<div className="space-y-2"><MacaronProgressBar label="工作" target={allocations.work * multiplier} actual={data.actual_allocation?.work || 0} colorBg="bg-indigo-50" colorBar="bg-macaron-blue" /><MacaronProgressBar label="学习" target={allocations.study * multiplier} actual={data.actual_allocation?.study || 0} colorBg="bg-teal-50" colorBar="bg-macaron-green" /><MacaronProgressBar label="休息" target={allocations.rest * multiplier} actual={data.actual_allocation?.rest || 0} colorBg="bg-pink-50" colorBar="bg-macaron-pink" /><MacaronProgressBar label="睡眠" target={allocations.sleep * multiplier} actual={data.actual_allocation?.sleep || 0} colorBg="bg-slate-50" colorBar="bg-macaron-purple" /><MacaronProgressBar label="生活" target={allocations.life * multiplier} actual={data.actual_allocation?.life || 0} colorBg="bg-orange-50" colorBar="bg-macaron-orange" /><MacaronProgressBar label="娱乐" target={allocations.entertainment * multiplier} actual={data.actual_allocation?.entertainment || 0} colorBg="bg-yellow-50" colorBar="bg-macaron-yellow" /><MacaronProgressBar label="健康" target={allocations.health * multiplier} actual={data.actual_allocation?.health || 0} colorBg="bg-emerald-100" colorBar="bg-emerald-200" /></div></div>)}</div></div>
             );
           };
 
