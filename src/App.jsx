@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.7</title>
+    <title>LifeOS Pro - Macaron v2.5</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,7 +115,8 @@
           Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw, Eye, EyeOff, Key,
           Hourglass, Bath, UtensilsCrossed, FileText, Percent, UserCheck, MessageSquarePlus,
           Sun, MoonStar, User, ArrowLeftRight, FileJson, RotateCcw, PenTool, Check, CheckSquare,
-          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle, TrendingUp as IconTrendingUp
+          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle, TrendingUp as IconTrendingUp,
+          Ban
         } from 'https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0';
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -150,70 +151,62 @@
         const getTodayDate = () => formatDate(new Date());
         const getCurrentTimeStr = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
         
-        // Date Helpers
+        // Strict Date Helpers (Normalized to 00:00:00)
+        const normalizeDate = (d) => {
+            const newDate = new Date(d);
+            newDate.setHours(0, 0, 0, 0);
+            return newDate;
+        };
+
         const getMonday = (d) => {
-          d = new Date(d);
-          d.setHours(0,0,0,0);
+          d = normalizeDate(d);
           var day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
           return new Date(d.setDate(diff));
         };
+        
         const getStartOfMonth = () => { 
             const d = new Date(); 
-            d.setHours(0,0,0,0);
             return new Date(d.getFullYear(), d.getMonth(), 1); 
         };
 
-        // NEW: Core function to extract logs within ANY date range
-        const getLogsInDateRange = (fullHistory, startDate, endDate) => {
+        // Improved History Context Extraction
+        const getHistoryContext = (fullHistory, scope) => {
             if (!fullHistory) return "";
             const lines = fullHistory.split('\n');
+            const today = normalizeDate(new Date());
+            
+            let startDate, endDate;
+
+            // Define ranges clearly
+            if (scope === 'today') {
+                startDate = today;
+                endDate = today;
+            } else if (scope === 'yesterday') {
+                const y = new Date(today); y.setDate(y.getDate() - 1);
+                startDate = y;
+                endDate = y;
+            } else if (scope === 'weekly') {
+                startDate = getMonday(today);
+                endDate = today;
+            } else if (scope === 'monthly') {
+                startDate = getStartOfMonth();
+                endDate = today;
+            }
+
             const filteredLines = [];
             const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
 
             for (let line of lines) {
                 const match = line.match(dateRegex);
                 if (match) {
-                    const lineDate = new Date(match[1]);
-                    // Set time to check date part only accurately, or respect range boundaries
-                    if (lineDate >= startDate && lineDate <= endDate) {
+                    const lineDate = normalizeDate(match[1]); // Normalize log date
+                    // Strict comparison including boundaries
+                    if (lineDate.getTime() >= startDate.getTime() && lineDate.getTime() <= endDate.getTime()) {
                         filteredLines.push(line);
                     }
                 }
             }
-            return filteredLines.join('\n').slice(0, 50000); // Limit context size
-        };
-
-        // NEW: Calculate Date Ranges for Scope (Current & Previous)
-        const getDateRangesForScope = (scope) => {
-            const today = new Date();
-            today.setHours(23, 59, 59, 999);
-            
-            let currentStart, currentEnd = today;
-            let prevStart, prevEnd;
-
-            if (scope === 'today') {
-                currentStart = new Date(); currentStart.setHours(0,0,0,0);
-                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 1);
-                prevEnd = new Date(prevStart); prevEnd.setHours(23,59,59,999);
-            } else if (scope === 'yesterday') {
-                const y = new Date(); y.setDate(y.getDate() - 1);
-                currentStart = new Date(y); currentStart.setHours(0,0,0,0);
-                currentEnd = new Date(y); currentEnd.setHours(23,59,59,999);
-                
-                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 1);
-                prevEnd = new Date(prevStart); prevEnd.setHours(23,59,59,999);
-            } else if (scope === 'weekly') {
-                currentStart = getMonday(new Date());
-                
-                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 7);
-                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1); prevEnd.setHours(23,59,59,999);
-            } else if (scope === 'monthly') {
-                currentStart = getStartOfMonth();
-                
-                prevStart = new Date(currentStart); prevStart.setMonth(prevStart.getMonth() - 1);
-                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1); prevEnd.setHours(23,59,59,999);
-            }
-            return { currentStart, currentEnd, prevStart, prevEnd };
+            return filteredLines.join('\n').slice(0, 50000); 
         };
 
         const getTargetMultiplier = (scope) => {
@@ -227,6 +220,53 @@
                 return now.getDate();
             }
             return 1;
+        };
+
+        // Core function to extract logs within ANY date range (used for dual-fetch review)
+        const getLogsInDateRange = (fullHistory, startDate, endDate) => {
+            if (!fullHistory) return "";
+            const lines = fullHistory.split('\n');
+            const filteredLines = [];
+            const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
+            
+            // Normalize boundaries
+            const s = normalizeDate(startDate).getTime();
+            const e = normalizeDate(endDate).getTime();
+
+            for (let line of lines) {
+                const match = line.match(dateRegex);
+                if (match) {
+                    const d = normalizeDate(match[1]).getTime();
+                    if (d >= s && d <= e) filteredLines.push(line);
+                }
+            }
+            return filteredLines.join('\n').slice(0, 50000);
+        };
+
+        const getDateRangesForScope = (scope) => {
+            const today = normalizeDate(new Date());
+            let currentStart, currentEnd = today;
+            let prevStart, prevEnd;
+
+            if (scope === 'today') {
+                currentStart = today;
+                prevStart = new Date(today); prevStart.setDate(prevStart.getDate() - 1);
+                prevEnd = prevStart;
+            } else if (scope === 'yesterday') {
+                currentStart = new Date(today); currentStart.setDate(currentStart.getDate() - 1);
+                currentEnd = currentStart;
+                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 1);
+                prevEnd = prevStart;
+            } else if (scope === 'weekly') {
+                currentStart = getMonday(today);
+                prevStart = new Date(currentStart); prevStart.setDate(prevStart.getDate() - 7);
+                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1);
+            } else if (scope === 'monthly') {
+                currentStart = getStartOfMonth();
+                prevStart = new Date(currentStart); prevStart.setMonth(prevStart.getMonth() - 1);
+                prevEnd = new Date(currentStart); prevEnd.setDate(prevEnd.getDate() - 1);
+            }
+            return { currentStart, currentEnd, prevStart, prevEnd };
         };
 
         const getDateRangeDisplay = (scope) => {
@@ -256,7 +296,7 @@
             { id: 'sleep', label: '睡眠', color: 'bg-macaron-purple', text: 'text-purple-700' },
             { id: 'life', label: '生活', color: 'bg-macaron-orange', text: 'text-orange-700' },
             { id: 'entertainment', label: '娱乐', color: 'bg-macaron-yellow', text: 'text-yellow-700' },
-            { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-500' }
+            { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-400' } // Added Trash
         ];
 
         // --- Components ---
@@ -399,7 +439,7 @@
                  const item = { id: Date.now() + idx, original: line, date: date, desc: cleanDesc, category: cat };
                  allItems.push(item);
 
-                 // De-duplication Logic
+                 // De-duplication: only add if description is unique in this batch AND not already categorized
                  if (cleanDesc && !uniqueReviewMap.has(cleanDesc) && !categoryMap[cleanDesc]) {
                      uniqueReviewMap.set(cleanDesc, item);
                  }
@@ -421,14 +461,30 @@
           const handleConfirmArchive = () => {
               if (rawLinesBuffer.length === 0) return;
               const newMap = { ...categoryMap };
-              parsedItems.forEach(item => { if (item.desc) newMap[item.desc] = item.category; });
+              
+              // Only update map for non-trash items
+              parsedItems.forEach(item => { 
+                  if (item.desc && item.category !== 'trash') {
+                      newMap[item.desc] = item.category; 
+                  }
+              });
 
               let minDate = rawLinesBuffer[0].date, maxDate = rawLinesBuffer[0].date;
               const finalLines = [];
               
               rawLinesBuffer.forEach(item => {
-                  const finalCategory = newMap[item.desc] || item.category;
-                  
+                  // Determine category: User selection > History Map > Auto-guess
+                  // Note: parsedItems only contains *some* items. We need to check if user updated it there.
+                  const userOverrideItem = parsedItems.find(p => p.desc === item.desc); // Simple match
+                  let finalCategory = item.category;
+
+                  if (userOverrideItem) {
+                      finalCategory = userOverrideItem.category;
+                  } else if (newMap[item.desc]) {
+                      finalCategory = newMap[item.desc];
+                  }
+
+                  // TRASH LOGIC: If category is trash, SKIP IT
                   if (finalCategory === 'trash') return;
 
                   const prefix = `[${finalCategory.toUpperCase()}]`; 
@@ -438,16 +494,18 @@
               });
 
               setCategoryMap(newMap);
-              setFullHistory(prev => (prev ? prev + "\n" + finalLines.join('\n') : finalLines.join('\n')));
+              // Only append if there are valid lines
+              if (finalLines.length > 0) {
+                  setFullHistory(prev => (prev ? prev + "\n" + finalLines.join('\n') : finalLines.join('\n')));
+                  setArchivedRange(`${minDate} ~ ${maxDate}`);
+                  showToast(`成功归档 ${finalLines.length} 条记录`);
+              } else {
+                  showToast('所有条目均已作废，无数据写入');
+              }
+
               setParsedItems([]);
               setRawLinesBuffer([]);
               setTempInput('');
-              if (finalLines.length > 0) {
-                  setArchivedRange(`${minDate} ~ ${maxDate}`);
-                  showToast('归档成功！记忆已更新');
-              } else {
-                  showToast('归档完成（所有条目均已作废）');
-              }
           };
           
           const handleOrganizeData = async () => {
@@ -472,7 +530,6 @@
             let p = 10;
             const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
 
-            // NEW: Fetch two distinct datasets
             const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
             const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
             const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
@@ -541,14 +598,11 @@
                 
                 CRITICAL RULES:
                 1. **Special Task Duration = PURE FOCUS TIME**: 
-                   - Interpret user's input duration (e.g., "1 hour") as the sum of FOCUS periods only.
-                   - REST periods are ADDED on top.
-                   - Example: "Read for 1h" -> 
-                     * Focus 25m -> Break 5m
-                     * Focus 25m -> Break 5m
-                     * Focus 10m
-                     * Total Time Span = 70 mins.
-                   - Do NOT compress breaks into the 1h. The block ends when focus time sums to 1h.
+                   - Interpret user's input duration (e.g., "1 hour") as **PURE FOCUS**.
+                   - **ADD BREAKS** on top of this time.
+                   - Example Calculation: "Work 1h" = 60m focus.
+                     * Block Structure: 25m Focus + 5m Break + 25m Focus + 5m Break + 10m Focus.
+                     * Total Block Duration: 70 mins.
                 2. **Pomodoro Split**:
                    - For ALL Work/Study blocks, generate "sub_blocks".
                    - Pattern: Focus (25m) -> Break (5m).
@@ -569,7 +623,7 @@
                       "category": "work|study|rest|sleep|life|entertainment", 
                       "title": "String", 
                       "desc": "String", 
-                      "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Rest", "detail": "String" } ],
+                      "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ],
                       "energy_required": "high|low" 
                     }
                   ]
@@ -671,10 +725,15 @@
                                 <div key={item.id} className={`flex flex-col p-3 rounded-xl border transition-all ${item.category === 'trash' ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-slate-50 border-slate-100'}`}>
                                     <div className="flex justify-between">
                                         <div className="text-xs text-slate-400 mb-1 font-mono">{item.date}</div>
-                                        {item.category === 'trash' && <XCircle className="w-4 h-4 text-slate-400"/>}
+                                        {/* Added Trash Button */}
+                                        <button onClick={() => updateReviewItemCategory(item.id, 'trash')} className={`p-1 rounded-full ${item.category === 'trash' ? 'bg-red-100 text-red-500' : 'text-slate-300 hover:bg-slate-100'}`}>
+                                            <Ban className="w-4 h-4"/>
+                                        </button>
                                     </div>
                                     <div className={`text-sm font-medium mb-2 truncate ${item.category === 'trash' ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{item.original}</div>
-                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                    
+                                    {/* Hide buttons if trash, or show to allow recovery */}
+                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar opacity-100 transition-opacity">
                                         {CATEGORIES.map(cat => (
                                             <button 
                                                 key={cat.id}
@@ -719,7 +778,6 @@
                 ))}
               </div>
 
-              {/* Date Range Header */}
               <div className="text-center -mb-2">
                   <span className="bg-macaron-cream px-4 py-1 rounded-full text-xs font-bold text-macaron-dark border border-macaron-orange/30">
                       📅 {dateRangeStr}
@@ -939,7 +997,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.7</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.5</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
