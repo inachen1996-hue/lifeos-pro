@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.8.1</title>
+    <title>LifeOS Pro - Macaron v2.8.3</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -201,13 +201,42 @@
             const start = new Date(dates[0]);
             const end = new Date(dates[dates.length - 1]);
             
-            // Format: YYYY年M月D日H时m分 (defaulting H:m to 00:00 for start, 23:59 for end if not parsed, 
-            // but for simplicity and user request, let's format the date part nicely. 
-            // If timestamps exist in logs, we could parse them, but raw regex is safer for basic range).
-            
             const fmt = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-            // Fake times for visual consistency with request if actual times aren't extracted
             return `${fmt(start)} 00:00 - ${fmt(end)} 23:59`;
+        };
+
+        // NEW: JS-based Stat Calculation Engine (Replaces AI guessing)
+        const calculateStatsFromLogs = (logText) => {
+            const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0 };
+            if (!logText) return stats;
+
+            const lines = logText.split('\n');
+            const durationRegex = /(\d+(\.\d+)?)(h|m)/i; 
+            const categoryRegex = /\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH)\]/i;
+
+            lines.forEach(line => {
+                // 1. Extract Duration
+                const durMatch = line.match(durationRegex);
+                let hours = 0;
+                if (durMatch) {
+                    const val = parseFloat(durMatch[1]);
+                    const unit = durMatch[3].toLowerCase();
+                    hours = unit === 'm' ? val / 60 : val;
+                }
+
+                // 2. Extract Category
+                const catMatch = line.match(categoryRegex);
+                if (catMatch && hours > 0) {
+                    const cat = catMatch[1].toLowerCase();
+                    if (stats[cat] !== undefined) {
+                        stats[cat] += hours;
+                    }
+                }
+            });
+            
+            // Round all to 1 decimal
+            Object.keys(stats).forEach(k => stats[k] = Math.round(stats[k] * 10) / 10);
+            return stats;
         };
 
         // Core function to extract logs within ANY date range (inclusive)
@@ -515,12 +544,11 @@
             let p = 10;
             const timer = setInterval(() => { p += 5; if(p>90) p=90; setLoading(prev => ({...prev, progress: p})); }, 200);
 
-            // Fixed: Data consistency by using same normalization logic
             const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
             const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
-            const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
-
-            const mapStr = JSON.stringify(categoryMap);
+            
+            // USE JS FOR STATS TO ENSURE CONSISTENCY
+            const jsStats = calculateStatsFromLogs(currentData);
 
             try {
               const genAI = new GoogleGenerativeAI(userApiKey);
@@ -530,30 +558,32 @@
                 Scope: ${scope.toUpperCase()}
                 Targets: ${JSON.stringify(allocations)}
                 
-                **User Category Map (Habits)**: ${mapStr}
+                **Calculated Actual Stats (USE THESE NUMBERS)**: ${JSON.stringify(jsStats)}
                 
-                **Data Set 1 (Current Period)**:
+                **Log Details**:
                 """${currentData}"""
                 
-                **Data Set 2 (Previous Period for Comparison)**:
-                """${prevData}"""
-                
                 Task: 
-                1. Analyze time usage for Current Period.
-                2. Compare with Previous Period.
+                1. Write a summary based on the provided stats.
+                2. Provide insights.
                 3. **SUMMARY Style**: Use OBJECTIVE declarative sentences in Chinese.
-                4. **SLEEP INFERENCE (CRITICAL)**: If there are NO log entries between 01:00 AM and 11:00 AM on any given day in the data, automatically assume the user was asleep during that gap. Calculate Sleep hours accordingly if missing.
                 
                 Output JSON:
                 {
                   "summary": "String (Objective Fact)",
-                  "actual_allocation": { "work": number, "study": number, "rest": number, "sleep": number, "life": number, "entertainment": number, "health": number },
                   "insights": ["Insight 1", "Insight 2"]
                 }
               `;
               const result = await callGeminiWithRetry(model, prompt);
-              const data = parseJSONSafely(result.response.text());
-              setReviewResults(prev => ({ ...prev, [scope]: data }));
+              const aiData = parseJSONSafely(result.response.text());
+              
+              // Merge AI summary with JS stats
+              const finalData = {
+                  ...aiData,
+                  actual_allocation: jsStats
+              };
+              
+              setReviewResults(prev => ({ ...prev, [scope]: finalData }));
               showToast(`${scope}复盘已更新`);
             } catch (e) { showToast('分析失败', 'error'); } 
             finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '', scope: '' }); }
@@ -570,28 +600,40 @@
               const genAI = new GoogleGenerativeAI(userApiKey);
               const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
 
+              const currentHour = new Date().getHours();
+              const isLate = currentHour >= 21;
+              const isBadState = ['tired', 'pain'].includes(userState.physical) || ['anxious', 'scattered'].includes(userState.mental);
+              const userWantsWork = /工作|学习|忙|work|study/i.test(planInput);
+
+              let strategyMode = "Normal";
+              if (isLate && !userWantsWork) strategyMode = "Rest_Priority";
+              if (isBadState) strategyMode = "Rest_Priority";
+
               const prompt = `
                 Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}
                 User Bio: ${JSON.stringify(bioState)}
                 User State: ${JSON.stringify(userState)}
-                User Special Task Request: "${planInput}"
+                User Request: "${planInput}"
+                Strategy Mode: ${strategyMode}
                 Targets: ${JSON.stringify(allocations)}
                 Language: Chinese (Mandarin)
                 
                 CRITICAL RULES:
-                1. **Special Task Duration = PURE FOCUS TIME**: 
-                   - Interpret user's input duration (e.g., "1 hour") as **PURE FOCUS**.
-                   - **ADD BREAKS** on top of this time.
-                2. **Pomodoro Split**:
+                1. **Mode Enforcement**: 
+                   - If Mode is "Rest_Priority": DO NOT schedule deep work/study unless explicitly requested. Fill with light reading, relaxation, sleep prep.
+                   - If Mode is "Normal": Prioritize unfinished allocation targets.
+                2. **Special Task Duration**: 
+                   - Treat input duration (e.g. "1h") as **PURE FOCUS**. 
+                   - Add breaks. 
+                3. **Pomodoro Split**:
                    - For ALL Work/Study blocks, generate "sub_blocks".
                    - Pattern: Focus (25m) -> Break (5m).
-                   - Insert "15-20min Long Break" after 4 consecutive Focus cycles.
-                3. **Sleep Boundary**: Plan strictly ends at ${bioState.sleepTime}.
-                4. **Bio-Check**: 
+                   - Insert "15-20min Long Break" after 4 cycles.
+                4. **Sleep Boundary**: Plan strictly ends at ${bioState.sleepTime}.
+                5. **Bio-Check**: 
                    - If washedMorning=false, MUST insert "Morning Routine". 
-                   - If hadBreakfast/Lunch/Dinner=false and time is appropriate, MUST insert Meal block.
-                5. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions.
-                6. **Health**: Schedule specific health/workout block based on 'health' target if time permits.
+                   - If hadBreakfast/Lunch/Dinner=false and time is appropriate, MUST insert Meal.
+                6. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions.
                 
                 Output JSON:
                 {
@@ -681,7 +723,6 @@
                 <div className="flex justify-between items-center mb-4">
                    <h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Database className="w-6 h-6 text-slate-400"/> 数据源</h2>
                    
-                   {/* Data Range Display */}
                    {fullHistory && (
                         <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
                             范围: {calculateDateRangeDisplay(fullHistory) || "暂无日期"}
@@ -734,6 +775,12 @@
                             <Save className="w-5 h-5"/> 确认归档并记忆
                         </button>
                     </div>
+                )}
+                {parsedItems.length === 0 && rawLinesBuffer.length > 0 && (
+                     <div className="mt-4 p-4 bg-emerald-50 rounded-2xl text-emerald-600 text-center font-bold text-sm">
+                         所有条目均已自动匹配历史习惯，点击下方确认归档
+                         <button onClick={handleConfirmArchive} className="mt-2 w-full py-3 bg-emerald-500 text-white rounded-xl">直接归档</button>
+                     </div>
                 )}
               </div>
             </div>
@@ -962,7 +1009,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.8.1</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.8.3</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
