@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.4</title>
+    <title>LifeOS Pro - Macaron v2.6</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,7 +115,7 @@
           Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw, Eye, EyeOff, Key,
           Hourglass, Bath, UtensilsCrossed, FileText, Percent, UserCheck, MessageSquarePlus,
           Sun, MoonStar, User, ArrowLeftRight, FileJson, RotateCcw, PenTool, Check, CheckSquare,
-          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble
+          ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle
         } from 'https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0';
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -150,12 +150,18 @@
         const getTodayDate = () => formatDate(new Date());
         const getCurrentTimeStr = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
         
+        // BUG FIX: Ensure dates start at 00:00:00 to match parsed log dates (which are date-only)
         const getMonday = (d) => {
           d = new Date(d);
+          d.setHours(0,0,0,0);
           var day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
           return new Date(d.setDate(diff));
         };
-        const getStartOfMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); };
+        const getStartOfMonth = () => { 
+            const d = new Date(); 
+            d.setHours(0,0,0,0);
+            return new Date(d.getFullYear(), d.getMonth(), 1); 
+        };
 
         const getHistoryContext = (fullHistory, scope) => {
             if (!fullHistory) return "";
@@ -163,16 +169,17 @@
             let startDate = new Date('2000-01-01');
             let endDate = new Date('2099-12-31');
             const today = new Date();
+            today.setHours(23, 59, 59, 999); // End of today
 
             if (scope === 'today') {
                 startDate = new Date(getTodayDate());
-                endDate = new Date(getTodayDate() + 'T23:59:59');
+                endDate = today;
             } else if (scope === 'yesterday') {
                 const y = new Date(); y.setDate(y.getDate() - 1);
                 startDate = new Date(formatDate(y));
                 endDate = new Date(formatDate(y) + 'T23:59:59');
             } else if (scope === 'weekly') {
-                startDate = getMonday(today);
+                startDate = getMonday(new Date()); // Ensure fresh date for calc
                 endDate = today;
             } else if (scope === 'monthly') {
                 startDate = getStartOfMonth();
@@ -186,7 +193,7 @@
             for (let line of lines) {
                 const match = line.match(dateRegex);
                 if (match) {
-                    const lineDate = new Date(match[1]);
+                    const lineDate = new Date(match[1]); // This defaults to 00:00:00 local/UTC depending on browser impl, usually local 00:00
                     if (lineDate >= startDate && lineDate <= endDate) {
                         isKeeping = true; filteredLines.push(line);
                     } else { isKeeping = false; }
@@ -199,9 +206,7 @@
             const now = new Date();
             if (scope === 'today' || scope === 'yesterday') return 1;
             if (scope === 'weekly') {
-                // Monday = 1, Sunday = 7
-                let day = now.getDay(); 
-                if (day === 0) day = 7;
+                let day = now.getDay(); if (day === 0) day = 7;
                 return day;
             }
             if (scope === 'monthly') {
@@ -246,7 +251,8 @@
             { id: 'rest', label: '休息', color: 'bg-macaron-pink', text: 'text-pink-700' },
             { id: 'sleep', label: '睡眠', color: 'bg-macaron-purple', text: 'text-purple-700' },
             { id: 'life', label: '生活', color: 'bg-macaron-orange', text: 'text-orange-700' },
-            { id: 'entertainment', label: '娱乐', color: 'bg-macaron-yellow', text: 'text-yellow-700' }
+            { id: 'entertainment', label: '娱乐', color: 'bg-macaron-yellow', text: 'text-yellow-700' },
+            { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-500' } // Added Trash
         ];
 
         // --- Components ---
@@ -360,8 +366,6 @@
              const lines = text.split('\n');
              const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
              
-             // Advanced Cleaner: Remove ISO Timestamps, dividers, emoji, brackets
-             // New rule: ignore emoji range and pipe symbols to merge "👀无意识信息流" and "无意识信息流"
              const descCleaner = (str) => str
                 .replace(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2})?)|(\d{4}-\d{1,2}-\d{1,2})/g, '') // dates
                 .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '') // emoji
@@ -416,12 +420,18 @@
               parsedItems.forEach(item => { if (item.desc) newMap[item.desc] = item.category; });
 
               let minDate = rawLinesBuffer[0].date, maxDate = rawLinesBuffer[0].date;
-              const finalLines = rawLinesBuffer.map(item => {
+              const finalLines = [];
+              
+              rawLinesBuffer.forEach(item => {
                   const finalCategory = newMap[item.desc] || item.category;
+                  
+                  // Trash Logic: Skip items marked as trash
+                  if (finalCategory === 'trash') return;
+
                   const prefix = `[${finalCategory.toUpperCase()}]`; 
                   if (item.date < minDate) minDate = item.date;
                   if (item.date > maxDate) maxDate = item.date;
-                  return `${prefix} ${item.original}`;
+                  finalLines.push(`${prefix} ${item.original}`);
               });
 
               setCategoryMap(newMap);
@@ -429,8 +439,12 @@
               setParsedItems([]);
               setRawLinesBuffer([]);
               setTempInput('');
-              setArchivedRange(`${minDate} ~ ${maxDate}`);
-              showToast('归档成功！记忆已更新');
+              if (finalLines.length > 0) {
+                  setArchivedRange(`${minDate} ~ ${maxDate}`);
+                  showToast('归档成功！记忆已更新');
+              } else {
+                  showToast('归档完成（所有条目均已作废）');
+              }
           };
           
           const handleOrganizeData = async () => {
@@ -508,6 +522,9 @@
               const genAI = new GoogleGenerativeAI(userApiKey);
               const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
 
+              const isPain = ['back_pain', 'stomach_pain'].includes(userState.physical);
+              const isNegativeState = isPain || ['tired'].includes(userState.physical) || ['anxious', 'scattered'].includes(userState.mental);
+
               const prompt = `
                 Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}
                 User Bio: ${JSON.stringify(bioState)}
@@ -517,22 +534,38 @@
                 Language: Chinese (Mandarin)
                 
                 CRITICAL RULES:
-                1. **Special Task Duration**: Treat user input "1h" or "2h" as TOTAL block time (including breaks). 
-                   - E.g. "Work 1h" -> 2 cycles of (25m Focus + 5m Break) = 60m. 
-                   - Do NOT add extra time on top of the user's request.
-                2. **Pomodoro & Grouping**: 
-                   - For ALL Work/Study blocks, aggregate cycles. Description: "**Focus 25m + Rest 5m (xN)**".
-                   - Insert **"15-20min Long Break"** after every 4 cycles.
+                1. **Special Task Duration = PURE FOCUS TIME**: 
+                   - Interpret user's input duration (e.g., "1 hour") as the sum of FOCUS periods only.
+                   - REST periods are ADDED on top.
+                   - Example: "Read for 1h" -> 
+                     * Focus 25m -> Break 5m
+                     * Focus 25m -> Break 5m
+                     * Focus 10m
+                     * Total Time Span = 70 mins.
+                   - Do NOT compress breaks into the 1h. The block ends when focus time sums to 1h.
+                2. **Pomodoro Split**:
+                   - For ALL Work/Study blocks, generate "sub_blocks".
+                   - Pattern: Focus (25m) -> Break (5m).
+                   - Insert "15-20min Long Break" after 4 consecutive Focus cycles.
                 3. **Sleep Boundary**: Plan strictly ends at ${bioState.sleepTime}.
-                4. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions.
-                5. **Smart Rest**: Recommend "NSDR", "Meditation", etc. for rest blocks.
+                4. **Bio-Check**: 
+                   - If washedMorning=false, MUST insert "Morning Routine". 
+                   - If hadBreakfast/Lunch/Dinner=false and time is appropriate, MUST insert Meal block.
+                5. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions.
                 
                 Output JSON:
                 {
                   "theme_title": "String",
                   "advice": "String",
                   "blocks": [
-                    { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment", "title": "String", "desc": "String (Include Pomodoro logic)", "energy_required": "high|low" }
+                    { 
+                      "time": "HH:MM - HH:MM", 
+                      "category": "work|study|rest|sleep|life|entertainment", 
+                      "title": "String", 
+                      "desc": "String", 
+                      "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Rest", "detail": "String" } ],
+                      "energy_required": "high|low" 
+                    }
                   ]
                 }
               `;
@@ -629,10 +662,13 @@
                         <h3 className="text-base font-bold text-macaron-dark mb-3 flex items-center gap-2"><PenTool className="w-4 h-4"/> 归类校对 <span className="text-xs font-normal text-slate-400">(自动隐藏已记忆条目)</span></h3>
                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                             {parsedItems.map(item => (
-                                <div key={item.id} className="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <div className="text-xs text-slate-400 mb-1 font-mono">{item.date}</div>
-                                    <div className="text-sm font-medium text-slate-700 mb-2 truncate">{item.original}</div>
-                                    <div className="flex gap-2 overflow-x-auto pb-1">
+                                <div key={item.id} className={`flex flex-col p-3 rounded-xl border transition-all ${item.category === 'trash' ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-slate-50 border-slate-100'}`}>
+                                    <div className="flex justify-between">
+                                        <div className="text-xs text-slate-400 mb-1 font-mono">{item.date}</div>
+                                        {item.category === 'trash' && <XCircle className="w-4 h-4 text-slate-400"/>}
+                                    </div>
+                                    <div className={`text-sm font-medium mb-2 truncate ${item.category === 'trash' ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{item.original}</div>
+                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                                         {CATEGORIES.map(cat => (
                                             <button 
                                                 key={cat.id}
@@ -728,7 +764,6 @@
                     )}
 
                     <div className="space-y-2">
-                      {/* Pass calculated target based on multiplier */}
                       <MacaronProgressBar label="工作" target={allocations.work * multiplier} actual={data.actual_allocation?.work || 0} colorBg="bg-indigo-50" colorBar="bg-macaron-blue" />
                       <MacaronProgressBar label="学习" target={allocations.study * multiplier} actual={data.actual_allocation?.study || 0} colorBg="bg-teal-50" colorBar="bg-macaron-green" />
                       <MacaronProgressBar label="休息" target={allocations.rest * multiplier} actual={data.actual_allocation?.rest || 0} colorBg="bg-pink-50" colorBar="bg-macaron-pink" />
@@ -855,6 +890,20 @@
                                      </div>
                                      <h4 className="font-bold text-slate-800 text-xl mb-1">{b.title}</h4>
                                      <p className="text-base text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">{b.desc}</p>
+                                     
+                                     {/* Render Sub Blocks (Pomodoro Timeline) */}
+                                     {b.sub_blocks && b.sub_blocks.length > 0 && (
+                                         <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-3">
+                                             {b.sub_blocks.map((sb, sbi) => (
+                                                 <div key={sbi} className="flex gap-3 items-center">
+                                                     <div className="font-mono text-xs text-slate-400 w-20 text-right shrink-0">{sb.time}</div>
+                                                     <div className={`w-2 h-2 rounded-full shrink-0 ${sb.label.includes('Focus') ? 'bg-macaron-blue' : 'bg-macaron-green'}`}></div>
+                                                     <div className="text-sm font-medium text-slate-600">{sb.detail || sb.label}</div>
+                                                 </div>
+                                             ))}
+                                         </div>
+                                     )}
+
                                      {b.energy_required==='high' && <div className="mt-3 text-sm text-rose-400 flex items-center gap-1 font-bold"><Zap className="w-4 h-4"/> 高能时刻</div>}
                                  </div>
                              )
@@ -883,7 +932,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.4</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.6</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
