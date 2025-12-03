@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v2.8.3</title>
+    <title>LifeOS Pro - Macaron v2.9.3</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,7 +116,7 @@
           Hourglass, Bath, UtensilsCrossed, FileText, Percent, UserCheck, MessageSquarePlus,
           Sun, MoonStar, User, ArrowLeftRight, FileJson, RotateCcw, PenTool, Check, CheckSquare,
           ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, BedDouble, XCircle, TrendingUp as IconTrendingUp,
-          Ban
+          Ban, Book, Pencil
         } from 'https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0';
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -151,7 +151,6 @@
         const getTodayDate = () => formatDate(new Date());
         const getCurrentTimeStr = () => new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
         
-        // Strict Date Helpers (Normalized to 00:00:00)
         const normalizeDate = (d) => {
             const newDate = new Date(d);
             newDate.setHours(0, 0, 0, 0);
@@ -161,95 +160,78 @@
         const getMonday = (d) => {
           const date = normalizeDate(d);
           const day = date.getDay();
-          const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+          const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
           return new Date(date.setDate(diff));
         };
         
         const getStartOfMonth = () => { 
             const d = new Date(); 
             d.setHours(0,0,0,0);
-            d.setDate(1); // Force 1st day
+            d.setDate(1); 
             return d;
         };
 
         const getTargetMultiplier = (scope) => {
             const now = new Date();
             const normalizedNow = normalizeDate(now);
-            
             if (scope === 'today' || scope === 'yesterday') return 1;
-            
             if (scope === 'weekly') {
-                // Monday = 1, Sunday = 7
-                let day = normalizedNow.getDay(); 
-                if (day === 0) day = 7;
-                return day; 
+                let day = normalizedNow.getDay(); if (day === 0) day = 7; return day; 
             }
-            
-            if (scope === 'monthly') {
-                return normalizedNow.getDate(); 
-            }
+            if (scope === 'monthly') { return normalizedNow.getDate(); }
             return 1;
         };
 
-        // NEW: Date Range Calculator for Display
         const calculateDateRangeDisplay = (historyText) => {
             if (!historyText) return null;
             const matches = historyText.match(/\d{4}-\d{1,2}-\d{1,2}/g);
             if (!matches || matches.length === 0) return null;
-            
             const dates = matches.map(d => new Date(d).getTime()).sort((a,b) => a-b);
             const start = new Date(dates[0]);
             const end = new Date(dates[dates.length - 1]);
-            
             const fmt = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-            return `${fmt(start)} 00:00 - ${fmt(end)} 23:59`;
+            return `${fmt(start)} - ${fmt(end)}`;
         };
 
-        // NEW: JS-based Stat Calculation Engine (Replaces AI guessing)
         const calculateStatsFromLogs = (logText) => {
             const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0 };
             if (!logText) return stats;
-
             const lines = logText.split('\n');
-            const durationRegex = /(\d+(\.\d+)?)(h|m)/i; 
+            const durationRegex = /(\d+(\.\d+)?)\s*(h|m|min|hour)/i; 
+            const isoTimeRegex = /(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)\s*(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)/;
             const categoryRegex = /\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH)\]/i;
-
             lines.forEach(line => {
-                // 1. Extract Duration
-                const durMatch = line.match(durationRegex);
                 let hours = 0;
-                if (durMatch) {
-                    const val = parseFloat(durMatch[1]);
-                    const unit = durMatch[3].toLowerCase();
-                    hours = unit === 'm' ? val / 60 : val;
+                const isoMatch = line.match(isoTimeRegex);
+                if (isoMatch) {
+                    const start = new Date(isoMatch[1]).getTime();
+                    const end = new Date(isoMatch[2]).getTime();
+                    if (!isNaN(start) && !isNaN(end) && end > start) hours = (end - start) / (1000 * 60 * 60);
+                } else {
+                    const durMatch = line.match(durationRegex);
+                    if (durMatch) {
+                        const val = parseFloat(durMatch[1]);
+                        const unit = durMatch[3].toLowerCase();
+                        hours = unit.startsWith('m') ? val / 60 : val;
+                    }
                 }
-
-                // 2. Extract Category
                 const catMatch = line.match(categoryRegex);
                 if (catMatch && hours > 0) {
                     const cat = catMatch[1].toLowerCase();
-                    if (stats[cat] !== undefined) {
-                        stats[cat] += hours;
-                    }
+                    if (stats[cat] !== undefined) stats[cat] += hours;
                 }
             });
-            
-            // Round all to 1 decimal
             Object.keys(stats).forEach(k => stats[k] = Math.round(stats[k] * 10) / 10);
             return stats;
         };
 
-        // Core function to extract logs within ANY date range (inclusive)
         const getLogsInDateRange = (fullHistory, startDate, endDate) => {
             if (!fullHistory) return "";
             const lines = fullHistory.split('\n');
             const filteredLines = [];
             const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
-            
-            // Normalize boundaries to timestamps for strict comparison
             const s = normalizeDate(startDate).getTime();
             const e = normalizeDate(endDate).getTime();
-
             for (let line of lines) {
                 const match = line.match(dateRegex);
                 if (match) {
@@ -257,14 +239,23 @@
                     if (d >= s && d <= e) filteredLines.push(line);
                 }
             }
-            return filteredLines.join('\n').slice(0, 50000);
+            return filteredLines.join('\n');
+        };
+
+        const getDiaryEntriesInDateRange = (diaryEntries, startDate, endDate) => {
+            if (!diaryEntries || diaryEntries.length === 0) return "";
+            const s = normalizeDate(startDate).getTime();
+            const e = normalizeDate(endDate).getTime();
+            return diaryEntries.filter(entry => {
+                const d = normalizeDate(entry.date).getTime();
+                return d >= s && d <= e;
+            }).map(entry => `[DIARY] ${entry.date}: ${entry.content}`).join('\n');
         };
 
         const getDateRangesForScope = (scope) => {
             const today = normalizeDate(new Date());
             let currentStart, currentEnd = today;
             let prevStart, prevEnd;
-
             if (scope === 'today') {
                 currentStart = today;
                 prevStart = new Date(today); prevStart.setDate(prevStart.getDate() - 1);
@@ -317,7 +308,7 @@
             { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-400' } 
         ];
 
-        // --- Components ---
+        // --- UI Components ---
         const AllocationSlider = ({ label, value, onChange, colorBg, icon: Icon }) => (
           <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm mb-3">
             <div className="flex justify-between items-center mb-2">
@@ -343,7 +334,6 @@
             const maxVal = Math.max(target, actual, 1);
             const actualPct = (actual / maxVal) * 100;
             const targetPct = (target / maxVal) * 100;
-
             return (
                 <div className="mb-6">
                     <div className="flex justify-between items-end mb-2 px-1">
@@ -368,6 +358,16 @@
             );
         };
 
+        // NavBtn Component (Moved Outside)
+        const NavBtn = ({ page, icon: Icon, label, groupColor, activeColor, activePage, setActivePage, loading }) => (
+            <button onClick={() => setActivePage(page)} className={`flex-1 py-2 flex flex-col items-center gap-1 transition-all duration-300 ${activePage === page ? 'text-slate-800 -translate-y-2' : 'text-slate-400 hover:text-slate-600'}`}>
+                <div className={`p-3 rounded-2xl transition-all ${activePage === page ? activeColor : groupColor} shadow-sm`}>
+                    {loading.state && loading.taskType === page ? <Loader2 className="w-6 h-6 animate-spin"/> : <Icon className={`w-6 h-6 ${activePage === page ? 'text-purple-900' : 'text-slate-400'}`}/>}
+                </div>
+                <span className="text-xs font-bold">{label}</span>
+            </button>
+        );
+
         // --- Main App ---
         function App() {
           const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem('lifeos_pro_key') || '');
@@ -387,7 +387,17 @@
               return saved ? JSON.parse(saved) : {};
           });
           
-          // Persistence for Review & Plan (New)
+          const [archivedRange, setArchivedRange] = useState(null);
+
+          // Diary State
+          const [diaryEntries, setDiaryEntries] = useState(() => {
+             const saved = localStorage.getItem('lifeos_pro_diary_v1');
+             return saved ? JSON.parse(saved) : [];
+          });
+          const [diaryInput, setDiaryInput] = useState({ date: getTodayDate(), content: '' });
+          const [showDiaryModal, setShowDiaryModal] = useState(false);
+          const [editingId, setEditingId] = useState(null); 
+          
           const [reviewResults, setReviewResults] = useState(() => {
               const saved = localStorage.getItem('lifeos_pro_reviews');
               return saved ? JSON.parse(saved) : { today: null, yesterday: null, weekly: null, monthly: null };
@@ -427,8 +437,7 @@
           useEffect(() => { localStorage.setItem('lifeos_pro_history_v2', fullHistory); }, [fullHistory]);
           useEffect(() => { localStorage.setItem('lifeos_pro_bio_v2', JSON.stringify(bioState)); }, [bioState]);
           useEffect(() => { localStorage.setItem('lifeos_pro_category_map', JSON.stringify(categoryMap)); }, [categoryMap]);
-          
-          // New Persistence
+          useEffect(() => { localStorage.setItem('lifeos_pro_diary_v1', JSON.stringify(diaryEntries)); }, [diaryEntries]);
           useEffect(() => { localStorage.setItem('lifeos_pro_reviews', JSON.stringify(reviewResults)); }, [reviewResults]);
           useEffect(() => { localStorage.setItem('lifeos_pro_plan', JSON.stringify(todayPlan)); }, [todayPlan]);
 
@@ -436,16 +445,39 @@
           const toggleBio = (key) => setBioState(prev => ({ ...prev, [key]: !prev[key] }));
 
           // --- Logic ---
+          
+          const saveDiaryEntry = () => {
+              if (!diaryInput.content.trim()) return showToast("请填写内容", "error");
+              if (editingId) {
+                  setDiaryEntries(prev => prev.map(e => e.id === editingId ? { ...e, ...diaryInput } : e).sort((a,b) => new Date(b.date) - new Date(a.date)));
+                  setEditingId(null);
+                  showToast("日记已更新");
+              } else {
+                  const newEntry = { ...diaryInput, id: Date.now() };
+                  setDiaryEntries(prev => [newEntry, ...prev].sort((a,b) => new Date(b.date) - new Date(a.date)));
+                  showToast("日记已保存");
+              }
+              setDiaryInput({ date: getTodayDate(), content: '' });
+              setShowDiaryModal(false);
+          };
+
+          const deleteDiaryEntry = (id) => {
+              if(confirm('确定要删除这篇日记吗？')) {
+                  setDiaryEntries(prev => prev.filter(e => e.id !== id));
+                  showToast("日记已删除");
+              }
+          };
+
+          const startEditDiary = (entry) => {
+              setDiaryInput({ date: entry.date, content: entry.content });
+              setEditingId(entry.id);
+              setShowDiaryModal(true);
+          };
 
           const parseRawInput = (text) => {
              const lines = text.split('\n');
              const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/;
-             
-             const descCleaner = (str) => str
-                .replace(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\+\d{2}:\d{2})?)|(\d{4}-\d{1,2}-\d{1,2})/g, '') 
-                .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '') 
-                .replace(/[｜|\[\]\(\)\【\】]/g, '') 
-                .trim();
+             const descCleaner = (str) => str.replace(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)|(\d{4}-\d{1,2}-\d{1,2})|[\p{Emoji_Presentation}\p{Extended_Pictographic}]|[｜|[\]()【】]/gu, '').trim();
 
              const allItems = [];
              const uniqueReviewMap = new Map();
@@ -461,10 +493,10 @@
                      cat = categoryMap[cleanDesc];
                  } else {
                      if (line.includes('工作') || line.includes('会议') || line.includes('work')) cat = 'work';
-                     else if (line.includes('学习') || line.includes('study') || line.includes('阅读')) cat = 'study';
+                     else if (line.includes('学习') || line.includes('study')) cat = 'study';
                      else if (line.includes('睡觉') || line.includes('sleep')) cat = 'sleep';
                      else if (line.includes('休息') || line.includes('rest')) cat = 'rest';
-                     else if (line.includes('健身') || line.includes('运动') || line.includes('跑步') || line.includes('gym') || line.includes('workout') || line.includes('瑜伽')) cat = 'health'; 
+                     else if (line.includes('健身') || line.includes('运动') || line.includes('gym')) cat = 'health'; 
                      else if (line.includes('游戏') || line.includes('娱乐')) cat = 'entertainment';
                  }
 
@@ -492,31 +524,28 @@
           const handleConfirmArchive = () => {
               if (rawLinesBuffer.length === 0) return;
               const newMap = { ...categoryMap };
+              parsedItems.forEach(item => { if (item.desc && item.category !== 'trash') newMap[item.desc] = item.category; });
               
-              parsedItems.forEach(item => { 
-                  if (item.desc && item.category !== 'trash') {
-                      newMap[item.desc] = item.category; 
-                  }
-              });
-
               const finalLines = [];
+              let minDate = rawLinesBuffer[0].date, maxDate = rawLinesBuffer[0].date;
               
               rawLinesBuffer.forEach(item => {
                   const finalCategory = newMap[item.desc] || item.category;
                   if (finalCategory === 'trash') return;
-
                   const prefix = `[${finalCategory.toUpperCase()}]`; 
+                  if (item.date < minDate) minDate = item.date;
+                  if (item.date > maxDate) maxDate = item.date;
                   finalLines.push(`${prefix} ${item.original}`);
               });
 
               setCategoryMap(newMap);
               if (finalLines.length > 0) {
                   setFullHistory(prev => (prev ? prev + "\n" + finalLines.join('\n') : finalLines.join('\n')));
+                  setArchivedRange(`${minDate} ~ ${maxDate}`);
                   showToast(`成功归档 ${finalLines.length} 条记录`);
               } else {
-                  showToast('所有条目均已作废，无数据写入');
+                  showToast('所有条目均已作废');
               }
-
               setParsedItems([]);
               setRawLinesBuffer([]);
               setTempInput('');
@@ -528,7 +557,7 @@
             setIsOrganizing(true);
             try {
               const genAI = new GoogleGenerativeAI(userApiKey);
-              const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
+              const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
               const prompt = `Task: Format logs to: YYYY-MM-DD: [Time Range] Task (Duration).\nInput: "${tempInput}"\nInfer missing info.`;
               const result = await callGeminiWithRetry(model, prompt);
               setTempInput(result.response.text());
@@ -546,8 +575,9 @@
 
             const { currentStart, currentEnd, prevStart, prevEnd } = getDateRangesForScope(scope);
             const currentData = getLogsInDateRange(fullHistory, currentStart, currentEnd);
+            const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
+            const currentDiary = getDiaryEntriesInDateRange(diaryEntries, currentStart, currentEnd);
             
-            // USE JS FOR STATS TO ENSURE CONSISTENCY
             const jsStats = calculateStatsFromLogs(currentData);
 
             try {
@@ -557,16 +587,22 @@
                 Role: Caring Life Analyst.
                 Scope: ${scope.toUpperCase()}
                 Targets: ${JSON.stringify(allocations)}
-                
-                **Calculated Actual Stats (USE THESE NUMBERS)**: ${JSON.stringify(jsStats)}
+                **Calculated Stats**: ${JSON.stringify(jsStats)}
                 
                 **Log Details**:
                 """${currentData}"""
                 
+                **User Diary**:
+                """${currentDiary}"""
+                
+                **Previous Data**:
+                """${prevData}"""
+                
                 Task: 
-                1. Write a summary based on the provided stats.
-                2. Provide insights.
+                1. Analyze time usage.
+                2. Compare with Previous Period.
                 3. **SUMMARY Style**: Use OBJECTIVE declarative sentences in Chinese.
+                4. **SLEEP INFERENCE (IMPORTANT)**: For any day in the date range, if there are NO log entries at all between 01:00 AM and 10:00 AM, assume this period was SLEEP. Mention this inference in insights if relevant.
                 
                 Output JSON:
                 {
@@ -576,13 +612,7 @@
               `;
               const result = await callGeminiWithRetry(model, prompt);
               const aiData = parseJSONSafely(result.response.text());
-              
-              // Merge AI summary with JS stats
-              const finalData = {
-                  ...aiData,
-                  actual_allocation: jsStats
-              };
-              
+              const finalData = { ...aiData, actual_allocation: jsStats };
               setReviewResults(prev => ({ ...prev, [scope]: finalData }));
               showToast(`${scope}复盘已更新`);
             } catch (e) { showToast('分析失败', 'error'); } 
@@ -600,40 +630,22 @@
               const genAI = new GoogleGenerativeAI(userApiKey);
               const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
 
-              const currentHour = new Date().getHours();
-              const isLate = currentHour >= 21;
-              const isBadState = ['tired', 'pain'].includes(userState.physical) || ['anxious', 'scattered'].includes(userState.mental);
-              const userWantsWork = /工作|学习|忙|work|study/i.test(planInput);
-
-              let strategyMode = "Normal";
-              if (isLate && !userWantsWork) strategyMode = "Rest_Priority";
-              if (isBadState) strategyMode = "Rest_Priority";
-
               const prompt = `
                 Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}
                 User Bio: ${JSON.stringify(bioState)}
                 User State: ${JSON.stringify(userState)}
                 User Request: "${planInput}"
-                Strategy Mode: ${strategyMode}
                 Targets: ${JSON.stringify(allocations)}
                 Language: Chinese (Mandarin)
                 
                 CRITICAL RULES:
-                1. **Mode Enforcement**: 
-                   - If Mode is "Rest_Priority": DO NOT schedule deep work/study unless explicitly requested. Fill with light reading, relaxation, sleep prep.
-                   - If Mode is "Normal": Prioritize unfinished allocation targets.
-                2. **Special Task Duration**: 
-                   - Treat input duration (e.g. "1h") as **PURE FOCUS**. 
-                   - Add breaks. 
-                3. **Pomodoro Split**:
-                   - For ALL Work/Study blocks, generate "sub_blocks".
-                   - Pattern: Focus (25m) -> Break (5m).
-                   - Insert "15-20min Long Break" after 4 cycles.
-                4. **Sleep Boundary**: Plan strictly ends at ${bioState.sleepTime}.
-                5. **Bio-Check**: 
-                   - If washedMorning=false, MUST insert "Morning Routine". 
-                   - If hadBreakfast/Lunch/Dinner=false and time is appropriate, MUST insert Meal.
-                6. **Pain Management**: If 'back_pain'/'stomach_pain', insert specific relief actions.
+                1. **Bio-Rhythm**: Schedule difficult/high-energy tasks during user's peak alert times.
+                2. **Exercise**: If scheduling exercise, ensure it is at least 1 hour after any Meal.
+                3. **Special Task Duration**: Pure focus time. Add breaks on top.
+                4. **Pomodoro**: For Work/Study, split into 25m Focus + 5m Break. Insert 15-20m Long Break after 4 cycles.
+                5. **Sleep Boundary**: End planning at ${bioState.sleepTime}.
+                6. **Bio-Check**: If washedMorning=false, insert "Morning Routine". If no food, insert Meal.
+                7. **Pain**: If back/stomach pain, insert relief actions.
                 
                 Output JSON:
                 {
@@ -720,20 +732,27 @@
               </div>
 
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative">
-                <div className="flex justify-between items-center mb-4">
-                   <h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Database className="w-6 h-6 text-slate-400"/> 数据源</h2>
+                
+                {/* Updated Layout for Data Source Header */}
+                <div className="flex flex-col gap-3 mb-4">
+                   <div className="flex justify-between items-start">
+                       <h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2">
+                           <Database className="w-6 h-6 text-slate-400"/> 数据源
+                       </h2>
+                       <div className="flex gap-2">
+                           <button onClick={()=>parseRawInput(tempInput)} className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">识别条目</button>
+                           <button onClick={handleOrganizeData} disabled={isOrganizing} className="text-xs font-bold bg-macaron-purple text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-200 transition-colors flex items-center gap-1">
+                             {isOrganizing ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} AI 整理
+                           </button>
+                       </div>
+                   </div>
                    
-                   {fullHistory && (
-                        <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
-                            范围: {calculateDateRangeDisplay(fullHistory) || "暂无日期"}
-                        </div>
-                   )}
-
-                   <div className="flex gap-2">
-                       <button onClick={()=>parseRawInput(tempInput)} className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">识别条目</button>
-                       <button onClick={handleOrganizeData} disabled={isOrganizing} className="text-xs font-bold bg-macaron-purple text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-200 transition-colors flex items-center gap-1">
-                         {isOrganizing ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} AI 整理
-                       </button>
+                   {/* Dedicated Range Display Row */}
+                   <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 font-medium">
+                        已有数据源时间范围：
+                        <span className="font-bold text-slate-700 ml-1 block mt-1">
+                            {fullHistory ? (calculateDateRangeDisplay(fullHistory) || "暂无日期") : "暂无数据"}
+                        </span>
                    </div>
                 </div>
                 
@@ -786,6 +805,66 @@
             </div>
           );
 
+          const renderDiaryPage = () => (
+              <div className="space-y-6 animate-in pb-28">
+                  <div className="flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2">
+                          <Book className="w-6 h-6 text-macaron-pink"/> 每日日记
+                      </h2>
+                      <button onClick={() => { setEditingId(null); setDiaryInput({ date: getTodayDate(), content: '' }); setShowDiaryModal(true); }} className="bg-macaron-pink text-pink-800 px-4 py-2 rounded-xl font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1">
+                          <Plus className="w-4 h-4"/> 写一篇
+                      </button>
+                  </div>
+
+                  {showDiaryModal && (
+                      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
+                          <div className="bg-white w-full max-w-md p-6 rounded-[2rem] shadow-2xl">
+                              <h3 className="font-bold text-lg mb-4">{editingId ? '编辑日记 ✏️' : '记录今天的成就 ✨'}</h3>
+                              <input 
+                                  type="date" 
+                                  value={diaryInput.date} 
+                                  onChange={(e) => setDiaryInput({...diaryInput, date: e.target.value})}
+                                  className="w-full bg-slate-50 p-3 rounded-xl mb-3 outline-none font-bold text-slate-600"
+                              />
+                              <textarea 
+                                  value={diaryInput.content}
+                                  onChange={(e) => setDiaryInput({...diaryInput, content: e.target.value})}
+                                  className="w-full h-32 bg-slate-50 p-4 rounded-xl outline-none resize-none text-slate-600 mb-4"
+                                  placeholder="今天发生了什么开心的事？完成了什么小目标？"
+                              />
+                              <div className="flex gap-2">
+                                  <button onClick={() => setShowDiaryModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">取消</button>
+                                  <button onClick={saveDiaryEntry} className="flex-[2] py-3 bg-macaron-pink text-pink-900 rounded-xl font-bold">保存</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="space-y-4">
+                      {diaryEntries.length === 0 ? (
+                          <div className="text-center py-12 text-slate-400">
+                              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3"><PenTool className="w-8 h-8 text-slate-300"/></div>
+                              <p>暂无日记，快来记录第一笔吧！</p>
+                          </div>
+                      ) : (
+                          diaryEntries.map((entry) => (
+                              <div key={entry.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-50 relative group">
+                                  <div className="flex justify-between items-center mb-2">
+                                      <div className="text-xs font-bold text-macaron-pink">{entry.date}</div>
+                                      <div className="flex gap-2">
+                                          <button onClick={() => startEditDiary(entry)} className="text-slate-300 hover:text-macaron-blue transition-colors"><Pencil className="w-3 h-3"/></button>
+                                          <button onClick={() => deleteDiaryEntry(entry.id)} className="text-slate-300 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3"/></button>
+                                      </div>
+                                  </div>
+                                  <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{entry.content}</p>
+                              </div>
+                          ))
+                      )}
+                  </div>
+              </div>
+          );
+
+          // RE-ADDED: renderReviewPage function definition (This was missing in previous turn causing ReferenceError)
           const renderReviewPage = () => {
             const isLoading = loading.state && loading.taskType === 'review' && loading.scope === reviewScope;
             const data = reviewResults[reviewScope];
@@ -863,7 +942,8 @@
              return (
               <div className="space-y-6 animate-in pb-28">
                 <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                    <h3 className="font-bold text-xl mb-5 text-macaron-dark flex items-center gap-2"><UserCheck className="w-6 h-6 text-macaron-green"/> 生理打卡</h3>
+                    <h3 className="font-bold text-xl mb-1 text-macaron-dark flex items-center gap-2"><UserCheck className="w-6 h-6 text-macaron-green"/> 生理打卡</h3>
+                    <p className="text-xs text-slate-400 font-medium mb-5">✨ 点亮已经做完的事情，未完成的会自动加入计划哦</p>
                     <div className="grid grid-cols-3 gap-3 mb-3">
                         <button onClick={()=>toggleBio('hadBreakfast')} className={btnClass(bioState.hadBreakfast, 'bg-macaron-orange text-orange-900')}><Coffee className="w-6 h-6"/> <span className="text-sm font-bold">早餐</span></button>
                         <button onClick={()=>toggleBio('hadLunch')} className={btnClass(bioState.hadLunch, 'bg-macaron-orange text-orange-900')}><UtensilsCrossed className="w-6 h-6"/> <span className="text-sm font-bold">午餐</span></button>
@@ -873,7 +953,6 @@
                         <button onClick={()=>toggleBio('washedMorning')} className={btnClass(bioState.washedMorning, 'bg-macaron-blue text-blue-900')}><Bath className="w-6 h-6"/> <span className="text-sm font-bold">晨间洗漱</span></button>
                         <button onClick={()=>toggleBio('washedEvening')} className={btnClass(bioState.washedEvening, 'bg-macaron-blue text-blue-900')}><Sparkles className="w-6 h-6"/> <span className="text-sm font-bold">晚间洗漱</span></button>
                     </div>
-                    <p className="text-center text-sm text-slate-400 font-medium bg-slate-50 p-2 rounded-lg">✨ 点亮已经做完的事情，未完成的会自动加入计划哦</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-macaron-cream to-macaron-pink/20 p-6 rounded-[2rem] text-macaron-dark shadow-xl border border-white">
@@ -929,7 +1008,7 @@
           };
 
           const renderPlanPage = () => {
-             if (loading.state && loading.taskType === 'plan') {
+             if (!todayPlan && loading.state && loading.taskType === 'plan') {
                  return (
                      <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
                          <div className="w-24 h-24 rounded-full border-4 border-macaron-cream border-t-macaron-purple animate-spin flex items-center justify-center">
@@ -939,6 +1018,19 @@
                      </div>
                  )
              }
+             
+             if (loading.state && loading.taskType === 'plan') {
+                  // Show overlay when regenerating
+                  return (
+                     <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
+                         <div className="w-24 h-24 rounded-full border-4 border-macaron-cream border-t-macaron-purple animate-spin flex items-center justify-center">
+                            <span className="font-black text-slate-300 text-xl">{loading.progress}%</span>
+                         </div>
+                         <p className="text-slate-400 font-bold animate-pulse text-lg">{loading.text}</p>
+                     </div>
+                  )
+             }
+
              if (!todayPlan) return <div className="flex flex-col items-center justify-center h-[50vh] text-center"><div className="bg-white p-8 rounded-full shadow-sm mb-6"><Layout className="w-16 h-16 text-macaron-blue"/></div><p className="text-slate-400 font-bold text-lg">请先在[状态]页打卡</p><button onClick={()=>setActivePage('status')} className="text-macaron-purple font-bold mt-4 text-base bg-purple-50 px-6 py-2 rounded-full">去打卡</button></div>;
 
              return (
@@ -993,15 +1085,6 @@
              )
           };
 
-          const NavBtn = ({ page, icon: Icon, label }) => (
-            <button onClick={() => setActivePage(page)} className={`flex-1 py-2 flex flex-col items-center gap-1 transition-all duration-300 ${activePage === page ? 'text-slate-800 -translate-y-2' : 'text-slate-400 hover:text-slate-600'}`}>
-                <div className={`p-3 rounded-2xl transition-all ${activePage === page ? 'bg-macaron-purple shadow-lg shadow-purple-200' : 'bg-transparent'}`}>
-                    {loading.state && loading.taskType === page ? <Loader2 className="w-6 h-6 animate-spin"/> : <Icon className={`w-6 h-6 ${activePage === page ? 'text-purple-900' : ''}`}/>}
-                </div>
-                <span className="text-xs font-bold">{label}</span>
-            </button>
-          );
-
           return (
             <div className="min-h-screen font-sans text-slate-800 pb-safe">
               <header className="fixed top-0 inset-x-0 h-24 bg-macaron-cream/90 backdrop-blur-md z-40 flex items-center justify-between px-6 pt-2">
@@ -1009,7 +1092,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.8.3</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v2.9.3</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
@@ -1017,16 +1100,23 @@
 
               <main className="pt-28 px-5 max-w-md mx-auto">
                  {activePage === 'data' && renderDataPage()}
+                 {activePage === 'diary' && renderDiaryPage()}
                  {activePage === 'review' && renderReviewPage()}
                  {activePage === 'status' && renderStatusPage()}
                  {activePage === 'plan' && renderPlanPage()}
               </main>
 
-              <nav className="fixed bottom-8 inset-x-6 max-w-md mx-auto bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-3 shadow-2xl shadow-slate-200/50 z-[100] flex justify-between items-center border border-white/50 ring-1 ring-slate-900/5">
-                <NavBtn page="data" icon={Database} label="记录" />
-                <NavBtn page="review" icon={PieIcon} label="复盘" />
-                <NavBtn page="status" icon={UserCheck} label="状态" />
-                <NavBtn page="plan" icon={CalendarDays} label="计划" />
+              <nav className="fixed bottom-8 inset-x-6 max-w-md mx-auto z-[100] flex gap-3">
+                <div className="flex-1 bg-white/95 backdrop-blur-xl rounded-[2rem] p-2 shadow-2xl shadow-slate-200/50 flex justify-between items-center border border-white/50 ring-1 ring-slate-900/5">
+                    <NavBtn page="data" icon={Database} label="数据源" groupColor="bg-transparent" activeColor="bg-macaron-blue" activePage={activePage} setActivePage={setActivePage} loading={loading} />
+                    <NavBtn page="diary" icon={Book} label="日记" groupColor="bg-transparent" activeColor="bg-macaron-pink" activePage={activePage} setActivePage={setActivePage} loading={loading} />
+                    <NavBtn page="review" icon={PieIcon} label="复盘" groupColor="bg-transparent" activeColor="bg-macaron-purple" activePage={activePage} setActivePage={setActivePage} loading={loading} />
+                </div>
+                
+                <div className="flex-[0.6] bg-slate-800/95 backdrop-blur-xl rounded-[2rem] p-2 shadow-2xl shadow-slate-800/30 flex justify-between items-center border border-slate-700 ring-1 ring-black/10">
+                    <NavBtn page="status" icon={UserCheck} label="状态" groupColor="bg-transparent" activeColor="bg-macaron-yellow text-yellow-900" activePage={activePage} setActivePage={setActivePage} loading={loading} />
+                    <NavBtn page="plan" icon={CalendarDays} label="计划" groupColor="bg-transparent" activeColor="bg-macaron-green text-green-900" activePage={activePage} setActivePage={setActivePage} loading={loading} />
+                </div>
               </nav>
 
               {showKeyInput && (
