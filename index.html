@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LifeOS Pro - Macaron v3.8.3</title>
+    <title>LifeOS Pro - Macaron v3.9.2</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,47 +13,34 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        macaron: {
-                            pink: '#FFC8DD',
-                            blue: '#BDE0FE',
-                            green: '#C1E7E3',
-                            purple: '#E2C2FF',
-                            yellow: '#FFF4BD',
-                            orange: '#FFD6A5',
-                            cream: '#FFF9F5',
-                            text: '#5D576B',
-                            dark: '#4A4556'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['"Quicksand"', '"Noto Sans SC"', 'sans-serif'],
-                        cute: ['"ZCOOL KuaiLe"', 'cursive'],
-                    },
-                    fontSize: {
-                        'xs': '0.85rem',
-                        'sm': '0.95rem',
-                        'base': '1.05rem',
-                        'lg': '1.15rem',
-                        'xl': '1.35rem',
-                        '2xl': '1.65rem',
-                        '3xl': '2.15rem',
-                    },
-                    animation: {
-                        'in': 'fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                        'bounce-slow': 'bounce 3s infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
+        // Safe check for tailwind object
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            macaron: {
+                                pink: '#FFC8DD',
+                                blue: '#BDE0FE',
+                                green: '#C1E7E3',
+                                purple: '#E2C2FF',
+                                yellow: '#FFF4BD',
+                                orange: '#FFD6A5',
+                                rose: '#FFB7B2',
+                                cream: '#FFF9F5',
+                                text: '#5D576B',
+                                dark: '#4A4556'
+                            }
+                        },
+                        fontFamily: {
+                            sans: ['"Quicksand"', '"Noto Sans SC"', 'sans-serif'],
+                            cute: ['"ZCOOL KuaiLe"', 'cursive'],
+                        },
                     }
                 }
             }
+        } else {
+            console.warn('Tailwind CSS script failed to load or is blocked.');
         }
     </script>
     
@@ -85,7 +72,7 @@
           Edit3, Target, ArrowUpRight, ArrowDownRight, PlusCircle, RefreshCcw, Eye, EyeOff, Key, Hourglass, Bath, 
           UtensilsCrossed, FileText, Percent, UserCheck, MessageSquarePlus, Sun, MoonStar, User, ArrowLeftRight, 
           FileJson, RotateCcw, PenTool, Check, CheckSquare, ThermometerSnowflake, Pill, Stethoscope, AlertTriangle, 
-          BedDouble, XCircle, TrendingUp as IconTrendingUp, Ban, Book, Pencil, RefreshCcw as ResetIcon, Settings2
+          BedDouble, XCircle, TrendingUp as IconTrendingUp, Ban, Book, Pencil, Settings2, Palette, Smile, Frown, Meh
         } from 'https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0';
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -128,8 +115,37 @@
             return `${fmt(start)} - ${fmt(end)}`;
         };
 
+        // Text Formatter for Insights
+        const FormattedText = ({ text }) => {
+            if (!text) return null;
+            return (
+                <div className="space-y-3">
+                    {text.split('\n').map((line, i) => {
+                        if (!line.trim()) return <div key={i} className="h-1"></div>;
+                        // Parse bold (**text**) and underline (__text__)
+                        // Updated regex to capture content
+                        const parts = line.split(/(\*\*.*?\*\*|__.*?__)/g);
+                        return (
+                            <div key={i} className="leading-relaxed text-sm text-slate-600">
+                                {parts.map((part, j) => {
+                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                        return <span key={j} className="font-bold text-macaron-dark bg-yellow-100/60 px-1 rounded-md mx-0.5">{part.slice(2, -2)}</span>;
+                                    }
+                                    if (part.startsWith('__') && part.endsWith('__')) {
+                                        // Updated: Underline style
+                                        return <span key={j} className="border-b-2 border-macaron-purple text-slate-800 font-semibold pb-0.5 mx-0.5">{part.slice(2, -2)}</span>;
+                                    }
+                                    return part;
+                                })}
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
         // Helper to strip existing tags
-        const stripCategoryTag = (str) => str.replace(/^\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|TRASH)\]\s*/i, '');
+        const stripCategoryTag = (str) => str.replace(/^\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY|TRASH)\]\s*/i, '');
         
         // Helper to extract description for matching logic
         const extractDescForMatching = (str) => str
@@ -137,18 +153,15 @@
             .trim();
 
         const calculateStatsFromLogs = (logText) => {
-            const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0 };
+            const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0, hobby: 0 };
             if (!logText) return stats;
             const lines = logText.split('\n');
             const durationRegex = /(\d+(\.\d+)?)\s*(h|m|min|hour)/i; 
             const isoTimeRegex = /(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)\s*(?:\||｜)\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})?)/;
-            const categoryRegex = /\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH)\]/i;
+            const categoryRegex = /\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]/i;
             
-            const processedLines = new Set(); 
-
             lines.forEach(line => {
-                if (!line.trim() || processedLines.has(line.trim())) return;
-                processedLines.add(line.trim());
+                if (!line.trim()) return;
 
                 let hours = 0;
                 const isoMatch = line.match(isoTimeRegex);
@@ -170,6 +183,17 @@
                     if (catMatch) {
                         const cat = catMatch[1].toLowerCase();
                         if (stats[cat] !== undefined) stats[cat] += hours;
+                    } else {
+                        // Fallback Keywords
+                        const l = line.toLowerCase();
+                        if (l.includes('工作') || l.includes('work')) stats.work += hours;
+                        else if (l.includes('学习') || l.includes('study')) stats.study += hours;
+                        else if (l.includes('休息') || l.includes('rest')) stats.rest += hours;
+                        else if (l.includes('睡觉') || l.includes('sleep')) stats.sleep += hours;
+                        else if (l.includes('生活') || l.includes('life')) stats.life += hours;
+                        else if (l.includes('健身') || l.includes('health') || l.includes('运动')) stats.health += hours;
+                        else if (l.includes('画') || l.includes('琴') || l.includes('写') || l.includes('摄')) stats.hobby += hours;
+                        else if (l.includes('娱乐') || l.includes('game')) stats.entertainment += hours;
                     }
                 }
             });
@@ -201,7 +225,7 @@
             return diaryEntries.filter(entry => {
                 const d = normalizeDate(entry.date).getTime();
                 return d >= s && d <= e;
-            }).map(entry => `[DIARY] ${entry.date}: ${entry.content}`).join('\n');
+            }).map(entry => `[DIARY ${entry.date}] 心情:${entry.mood || '平淡'} | 成就:${entry.hasAchievement ? entry.achievements : '无'} | 原因:${!entry.hasAchievement ? entry.reason : 'N/A'} | 内容:${entry.content}`).join('\n');
         };
 
         const getDateRangesForScope = (scope) => {
@@ -242,6 +266,7 @@
             { id: 'sleep', label: '睡眠', color: 'bg-macaron-purple', text: 'text-purple-700' },
             { id: 'life', label: '生活', color: 'bg-macaron-orange', text: 'text-orange-700' },
             { id: 'health', label: '健康', color: 'bg-emerald-200', text: 'text-emerald-700' }, 
+            { id: 'hobby', label: '兴趣', color: 'bg-macaron-rose', text: 'text-rose-700' },
             { id: 'entertainment', label: '娱乐', color: 'bg-macaron-yellow', text: 'text-yellow-700' },
             { id: 'trash', label: '作废', color: 'bg-slate-200', text: 'text-slate-400' } 
         ];
@@ -292,19 +317,20 @@
           const [categoryMap, setCategoryMap] = useState(() => { const saved = localStorage.getItem('lifeos_pro_category_map'); return saved ? JSON.parse(saved) : {}; });
           const [archivedRange, setArchivedRange] = useState(null);
           const [diaryEntries, setDiaryEntries] = useState(() => { const saved = localStorage.getItem('lifeos_pro_diary_v1'); return saved ? JSON.parse(saved) : []; });
-          const [diaryInput, setDiaryInput] = useState({ date: getTodayDate(), content: '' });
+          // Updated Diary State
+          const [diaryInput, setDiaryInput] = useState({ date: getTodayDate(), content: '', achievements: '', reason: '', mood: '平静', hasAchievement: true });
           const [showDiaryModal, setShowDiaryModal] = useState(false);
           const [editingId, setEditingId] = useState(null); 
           const [reviewResults, setReviewResults] = useState(() => { const saved = localStorage.getItem('lifeos_pro_reviews'); return saved ? JSON.parse(saved) : { today: null, yesterday: null, weekly: null, monthly: null }; });
           const [todayPlan, setTodayPlan] = useState(() => { const saved = localStorage.getItem('lifeos_pro_plan'); return saved ? JSON.parse(saved) : null; });
           const [reviewScope, setReviewScope] = useState('today');
-          const [allocations, setAllocations] = useState(() => { const saved = localStorage.getItem('lifeos_pro_allocations_v2'); return saved ? JSON.parse(saved) : { work: 8, study: 2, rest: 2, sleep: 7, life: 2.5, entertainment: 2.5, health: 1 }; });
+          const [allocations, setAllocations] = useState(() => { const saved = localStorage.getItem('lifeos_pro_allocations_v2'); return saved ? JSON.parse(saved) : { work: 8, study: 2, rest: 2, sleep: 7, life: 2.5, entertainment: 2.5, health: 1, hobby: 0 }; }); 
           const [isOrganizing, setIsOrganizing] = useState(false);
           const [userState, setUserState] = useState({ physical: 'normal', mental: 'calm' });
           const [bioState, setBioState] = useState(() => { const saved = localStorage.getItem('lifeos_pro_bio_v2'); return saved ? JSON.parse(saved) : { wakeTime: '08:00', sleepTime: '23:30', hadBreakfast: false, hadLunch: false, hadDinner: false, washedMorning: false, washedEvening: false }; });
           const [planInput, setPlanInput] = useState('');
           const [showHabitModal, setShowHabitModal] = useState(false);
-          const [showClearModal, setShowClearModal] = useState(false); // New Modal State
+          const [showClearModal, setShowClearModal] = useState(false);
 
           useEffect(() => { if (userApiKey) localStorage.setItem('lifeos_pro_key', userApiKey); }, [userApiKey]);
           useEffect(() => { localStorage.setItem('lifeos_pro_allocations_v2', JSON.stringify(allocations)); }, [allocations]);
@@ -318,51 +344,38 @@
           const showToast = (text, type = 'success') => { setMsg({ type, text }); setTimeout(() => setMsg({ type: '', text: '' }), 3000); };
           const toggleBio = (key) => setBioState(prev => ({ ...prev, [key]: !prev[key] }));
           
-          // --- Feature 2: Thorough Clear History (FIXED with Custom Modal) ---
-          const performClearHistory = () => {
-              // 1. Visual Feedback FIRST: Reset all states to empty
-              setFullHistory('');
-              setCategoryMap({});
-              setDiaryEntries([]);
-              setTempInput('');
-              setParsedItems([]);
-              setRawLinesBuffer([]);
-              setArchivedRange(null);
-              setReviewResults({ today: null, yesterday: null, weekly: null, monthly: null });
-              setTodayPlan(null);
-              setShowClearModal(false); // Close modal
+          const handleClearHistory = () => {
+              if (confirm('🧨 警告：确定要清空所有数据？\n\n这将永久删除：\n1. 所有历史日程记录\n2. 所有日记\n3. 所有归类习惯\n4. 所有复盘和计划\n\n（您的 API Key 不会被删除）')) {
+                  localStorage.removeItem('lifeos_pro_history_v2');
+                  localStorage.removeItem('lifeos_pro_category_map');
+                  localStorage.removeItem('lifeos_pro_diary_v1');
+                  localStorage.removeItem('lifeos_pro_reviews');
+                  localStorage.removeItem('lifeos_pro_plan');
+                  
+                  setFullHistory('');
+                  setCategoryMap({});
+                  setDiaryEntries([]);
+                  setTempInput('');
+                  setParsedItems([]);
+                  setRawLinesBuffer([]);
+                  setArchivedRange(null);
+                  setReviewResults({ today: null, yesterday: null, weekly: null, monthly: null });
+                  setTodayPlan(null);
 
-              // 2. Clear Storage (Specific Keys Only - Protecting API Key)
-              localStorage.removeItem('lifeos_pro_history_v2');
-              localStorage.removeItem('lifeos_pro_category_map');
-              localStorage.removeItem('lifeos_pro_diary_v1');
-              localStorage.removeItem('lifeos_pro_reviews');
-              localStorage.removeItem('lifeos_pro_plan');
-
-              // 3. Toast & Reload
-              showToast("🗑️ 数据已清空，界面即将刷新...", "success");
-              
-              // Wait a bit for the user to see the "cleared" state (empty UI), then reload to re-init
-              setTimeout(() => {
-                  window.location.reload();
-              }, 800); // Reduced delay slightly for snappier feel
+                  showToast("🗑️ 数据已全部清空，系统即将重置...", "success");
+                  setTimeout(() => { window.location.reload(); }, 1500);
+              }
           };
 
-          // --- Feature 1: Habit Management ---
           const updateHabitCategory = (desc, newCat) => {
               const newMap = { ...categoryMap, [desc]: newCat };
               setCategoryMap(newMap);
-              
-              // Retroactively update full history
               if (fullHistory) {
                   const lines = fullHistory.split('\n');
                   const newLines = lines.map(line => {
                       const contentOnly = stripCategoryTag(line); 
                       const historyDesc = extractDescForMatching(contentOnly);
-                      if (historyDesc === desc) {
-                          // Update tag
-                          return `[${newCat.toUpperCase()}] ${contentOnly}`;
-                      }
+                      if (historyDesc === desc) { return `[${newCat.toUpperCase()}] ${contentOnly}`; }
                       return line;
                   });
                   setFullHistory(newLines.join('\n'));
@@ -380,13 +393,13 @@
           };
 
           const saveDiaryEntry = () => {
-              if (!diaryInput.content.trim()) return showToast("请填写内容", "error");
+              if (!diaryInput.content.trim() && !diaryInput.achievements.trim() && !diaryInput.reason) return showToast("请至少填写一点内容", "error");
               if (editingId) { setDiaryEntries(prev => prev.map(e => e.id === editingId ? { ...e, ...diaryInput } : e).sort((a,b) => new Date(b.date) - new Date(a.date))); setEditingId(null); showToast("日记已更新"); } 
               else { const newEntry = { ...diaryInput, id: Date.now() }; setDiaryEntries(prev => [newEntry, ...prev].sort((a,b) => new Date(b.date) - new Date(a.date))); showToast("日记已保存"); }
-              setDiaryInput({ date: getTodayDate(), content: '' }); setShowDiaryModal(false);
+              setDiaryInput({ date: getTodayDate(), content: '', achievements: '', reason: '', mood: '平静', hasAchievement: true }); setShowDiaryModal(false);
           };
           const deleteDiaryEntry = (id) => { if(confirm('确定要删除这篇日记吗？')) { setDiaryEntries(prev => prev.filter(e => e.id !== id)); showToast("日记已删除"); } };
-          const startEditDiary = (entry) => { setDiaryInput({ date: entry.date, content: entry.content }); setEditingId(entry.id); setShowDiaryModal(true); };
+          const startEditDiary = (entry) => { setDiaryInput({ date: entry.date, content: entry.content, achievements: entry.achievements || '', reason: entry.reason || '', mood: entry.mood || '平静', hasAchievement: entry.hasAchievement !== false }); setEditingId(entry.id); setShowDiaryModal(true); };
 
           const parseRawInput = (text) => {
              const lines = text.split('\n');
@@ -404,12 +417,12 @@
                  if (categoryMap[cleanDesc]) {
                      cat = categoryMap[cleanDesc];
                  } else {
-                     // Fallback keywords
                      if (line.includes('工作') || line.includes('会议') || line.includes('work')) cat = 'work';
                      else if (line.includes('学习') || line.includes('study')) cat = 'study';
                      else if (line.includes('睡觉') || line.includes('sleep')) cat = 'sleep';
                      else if (line.includes('休息') || line.includes('rest')) cat = 'rest';
                      else if (line.includes('健身') || line.includes('运动') || line.includes('gym')) cat = 'health'; 
+                     else if (line.includes('画') || line.includes('琴') || line.includes('写') || line.includes('摄')) cat = 'hobby';
                      else if (line.includes('游戏') || line.includes('娱乐')) cat = 'entertainment';
                  }
 
@@ -425,8 +438,6 @@
              setParsedItems(Array.from(uniqueReviewMap.values()));
              
              if(allItems.length === 0) showToast('未能识别有效内容', 'error'); 
-             
-             // Feature 3: Auto show Green Panel if all matched
              else if (Array.from(uniqueReviewMap.values()).length === 0) {
                  showToast('所有条目已自动匹配历史分类，可直接归档');
              }
@@ -444,7 +455,6 @@
               const existingSet = new Set(fullHistory.split('\n').map(l => l.trim()));
 
               rawLinesBuffer.forEach(item => {
-                  // Determine category (User override > Map > Auto)
                   const userOverride = parsedItems.find(p => p.id === item.id);
                   const finalCategory = userOverride ? userOverride.category : (newMap[item.desc] || item.category);
 
@@ -485,16 +495,19 @@
             const prevData = getLogsInDateRange(fullHistory, prevStart, prevEnd);
             const currentDiary = getDiaryEntriesInDateRange(diaryEntries, currentStart, currentEnd);
             const jsStats = calculateStatsFromLogs(currentData);
-            
-            // Smart Sleep Fill
-            const multiplier = getTargetMultiplier(scope);
-            if (jsStats.sleep < 1) {
-                jsStats.sleep = 9.5 * multiplier; 
-            }
 
             try {
               const genAI = new GoogleGenerativeAI(userApiKey); const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025", generationConfig: { responseMimeType: "application/json" } });
-              const prompt = `Role: Life Analyst. Scope: ${scope}. Targets: ${JSON.stringify(allocations)}. **STATS (TRUST THESE)**: ${JSON.stringify(jsStats)}. **Logs**: """${currentData}""". **Diary**: """${currentDiary}""". Task: 1. Analyze based on STATS. 2. Compare w/ prev. 3. **SUMMARY**: Chinese declarative sentences ONLY. Use Arabic numerals (e.g. 9.5) for ALL numbers. 4. **Insights**: Strengths & Weaknesses. Output JSON: { "summary": "String", "insights": ["Str1", "Str2"] }`;
+              const prompt = `Role: Life Analyst. Scope: ${scope}. Targets: ${JSON.stringify(allocations)}. **STATS (TRUST THESE)**: ${JSON.stringify(jsStats)}. **Logs**: """${currentData}""". **Diary**: """${currentDiary}""". **Previous Data**: """${prevData}""". 
+              Task: 
+              1. **Deep Insight**: Find "Trigger Behavior Chains" (e.g. Bad emotion -> Binge TV). Analyze "Overdraft Risks". Identify "Beneficial Habits". 
+              2. **Vision**: Project a 3-month vision if current habits continue (Be objective, gentle).
+              3. **3 Protections**: List 3 things user needs to protect most.
+              4. **Advice**: Reasonable time adjustments.
+              5. **Format**: Use **bold** for key points, __underline__ for critical info. Use Emojis (🔗, 🔮, 🛡️, 💡) to structure sections. Separate sections clearly.
+              6. **Language**: PURE CHINESE (Mandarin). NO ENGLISH in response content.
+              
+              Output JSON: { "summary": "String", "insights": ["Formatted String 1", "Formatted String 2", "Formatted String 3", "Formatted String 4"] }`;
               const result = await callGeminiWithRetry(model, prompt);
               const aiData = parseJSONSafely(result.response.text());
               const finalData = { ...aiData, actual_allocation: jsStats }; 
@@ -520,7 +533,7 @@
                  - IF (Time > 21:00 AND No work request) OR (Pain/Tired AND No work request): **LOW ENERGY MODE** (Rest/Read/Meditate only).
               4. **Special Task Duration**: Treat "1h" as **PURE FOCUS**. Add breaks on top.
               
-              Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
+              Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health|hobby", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
               const result = await callGeminiWithRetry(model, prompt);
               setTodayPlan(parseJSONSafely(result.response.text())); showToast('今日计划已生成');
             } catch (e) { showToast('生成失败', 'error'); setActivePage('status'); } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '' }); }
@@ -528,7 +541,7 @@
 
           const calculatePlanStats = () => {
               if (!todayPlan || !todayPlan.blocks) return null;
-              const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0 };
+              const stats = { work: 0, study: 0, rest: 0, sleep: 0, life: 0, entertainment: 0, health: 0, hobby: 0 };
               todayPlan.blocks.forEach(b => {
                   if (stats[b.category] !== undefined) {
                       const times = b.time.split(/[-~]/);
@@ -544,7 +557,7 @@
           const renderPlanAnalysis = () => {
               const stats = calculatePlanStats();
               if (!stats) return null;
-              const diffs = [ { k: 'work', l: '工作', t: allocations.work }, { k: 'study', l: '学习', t: allocations.study } ];
+              const diffs = [ { k: 'work', l: '工作', t: allocations.work }, { k: 'study', l: '学习', t: allocations.study }, { k: 'hobby', l: '兴趣', t: allocations.hobby || 0 } ];
               return (
                   <div className="bg-white/80 p-4 rounded-2xl mb-4 border border-macaron-blue/30 shadow-sm flex justify-around">
                       {diffs.map(d => {
@@ -566,29 +579,28 @@
                 <AllocationSlider label="生活" value={allocations.life} icon={Utensils} colorBg="bg-macaron-orange" onChange={(v)=>setAllocations({...allocations, life: v})} />
                 <AllocationSlider label="娱乐" value={allocations.entertainment} icon={Gamepad2} colorBg="bg-macaron-yellow" onChange={(v)=>setAllocations({...allocations, entertainment: v})} />
                 <AllocationSlider label="健康" value={allocations.health} icon={Heart} colorBg="bg-emerald-200" onChange={(v)=>setAllocations({...allocations, health: v})} />
+                <AllocationSlider label="兴趣" value={allocations.hobby} icon={Palette} colorBg="bg-macaron-rose" onChange={(v)=>setAllocations({...allocations, hobby: v})} />
               </div>
 
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative">
                 <div className="flex flex-col gap-3 mb-4">
                    <div className="flex justify-between items-start"><h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Database className="w-6 h-6 text-slate-400"/> 数据源</h2><div className="flex gap-2">
                        <button onClick={()=>setShowHabitModal(true)} className="text-xs font-bold bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full hover:bg-purple-100 transition-colors flex items-center gap-1"><Settings2 className="w-3 h-3"/> 管理习惯</button>
-                       <button onClick={()=>setShowClearModal(true)} className="text-xs font-bold bg-red-50 text-red-500 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors flex items-center gap-1"><Trash2 className="w-3 h-3"/> 清空</button>
+                       <button onClick={() => setShowClearModal(true)} className="text-xs font-bold bg-red-50 text-red-500 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors flex items-center gap-1"><Trash2 className="w-3 h-3"/> 清空</button>
                    </div></div>
                    <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 font-medium">已有数据源时间范围：<span className="font-bold text-slate-700 ml-1 block mt-1">{fullHistory ? (calculateDateRangeDisplay(fullHistory) || "暂无数据") : "暂无数据"}</span></div>
                 </div>
                 <textarea className="w-full h-32 bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base font-mono text-slate-600 focus:border-macaron-blue outline-none resize-none mb-3" placeholder="粘贴日程 (例如: 2023-10-27: 开会 2h)..." value={tempInput} onChange={(e) => setTempInput(e.target.value)}/>
                 
-                {/* Organize Button Removed here as requested previously */}
                 <button onClick={()=>parseRawInput(tempInput)} className="w-full py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"><PenTool className="w-4 h-4"/> 识别条目</button>
                 
-                {/* Feature 3: Green Panel Logic - Always show if no parsed items but has buffer */}
                 {parsedItems.length === 0 && rawLinesBuffer.length > 0 && (
-                    <div className="mt-6 animate-in"><div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center"><p className="text-emerald-700 font-bold text-sm mb-3 flex items-center justify-center gap-2"><CheckCircle className="w-5 h-5"/> 所有条目已自动匹配历史分类</p><button onClick={handleConfirmArchive} className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200/50 flex justify-center items-center gap-2"><Save className="w-4 h-4"/> 直接归档</button></div></div>
+                    <div className="mt-6 animate-in z-20 relative"><div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center shadow-lg"><p className="text-emerald-700 font-bold text-sm mb-3 flex items-center justify-center gap-2"><CheckCircle className="w-5 h-5"/> 所有条目已自动匹配历史分类</p><button onClick={handleConfirmArchive} className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200/50 flex justify-center items-center gap-2"><Save className="w-4 h-4"/> 直接归档</button></div></div>
                 )}
 
                 {parsedItems.length > 0 && (<div className="mt-6 border-t border-slate-100 pt-4 animate-in"><h3 className="text-base font-bold text-macaron-dark mb-3 flex items-center gap-2"><PenTool className="w-4 h-4"/> 归类校对 <span className="text-xs font-normal text-slate-400">(自动隐藏已记忆条目)</span></h3><div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">{parsedItems.map(item => (<div key={item.id} className={`flex flex-col p-3 rounded-xl border transition-all ${item.category === 'trash' ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-slate-50 border-slate-100'}`}><div className="flex justify-between"><div className="text-xs text-slate-400 mb-1 font-mono">{item.date}</div><button onClick={() => updateReviewItemCategory(item.id, 'trash')} className={`p-1 rounded-full ${item.category === 'trash' ? 'bg-red-100 text-red-500' : 'text-slate-300 hover:bg-slate-100'}`}><Ban className="w-4 h-4"/></button></div><div className={`text-sm font-medium mb-2 truncate ${item.category === 'trash' ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{item.original}</div><div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar opacity-100 transition-opacity">{CATEGORIES.map(cat => (<button key={cat.id} onClick={() => updateReviewItemCategory(item.id, cat.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${item.category === cat.id ? `${cat.color} ${cat.text} shadow-sm ring-1 ring-inset ring-black/5` : 'bg-white text-slate-400 border border-slate-200'}`}>{cat.label}</button>))}</div></div>))}</div><button onClick={handleConfirmArchive} className="w-full mt-4 py-4 bg-macaron-dark text-white rounded-2xl font-bold text-lg hover:bg-slate-700 transition-all flex justify-center items-center gap-2 shadow-lg shadow-slate-300/50"><Save className="w-5 h-5"/> 确认归档并记忆</button></div>)}
               
-                {/* Feature 1: Habit Manager Modal */}
+                {/* Habit Manager Modal */}
                 {showHabitModal && (
                     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in">
                         <div className="bg-white w-full max-w-md p-6 rounded-[2rem] shadow-2xl h-[70vh] flex flex-col">
@@ -634,7 +646,7 @@
                             </p>
                             <div className="flex gap-3">
                                 <button onClick={() => setShowClearModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">取消</button>
-                                <button onClick={performClearHistory} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200">确认清空</button>
+                                <button onClick={handleClearHistory} className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200">确认清空</button>
                             </div>
                         </div>
                     </div>
@@ -645,9 +657,9 @@
 
           const renderDiaryPage = () => (
               <div className="space-y-6 animate-in pb-48">
-                  <div className="flex justify-between items-center"><h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Book className="w-6 h-6 text-macaron-pink"/> 每日日记</h2><button onClick={() => { setEditingId(null); setDiaryInput({ date: getTodayDate(), content: '' }); setShowDiaryModal(true); }} className="bg-macaron-pink text-pink-800 px-4 py-2 rounded-xl font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1"><Plus className="w-4 h-4"/> 写一篇</button></div>
-                  {showDiaryModal && !showHabitModal && (<div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in"><div className="bg-white w-full max-w-md p-6 rounded-[2rem] shadow-2xl"><h3 className="font-bold text-lg mb-4">{editingId ? '编辑日记 ✏️' : '记录今天的成就 ✨'}</h3><input type="date" value={diaryInput.date} onChange={(e) => setDiaryInput({...diaryInput, date: e.target.value})} className="w-full bg-slate-50 p-3 rounded-xl mb-3 outline-none font-bold text-slate-600"/><textarea value={diaryInput.content} onChange={(e) => setDiaryInput({...diaryInput, content: e.target.value})} className="w-full h-32 bg-slate-50 p-4 rounded-xl outline-none resize-none text-slate-600 mb-4" placeholder="今天发生了什么开心的事？完成了什么小目标？"/><div className="flex gap-2"><button onClick={() => setShowDiaryModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">取消</button><button onClick={saveDiaryEntry} className="flex-[2] py-3 bg-macaron-pink text-pink-900 rounded-xl font-bold">保存</button></div></div></div>)}
-                  <div className="space-y-4">{diaryEntries.length === 0 ? (<div className="text-center py-12 text-slate-400"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3"><PenTool className="w-8 h-8 text-slate-300"/></div><p>暂无日记，快来记录第一笔吧！</p></div>) : (diaryEntries.map((entry) => (<div key={entry.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-50 relative group"><div className="flex justify-between items-center mb-2"><div className="text-xs font-bold text-macaron-pink">{entry.date}</div><div className="flex gap-2"><button onClick={() => startEditDiary(entry)} className="text-slate-300 hover:text-macaron-blue transition-colors"><Pencil className="w-3 h-3"/></button><button onClick={() => deleteDiaryEntry(entry.id)} className="text-slate-300 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3"/></button></div></div><p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{entry.content}</p></div>)))}</div>
+                  <div className="flex justify-between items-center"><h2 className="text-xl font-bold text-macaron-dark flex items-center gap-2"><Book className="w-6 h-6 text-macaron-pink"/> 每日日记</h2><button onClick={() => { setEditingId(null); setDiaryInput({ date: getTodayDate(), content: '', achievements: '', reason: '', mood: '平静', hasAchievement: true }); setShowDiaryModal(true); }} className="bg-macaron-pink text-pink-800 px-4 py-2 rounded-xl font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1"><Plus className="w-4 h-4"/> 写一篇</button></div>
+                  {showDiaryModal && !showHabitModal && (<div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in z-[200]"><div className="bg-white w-full max-w-md p-6 rounded-[2rem] shadow-2xl relative"><h3 className="font-bold text-lg mb-4">记录一下今天吧</h3><input type="date" value={diaryInput.date} onChange={(e) => setDiaryInput({...diaryInput, date: e.target.value})} className="w-full bg-slate-50 p-3 rounded-xl mb-3 outline-none font-bold text-slate-600"/><div className="flex gap-2 mb-3 overflow-x-auto pb-1">{['😄 开心', '😐 平静', '😟 焦虑', '😫 疲惫', '😠 生气'].map(m => (<button key={m} onClick={()=>setDiaryInput({...diaryInput, mood: m.split(' ')[1]})} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${diaryInput.mood === m.split(' ')[1] ? 'bg-macaron-yellow border-macaron-orange text-orange-800' : 'bg-white border-slate-100 text-slate-400'}`}>{m}</button>))}</div><div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl mb-3"><span className="text-sm font-bold text-slate-600">今日有成就?</span><div className={`w-12 h-7 rounded-full flex items-center px-1 cursor-pointer transition-colors ${diaryInput.hasAchievement ? 'bg-emerald-400' : 'bg-slate-300'}`} onClick={()=>setDiaryInput({...diaryInput, hasAchievement: !diaryInput.hasAchievement})}><div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${diaryInput.hasAchievement ? 'translate-x-5' : ''}`}></div></div></div>{diaryInput.hasAchievement ? (<input type="text" value={diaryInput.achievements} onChange={(e) => setDiaryInput({...diaryInput, achievements: e.target.value})} className="w-full bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl mb-3 outline-none text-slate-600 text-sm animate-in" placeholder="🏆 写下今天的成就..."/>) : (<select value={diaryInput.reason} onChange={(e) => setDiaryInput({...diaryInput, reason: e.target.value})} className="w-full bg-slate-50 p-3 rounded-xl mb-3 outline-none text-slate-600 text-sm font-bold animate-in"><option value="">🤔 选择无成就原因...</option><option value="hard">太难了 (Difficulty)</option><option value="tired">太累了 (Fatigue)</option><option value="low_energy">没能量 (Low Energy)</option><option value="emotion">情绪卡点 (Emotional Block)</option></select>)}<textarea value={diaryInput.content} onChange={(e) => setDiaryInput({...diaryInput, content: e.target.value})} className="w-full h-32 bg-slate-50 p-4 rounded-xl outline-none resize-none text-slate-600 mb-4" placeholder="今天发生了什么？..."/><div className="flex gap-2"><button onClick={() => setShowDiaryModal(false)} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">取消</button><button onClick={saveDiaryEntry} className="flex-[2] py-3 bg-macaron-pink text-pink-900 rounded-xl font-bold">保存</button></div></div></div>)}
+                  <div className="space-y-4">{diaryEntries.length === 0 ? (<div className="text-center py-12 text-slate-400"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3"><PenTool className="w-8 h-8 text-slate-300"/></div><p>暂无日记，快来记录第一笔吧！</p></div>) : (diaryEntries.map((entry) => (<div key={entry.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-50 relative group"><div className="flex justify-between items-center mb-2"><div className="flex items-center gap-2"><div className="text-xs font-bold text-macaron-pink">{entry.date}</div><span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">{entry.mood}</span></div><div className="flex gap-2"><button onClick={() => startEditDiary(entry)} className="text-slate-300 hover:text-macaron-blue transition-colors"><Pencil className="w-3 h-3"/></button><button onClick={() => deleteDiaryEntry(entry.id)} className="text-slate-300 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3"/></button></div></div>{entry.hasAchievement && entry.achievements ? <div className="text-xs font-bold text-emerald-600 mb-2 bg-emerald-50/50 p-2 rounded-lg">🏆 {entry.achievements}</div> : entry.reason && <div className="text-xs font-bold text-slate-400 mb-2 bg-slate-50 p-2 rounded-lg">⚠️ 卡点: {entry.reason === 'hard' ? '太难' : entry.reason === 'tired' ? '太累' : entry.reason === 'low_energy' ? '没能量' : '情绪卡点'}</div>}<p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{entry.content}</p></div>)))}</div>
               </div>
           );
 
@@ -661,7 +673,7 @@
               <div className="bg-white p-1.5 rounded-2xl shadow-sm flex gap-1 border border-slate-100 sticky top-24 z-30">{['today', 'yesterday', 'weekly', 'monthly'].map(s => (<button key={s} onClick={() => setReviewScope(s)} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${reviewScope === s ? 'bg-macaron-purple text-purple-900 shadow-sm' : 'text-slate-400 hover:bg-slate-50'}`}>{s === 'today' ? '今日' : s === 'yesterday' ? '昨日' : s === 'weekly' ? '本周' : '本月'}</button>))}</div>
               <div className="text-center -mb-2"><span className="bg-macaron-cream px-4 py-1 rounded-full text-xs font-bold text-macaron-dark border border-macaron-orange/30">📅 {dateRangeStr}</span></div>
               <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[400px] relative overflow-hidden">
-                {isLoading ? (<div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20"><Loader2 className="w-12 h-12 text-macaron-purple animate-spin mb-4"/><p className="text-slate-500 font-bold text-base animate-pulse">{loading.text}</p></div>) : !data ? (<div className="flex flex-col items-center justify-center h-full p-10 text-center"><div className="w-24 h-24 bg-macaron-cream rounded-full flex items-center justify-center mb-6"><Sparkles className="w-12 h-12 text-macaron-orange"/></div><p className="text-slate-400 mb-8 font-bold text-lg">生成一份治愈的复盘报告吧</p><button onClick={() => generateReview(reviewScope)} className="bg-macaron-blue text-blue-900 px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">开始生成</button></div>) : (<div className="p-8 animate-in"><div className="flex justify-center mb-6"><button onClick={() => generateReview(reviewScope)} className="bg-slate-100 text-slate-400 px-6 py-2 rounded-full text-xs font-bold hover:bg-slate-200 transition-colors flex items-center gap-1"><RefreshCcw className="w-3 h-3"/> 刷新数据</button></div><div className="bg-macaron-cream p-6 rounded-3xl mb-8 border border-orange-100/50 relative"><div className="absolute top-0 left-6 -translate-y-1/2 bg-macaron-orange text-orange-800 px-3 py-1 rounded-full text-xs font-bold">SUMMARY</div><p className="text-base text-slate-600 leading-relaxed font-medium mt-2">"{data.summary}"</p></div>{data.insights && (<div className="mb-8 space-y-3"><h4 className="font-bold text-macaron-dark text-base flex items-center gap-2"><Lightbulb className="w-5 h-5 text-macaron-yellow"/> 洞察时刻</h4>{data.insights.map((insight, i) => (<div key={i} className="flex gap-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-100"><span className="text-macaron-purple text-xl leading-none">•</span> {insight}</div>))}</div>)}<div className="space-y-2"><MacaronProgressBar label="工作" target={allocations.work * multiplier} actual={data.actual_allocation?.work || 0} colorBg="bg-indigo-50" colorBar="bg-macaron-blue" /><MacaronProgressBar label="学习" target={allocations.study * multiplier} actual={data.actual_allocation?.study || 0} colorBg="bg-teal-50" colorBar="bg-macaron-green" /><MacaronProgressBar label="休息" target={allocations.rest * multiplier} actual={data.actual_allocation?.rest || 0} colorBg="bg-pink-50" colorBar="bg-macaron-pink" /><MacaronProgressBar label="睡眠" target={allocations.sleep * multiplier} actual={data.actual_allocation?.sleep || 0} colorBg="bg-slate-50" colorBar="bg-macaron-purple" /><MacaronProgressBar label="生活" target={allocations.life * multiplier} actual={data.actual_allocation?.life || 0} colorBg="bg-orange-50" colorBar="bg-macaron-orange" /><MacaronProgressBar label="娱乐" target={allocations.entertainment * multiplier} actual={data.actual_allocation?.entertainment || 0} colorBg="bg-yellow-50" colorBar="bg-macaron-yellow" /><MacaronProgressBar label="健康" target={allocations.health * multiplier} actual={data.actual_allocation?.health || 0} colorBg="bg-emerald-100" colorBar="bg-emerald-200" /></div></div>)}</div></div>
+                {isLoading ? (<div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20"><Loader2 className="w-12 h-12 text-macaron-purple animate-spin mb-4"/><p className="text-slate-500 font-bold text-base animate-pulse">{loading.text}</p></div>) : !data ? (<div className="flex flex-col items-center justify-center h-full p-10 text-center"><div className="w-24 h-24 bg-macaron-cream rounded-full flex items-center justify-center mb-6"><Sparkles className="w-12 h-12 text-macaron-orange"/></div><p className="text-slate-400 mb-8 font-bold text-lg">生成一份治愈的复盘报告吧</p><button onClick={() => generateReview(reviewScope)} className="bg-macaron-blue text-blue-900 px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">开始生成</button></div>) : (<div className="p-8 animate-in"><div className="flex justify-center mb-6"><button onClick={() => generateReview(reviewScope)} className="bg-slate-100 text-slate-400 px-6 py-2 rounded-full text-xs font-bold hover:bg-slate-200 transition-colors flex items-center gap-1"><RefreshCcw className="w-3 h-3"/> 刷新数据</button></div><div className="bg-macaron-cream p-6 rounded-3xl mb-8 border border-orange-100/50 relative"><div className="absolute top-0 left-6 -translate-y-1/2 bg-macaron-orange text-orange-800 px-3 py-1 rounded-full text-xs font-bold">SUMMARY</div><p className="text-base text-slate-600 leading-relaxed font-medium mt-2">"{data.summary}"</p></div>{data.insights && (<div className="mb-8 space-y-3"><h4 className="font-bold text-macaron-dark text-base flex items-center gap-2"><Lightbulb className="w-5 h-5 text-macaron-yellow"/> 洞察时刻</h4><FormattedText text={data.insights.join('\n')} /></div>)}<div className="space-y-2"><MacaronProgressBar label="工作" target={allocations.work * multiplier} actual={data.actual_allocation?.work || 0} colorBg="bg-indigo-50" colorBar="bg-macaron-blue" /><MacaronProgressBar label="学习" target={allocations.study * multiplier} actual={data.actual_allocation?.study || 0} colorBg="bg-teal-50" colorBar="bg-macaron-green" /><MacaronProgressBar label="休息" target={allocations.rest * multiplier} actual={data.actual_allocation?.rest || 0} colorBg="bg-pink-50" colorBar="bg-macaron-pink" /><MacaronProgressBar label="睡眠" target={allocations.sleep * multiplier} actual={data.actual_allocation?.sleep || 0} colorBg="bg-slate-50" colorBar="bg-macaron-purple" /><MacaronProgressBar label="生活" target={allocations.life * multiplier} actual={data.actual_allocation?.life || 0} colorBg="bg-orange-50" colorBar="bg-macaron-orange" /><MacaronProgressBar label="娱乐" target={allocations.entertainment * multiplier} actual={data.actual_allocation?.entertainment || 0} colorBg="bg-yellow-50" colorBar="bg-macaron-yellow" /><MacaronProgressBar label="健康" target={allocations.health * multiplier} actual={data.actual_allocation?.health || 0} colorBg="bg-emerald-100" colorBar="bg-emerald-200" /><MacaronProgressBar label="兴趣" target={allocations.hobby * multiplier} actual={data.actual_allocation?.hobby || 0} colorBg="bg-pink-100" colorBar="bg-macaron-rose" /></div></div>)}</div></div>
             );
           };
 
@@ -684,7 +696,7 @@
                  <div className="space-y-6 animate-in pb-48">
                      {renderPlanAnalysis()}
                      <div className="bg-gradient-to-r from-macaron-purple/30 to-macaron-blue/30 p-8 rounded-[2.5rem] relative overflow-hidden"><h2 className="text-2xl font-black text-slate-700 mb-3 relative z-10">{todayPlan.theme_title}</h2><p className="text-slate-600 font-medium italic relative z-10 text-base">"{todayPlan.advice}"</p><Footprints className="absolute -bottom-4 -right-4 w-40 h-40 text-white/40 rotate-12"/></div>
-                     <div className="space-y-4">{todayPlan.blocks?.map((b, i) => { const borderColor = b.category === 'work' ? 'border-l-macaron-blue' : b.category === 'study' ? 'border-l-macaron-green' : b.category === 'rest' ? 'border-l-macaron-pink' : b.category === 'health' ? 'border-l-emerald-200' : 'border-l-slate-300'; return (<div key={i} className={`bg-white p-6 rounded-2xl border border-slate-50 shadow-sm border-l-8 ${borderColor}`}><div className="flex justify-between items-center mb-2"><span className="font-mono font-black text-slate-700 text-xl">{b.time}</span><span className="text-xs font-bold uppercase bg-slate-50 px-2 py-1 rounded text-slate-400">{b.category}</span></div><h4 className="font-bold text-slate-800 text-xl mb-1">{b.title}</h4><p className="text-base text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">{b.desc}</p>{b.sub_blocks && b.sub_blocks.length > 0 && (<div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-3">{b.sub_blocks.map((sb, sbi) => (<div key={sbi} className="flex gap-3 items-center"><div className="font-mono text-xs text-slate-400 w-20 text-right shrink-0">{sb.time}</div><div className={`w-2 h-2 rounded-full shrink-0 ${sb.label.includes('Focus') ? 'bg-macaron-blue' : 'bg-macaron-green'}`}></div><div className="text-sm font-medium text-slate-600">{sb.detail || sb.label}</div></div>))}</div>)}{b.energy_required==='high' && <div className="mt-3 text-sm text-rose-400 flex items-center gap-1 font-bold"><Zap className="w-4 h-4"/> 高能时刻</div>}</div>) })}</div>
+                     <div className="space-y-4">{todayPlan.blocks?.map((b, i) => { const borderColor = b.category === 'work' ? 'border-l-macaron-blue' : b.category === 'study' ? 'border-l-macaron-green' : b.category === 'rest' ? 'border-l-macaron-pink' : b.category === 'health' ? 'border-l-emerald-200' : b.category === 'hobby' ? 'border-l-macaron-rose' : 'border-l-slate-300'; return (<div key={i} className={`bg-white p-6 rounded-2xl border border-slate-50 shadow-sm border-l-8 ${borderColor}`}><div className="flex justify-between items-center mb-2"><span className="font-mono font-black text-slate-700 text-xl">{b.time}</span><span className="text-xs font-bold uppercase bg-slate-50 px-2 py-1 rounded text-slate-400">{b.category}</span></div><h4 className="font-bold text-slate-800 text-xl mb-1">{b.title}</h4><p className="text-base text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">{b.desc}</p>{b.sub_blocks && b.sub_blocks.length > 0 && (<div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-3">{b.sub_blocks.map((sb, sbi) => (<div key={sbi} className="flex gap-3 items-center"><div className="font-mono text-xs text-slate-400 w-20 text-right shrink-0">{sb.time}</div><div className={`w-2 h-2 rounded-full shrink-0 ${sb.label.includes('Focus') ? 'bg-macaron-blue' : 'bg-macaron-green'}`}></div><div className="text-sm font-medium text-slate-600">{sb.detail || sb.label}</div></div>))}</div>)}{b.energy_required==='high' && <div className="mt-3 text-sm text-rose-400 flex items-center gap-1 font-bold"><Zap className="w-4 h-4"/> 高能时刻</div>}</div>) })}</div>
                      <button onClick={() => { setTodayPlan(null); setActivePage('status'); }} className="w-full py-5 text-slate-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 rounded-2xl"><RefreshCcw className="w-4 h-4"/> 重新生成</button>
                  </div>
              )
@@ -697,7 +709,7 @@
                     <div className="bg-slate-800 text-white p-2.5 rounded-xl"><BrainCircuit className="w-6 h-6"/></div>
                     <div className="flex flex-col">
                         <span className="font-cute text-2xl text-slate-700 tracking-wider leading-none">LifeOS</span>
-                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v3.8.2</span>
+                        <span className="text-macaron-purple text-[10px] font-sans font-bold bg-purple-100 px-1.5 py-0.5 rounded self-start mt-1">Macaron v3.9.2</span>
                     </div>
                  </div>
                  <button onClick={() => setShowKeyInput(true)} className="p-3 bg-white rounded-full text-slate-400 shadow-sm"><Settings className="w-6 h-6"/></button>
