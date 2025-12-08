@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查 CategoryMap 数据</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto;
+        }
+        .section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        h2 { color: #333; }
+        pre { 
+            background: #fff; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        .count { 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #007bff; 
+        }
+    </style>
+</head>
+<body>
+    <h1>CategoryMap 数据检查工具</h1>
+    
+    <div class="section">
+        <h2>📊 数据统计</h2>
+        <div id="stats"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🗂️ CategoryMap 内容</h2>
+        <div id="categoryMapContent"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📝 历史数据</h2>
+        <div id="historyContent"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🔧 操作</h2>
+        <button onclick="refreshData()">🔄 刷新数据</button>
+        <button onclick="addTestData()">➕ 添加测试数据</button>
+        <button onclick="clearCategoryMap()">🗑️ 清空 CategoryMap</button>
+    </div>
+
+    <script>
+        function displayData() {
+            // 读取 categoryMap
+            const categoryMapStr = localStorage.getItem('lifeos_pro_category_map');
+            const categoryMap = categoryMapStr ? JSON.parse(categoryMapStr) : {};
+            
+            // 读取历史数据
+            const historyStr = localStorage.getItem('lifeos_pro_history_v2');
+            
+            // 统计
+            const categoryCount = Object.keys(categoryMap).length;
+            const historyLines = historyStr ? historyStr.split('\n').filter(l => l.trim()).length : 0;
+            
+            // 显示统计
+            document.getElementById('stats').innerHTML = `
+                <div class="status info">
+                    <p><strong>CategoryMap 条目数：</strong> <span class="count">${categoryCount}</span></p>
+                    <p><strong>历史数据行数：</strong> <span class="count">${historyLines}</span></p>
+                    <p><strong>LocalStorage Key：</strong> lifeos_pro_category_map</p>
+                </div>
+            `;
+            
+            // 显示 categoryMap 内容
+            if (categoryCount === 0) {
+                document.getElementById('categoryMapContent').innerHTML = `
+                    <div class="status error">
+                        <p>❌ CategoryMap 为空！</p>
+                        <p>这就是为什么"管理习惯"显示空白的原因。</p>
+                    </div>
+                `;
+            } else {
+                let html = '<div class="status success"><p>✅ 找到 ' + categoryCount + ' 条习惯数据</p></div>';
+                html += '<pre>' + JSON.stringify(categoryMap, null, 2) + '</pre>';
+                document.getElementById('categoryMapContent').innerHTML = html;
+            }
+            
+            // 显示历史数据（前10行）
+            if (historyLines === 0) {
+                document.getElementById('historyContent').innerHTML = `
+                    <div class="status error">
+                        <p>❌ 没有历史数据</p>
+                    </div>
+                `;
+            } else {
+                const lines = historyStr.split('\n').filter(l => l.trim()).slice(0, 10);
+                let html = '<div class="status success"><p>✅ 找到 ' + historyLines + ' 行历史数据（显示前10行）</p></div>';
+                html += '<pre>' + lines.join('\n') + '</pre>';
+                document.getElementById('historyContent').innerHTML = html;
+            }
+        }
+        
+        function refreshData() {
+            displayData();
+            alert('数据已刷新！');
+        }
+        
+        function addTestData() {
+            const categoryMap = {
+                '工作会议': 'work',
+                '阅读书籍': 'study',
+                '午休': 'rest',
+                '健身': 'health',
+                '画画': 'hobby'
+            };
+            localStorage.setItem('lifeos_pro_category_map', JSON.stringify(categoryMap));
+            displayData();
+            alert('已添加5条测试数据！');
+        }
+        
+        function clearCategoryMap() {
+            if (confirm('确定要清空 CategoryMap 吗？')) {
+                localStorage.removeItem('lifeos_pro_category_map');
+                displayData();
+                alert('CategoryMap 已清空！');
+            }
+        }
+        
+        // 页面加载时显示数据
+        displayData();
+    </script>
+</body>
+</html>

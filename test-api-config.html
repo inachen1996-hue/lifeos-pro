@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API配置测试</title>
+    <script crossorigin src="https://esm.sh/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://esm.sh/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+    
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        // 统一的AI调用接口
+        const callAI = async (provider, apiKey, prompt) => {
+          if (provider === 'google') {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ 
+              model: "gemini-2.0-flash-exp", 
+              generationConfig: { responseMimeType: "application/json" } 
+            });
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+          } else if (provider === 'openai') {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' }
+              })
+            });
+            if (!response.ok) throw new Error(`OpenAI API error: ${response.statusText}`);
+            const data = await response.json();
+            return data.choices[0].message.content;
+          } else if (provider === 'deepseek') {
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' }
+              })
+            });
+            if (!response.ok) throw new Error(`DeepSeek API error: ${response.statusText}`);
+            const data = await response.json();
+            return data.choices[0].message.content;
+          }
+          throw new Error('Unsupported AI provider');
+        };
+
+        function TestApp() {
+            const [apiConfig, setApiConfig] = useState({
+                provider: 'google',
+                keys: {
+                    google: '',
+                    openai: '',
+                    deepseek: ''
+                }
+            });
+            const [testResult, setTestResult] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const testAPI = async () => {
+                const currentKey = apiConfig.keys[apiConfig.provider];
+                if (!currentKey) {
+                    setTestResult('请先输入API Key');
+                    return;
+                }
+
+                setLoading(true);
+                setTestResult('测试中...');
+
+                try {
+                    const prompt = '请用JSON格式返回一个简单的问候语。格式：{"message": "你的问候语"}';
+                    const result = await callAI(apiConfig.provider, currentKey, prompt);
+                    setTestResult(`✅ 测试成功！\n\n响应：\n${result}`);
+                } catch (error) {
+                    setTestResult(`❌ 测试失败：${error.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+                    <h1 className="text-3xl font-bold mb-6 text-gray-800">API配置测试工具</h1>
+                    
+                    {/* 提供商选择 */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">选择 AI 服务</label>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setApiConfig(prev => ({ ...prev, provider: 'google' }))}
+                                className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                                    apiConfig.provider === 'google' 
+                                    ? 'bg-purple-600 text-white' 
+                                    : 'bg-gray-200 text-gray-600'
+                                }`}
+                            >
+                                Google Gemini
+                            </button>
+                            <button 
+                                onClick={() => setApiConfig(prev => ({ ...prev, provider: 'openai' }))}
+                                className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                                    apiConfig.provider === 'openai' 
+                                    ? 'bg-purple-600 text-white' 
+                                    : 'bg-gray-200 text-gray-600'
+                                }`}
+                            >
+                                OpenAI
+                            </button>
+                            <button 
+                                onClick={() => setApiConfig(prev => ({ ...prev, provider: 'deepseek' }))}
+                                className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                                    apiConfig.provider === 'deepseek' 
+                                    ? 'bg-purple-600 text-white' 
+                                    : 'bg-gray-200 text-gray-600'
+                                }`}
+                            >
+                                DeepSeek
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* API Key输入 */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                            {apiConfig.provider === 'google' ? 'Google Gemini API Key' : 
+                             apiConfig.provider === 'openai' ? 'OpenAI API Key' : 
+                             'DeepSeek API Key'}
+                        </label>
+                        <input 
+                            type="password" 
+                            value={apiConfig.keys[apiConfig.provider]} 
+                            onChange={(e) => {
+                                const newKey = e.target.value.trim();
+                                setApiConfig(prev => ({
+                                    ...prev,
+                                    keys: { ...prev.keys, [prev.provider]: newKey }
+                                }));
+                            }}
+                            className="w-full bg-gray-50 p-4 rounded-lg border-2 border-gray-200 focus:border-purple-500 outline-none" 
+                            placeholder={
+                                apiConfig.provider === 'google' ? '输入 Gemini Key (AIza...)' : 
+                                apiConfig.provider === 'openai' ? '输入 OpenAI Key (sk-...)' : 
+                                '输入 DeepSeek Key (sk-...)'
+                            }
+                        />
+                    </div>
+
+                    {/* 测试按钮 */}
+                    <button 
+                        onClick={testAPI}
+                        disabled={loading}
+                        className="w-full py-4 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:bg-gray-400 transition-all"
+                    >
+                        {loading ? '测试中...' : '测试 API 连接'}
+                    </button>
+
+                    {/* 测试结果 */}
+                    {testResult && (
+                        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h3 className="font-bold mb-2">测试结果：</h3>
+                            <pre className="whitespace-pre-wrap text-sm">{testResult}</pre>
+                        </div>
+                    )}
+
+                    {/* 说明 */}
+                    <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                        <h3 className="font-bold mb-2 text-blue-800">使用说明：</h3>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                            <li>1. 选择要测试的AI服务</li>
+                            <li>2. 输入对应的API Key</li>
+                            <li>3. 点击"测试 API 连接"按钮</li>
+                            <li>4. 查看测试结果</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<TestApp />);
+    </script>
+</body>
+</html>

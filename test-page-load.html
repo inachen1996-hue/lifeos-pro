@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面加载</title>
+</head>
+<body>
+    <div id="root">加载中...</div>
+    <script>
+        console.log('页面开始加载');
+        
+        // 测试 React 加载
+        import('https://esm.sh/react@18.2.0').then(React => {
+            console.log('React 加载成功', React);
+        }).catch(err => {
+            console.error('React 加载失败', err);
+        });
+        
+        // 测试后端模块加载
+        import('./dist/storage.js').then(module => {
+            console.log('Storage 模块加载成功', module);
+        }).catch(err => {
+            console.error('Storage 模块加载失败', err);
+        });
+    </script>
+</body>
+</html>

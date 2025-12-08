@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试页面</title>
+    <style>
+        body { margin: 20px; font-family: sans-serif; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>LifeOS Pro 调试页面</h1>
+    <div id="status"></div>
+    
+    <script>
+        const status = document.getElementById('status');
+        
+        function addStatus(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            status.appendChild(div);
+        }
+        
+        // 1. 检查 dist 文件
+        addStatus('开始检查后端模块...');
+        
+        fetch('./dist/storage.js')
+            .then(res => {
+                if (res.ok) {
+                    addStatus('✅ dist/storage.js 加载成功');
+                } else {
+                    addStatus(`❌ dist/storage.js 加载失败: ${res.status}`, 'error');
+                }
+            })
+            .catch(err => {
+                addStatus(`❌ dist/storage.js 加载错误: ${err.message}`, 'error');
+            });
+        
+        // 2. 检查 React
+        addStatus('开始检查 React...');
+        
+        import('https://esm.sh/react@18.2.0')
+            .then(React => {
+                addStatus('✅ React 加载成功');
+                console.log('React:', React);
+            })
+            .catch(err => {
+                addStatus(`❌ React 加载失败: ${err.message}`, 'error');
+            });
+        
+        // 3. 检查 React DOM
+        import('https://esm.sh/react-dom@18.2.0/client')
+            .then(ReactDOM => {
+                addStatus('✅ React DOM 加载成功');
+                console.log('ReactDOM:', ReactDOM);
+            })
+            .catch(err => {
+                addStatus(`❌ React DOM 加载失败: ${err.message}`, 'error');
+            });
+        
+        // 4. 检查 Tailwind
+        setTimeout(() => {
+            if (typeof tailwind !== 'undefined') {
+                addStatus('✅ Tailwind CSS 加载成功');
+            } else {
+                addStatus('❌ Tailwind CSS 未加载', 'error');
+            }
+        }, 2000);
+        
+        // 5. 检查 Babel
+        setTimeout(() => {
+            if (typeof Babel !== 'undefined') {
+                addStatus('✅ Babel 加载成功');
+            } else {
+                addStatus('❌ Babel 未加载', 'error');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
