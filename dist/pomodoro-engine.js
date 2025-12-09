@@ -21,6 +21,7 @@ export class PomodoroEngine {
         this.onUpdate = null;
         this.onPeriodComplete = null;
         this.onAllComplete = null;
+        this.extendedSeconds = 0; // 延长的秒数
         if (timer.mode !== 'pomodoro') {
             throw new Error('Timer must be in pomodoro mode');
         }
@@ -41,8 +42,8 @@ export class PomodoroEngine {
      * Requirement 5.1: Create Pomodoro state machine
      */
     start() {
-        if (this.state !== 'configured' && this.state !== 'work_paused' && this.state !== 'rest_paused') {
-            throw new Error('Pomodoro can only be started from configured or paused state');
+        if (this.state !== 'configured' && this.state !== 'work_paused' && this.state !== 'rest_paused' && this.state !== 'work_complete' && this.state !== 'rest_complete') {
+            throw new Error('Pomodoro can only be started from configured, paused, or complete state');
         }
         const now = this.dateProvider().toISOString();
         if (this.state === 'configured') {
@@ -76,6 +77,14 @@ export class PomodoroEngine {
                 this.session.status = 'running';
             }
             this.startInterval();
+        }
+        else if (this.state === 'work_complete') {
+            // Confirm to start rest
+            this.confirmStartRest();
+        }
+        else if (this.state === 'rest_complete') {
+            // Confirm to start next work
+            this.confirmStartWork();
         }
     }
     /**
@@ -225,12 +234,19 @@ export class PomodoroEngine {
             return; // Already running
         }
         this.intervalId = globalThis.setInterval(() => {
-            this.remainingSeconds--;
+            // 如果剩余时间为0或负数，说明在延长时间（正计时）
+            if (this.remainingSeconds <= 0) {
+                this.extendedSeconds++;
+                this.remainingSeconds = -this.extendedSeconds; // 负数表示延长时间
+            }
+            else {
+                this.remainingSeconds--;
+            }
             if (this.onUpdate) {
                 this.onUpdate(this.remainingSeconds, this.state, this.currentCycle, this.currentPeriod);
             }
-            // Check if period completed
-            if (this.remainingSeconds <= 0) {
+            // Check if period completed (only for countdown, not for extended time)
+            if (this.remainingSeconds === 0 && this.extendedSeconds === 0) {
                 this.handlePeriodCompletion();
             }
         }, 1000);
@@ -245,9 +261,72 @@ export class PomodoroEngine {
         }
     }
     /**
+     * Confirm to start rest period (manual transition)
+     */
+    confirmStartRest() {
+        if (this.state !== 'work_complete') {
+            throw new Error('Can only start rest from work_complete state');
+        }
+        // 如果有延长时间，记录到工作周期
+        if (this.extendedSeconds > 0 && this.currentPeriodStart) {
+            const now = this.dateProvider().toISOString();
+            // 更新最后一个工作周期的结束时间（包含延长时间）
+            if (this.workPeriods.length > 0) {
+                this.workPeriods[this.workPeriods.length - 1].end = now;
+            }
+            this.extendedSeconds = 0;
+        }
+        this.startRestPeriod();
+    }
+    /**
+     * Confirm to start next work period (manual transition)
+     */
+    confirmStartWork() {
+        if (this.state !== 'rest_complete') {
+            throw new Error('Can only start work from rest_complete state');
+        }
+        // 休息延长时间不记录（只记录工作时间）
+        this.extendedSeconds = 0;
+        // Move to next cycle
+        this.currentCycle++;
+        if (this.session) {
+            this.session.currentCycle = this.currentCycle;
+        }
+        this.startWorkPeriod();
+    }
+    /**
+     * Continue current period (extend time)
+     */
+    continueCurrentPeriod() {
+        if (this.state !== 'work_complete' && this.state !== 'rest_complete') {
+            throw new Error('Can only continue from complete state');
+        }
+        // 切换回运行状态，开始正计时
+        if (this.state === 'work_complete') {
+            this.state = 'work_running';
+            this.currentPeriod = 'work';
+        }
+        else {
+            this.state = 'rest_running';
+            this.currentPeriod = 'rest';
+        }
+        if (this.session) {
+            this.session.status = 'running';
+        }
+        // 重置剩余时间为0，开始正计时
+        this.remainingSeconds = 0;
+        this.startInterval();
+    }
+    /**
+     * Get extended seconds
+     */
+    getExtendedSeconds() {
+        return this.extendedSeconds;
+    }
+    /**
      * Handle period completion
      * Requirement 5.2: Trigger alarms at end of each period
-     * Requirement 5.3: Implement automatic transitions between work and rest periods
+     * Requirement 5.3: Wait for manual confirmation between periods
      */
     handlePeriodCompletion() {
         this.stopInterval();
@@ -271,8 +350,11 @@ export class PomodoroEngine {
                 this.handleAllComplete();
             }
             else {
-                // Start rest period
-                this.startRestPeriod();
+                // Wait for manual confirmation to start rest
+                this.state = 'work_complete';
+                if (this.session) {
+                    this.session.status = 'paused';
+                }
             }
         }
         else {
@@ -281,13 +363,11 @@ export class PomodoroEngine {
             if (this.onPeriodComplete) {
                 this.onPeriodComplete('rest');
             }
-            // Move to next cycle
-            this.currentCycle++;
+            // Wait for manual confirmation to start next work period
+            this.state = 'rest_complete';
             if (this.session) {
-                this.session.currentCycle = this.currentCycle;
+                this.session.status = 'paused';
             }
-            // Start next work period
-            this.startWorkPeriod();
         }
     }
     /**

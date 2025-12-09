@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载修复测试</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .details {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .details pre {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 加载修复测试</h1>
+        <div id="status" class="status loading">
+            <span class="spinner"></span>
+            正在测试加载顺序...
+        </div>
+        <div id="details" class="details" style="display: none;"></div>
+        <button onclick="location.href='index.html'">返回主应用</button>
+        <button onclick="location.reload()">重新测试</button>
+    </div>
+
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        const detailsDiv = document.getElementById('details');
+        const logs = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push(`[${timestamp}] ${message}`);
+            console.log(message);
+        }
+
+        function updateStatus(message, type) {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = type === 'loading' 
+                ? `<span class="spinner"></span>${message}`
+                : message;
+        }
+
+        function showDetails() {
+            detailsDiv.style.display = 'block';
+            detailsDiv.innerHTML = `
+                <strong>详细日志：</strong>
+                <pre>${logs.join('\n')}</pre>
+            `;
+        }
+
+        async function testLoading() {
+            try {
+                log('开始测试...');
+                updateStatus('正在加载 Timer Backend 模块...', 'loading');
+
+                // 模拟 Timer Backend 加载
+                log('步骤 1: 加载 storage.js');
+                const { TimerStorage, CategoryStorage, EventStorage } = await import('./dist/storage.js');
+                log('✓ storage.js 加载成功');
+
+                log('步骤 2: 加载 timer-manager.js');
+                const { TimerManager } = await import('./dist/timer-manager.js');
+                log('✓ timer-manager.js 加载成功');
+
+                log('步骤 3: 加载其他模块...');
+                const { CategoryManager } = await import('./dist/category-manager.js');
+                const { StopwatchEngine } = await import('./dist/stopwatch-engine.js');
+                const { CountdownEngine } = await import('./dist/countdown-engine.js');
+                const { PomodoroEngine } = await import('./dist/pomodoro-engine.js');
+                const { EventManager } = await import('./dist/event-manager.js');
+                const { ConflictResolver } = await import('./dist/conflict-resolver.js');
+                const { BlankPeriodDetector } = await import('./dist/blank-period-detector.js');
+                const { alarmService } = await import('./dist/alarm-service.js');
+                const { DEFAULT_CATEGORIES } = await import('./dist/types.js');
+                log('✓ 所有模块加载成功');
+
+                // 设置全局对象
+                window.TimerBackend = {
+                    TimerStorage,
+                    CategoryStorage,
+                    EventStorage,
+                    TimerManager,
+                    CategoryManager,
+                    StopwatchEngine,
+                    CountdownEngine,
+                    PomodoroEngine,
+                    EventManager,
+                    ConflictResolver,
+                    BlankPeriodDetector,
+                    alarmService,
+                    DEFAULT_CATEGORIES
+                };
+                log('✓ window.TimerBackend 已设置');
+
+                // 测试基本功能
+                log('步骤 4: 测试基本功能');
+                const categories = CategoryStorage.loadCategories();
+                log(`✓ 加载了 ${categories.length} 个分类`);
+
+                const timers = TimerStorage.loadTimers();
+                log(`✓ 加载了 ${timers.length} 个计时器`);
+
+                updateStatus('✅ 所有测试通过！模块加载正常', 'success');
+                log('测试完成！');
+                showDetails();
+
+            } catch (error) {
+                log(`✗ 错误: ${error.message}`);
+                log(`堆栈: ${error.stack}`);
+                updateStatus(`❌ 测试失败: ${error.message}`, 'error');
+                showDetails();
+            }
+        }
+
+        // 运行测试
+        testLoading();
+    </script>
+</body>
+</html>

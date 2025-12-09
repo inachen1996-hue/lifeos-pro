@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React + Babel 测试</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        #root {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .log {
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid #ccc;
+            padding-left: 12px;
+            font-size: 14px;
+        }
+        .success { border-color: #4caf50; background: #f1f8f4; }
+        .error { border-color: #f44336; background: #fef1f0; }
+    </style>
+</head>
+<body>
+    <div id="root">加载中...</div>
+    <div id="logs"></div>
+
+    <!-- React UMD -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Load dependencies -->
+    <script type="module">
+        (async function() {
+            try {
+                console.log('🔄 Loading dependencies...');
+                const lucide = await import('https://esm.sh/lucide-react@0.294.0?deps=react@18.2.0');
+                window.LucideIcons = lucide;
+                console.log('✓ Lucide icons loaded');
+                
+                window.DependenciesReady = true;
+                window.dispatchEvent(new Event('dependenciesReady'));
+            } catch (error) {
+                console.error('❌ Failed to load dependencies:', error);
+                window.DependenciesError = error.message;
+                window.DependenciesReady = false;
+                window.dispatchEvent(new Event('dependenciesReady'));
+            }
+        })();
+    </script>
+
+    <script type="text/babel">
+        (async function() {
+            const logsDiv = document.getElementById('logs');
+            
+            function log(message, type = 'info') {
+                const logItem = document.createElement('div');
+                logItem.className = `log ${type}`;
+                logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logsDiv.appendChild(logItem);
+                console.log(message);
+            }
+            
+            log('🚀 Babel script starting...');
+            
+            // Wait for dependencies
+            if (!window.DependenciesReady) {
+                log('⏳ Waiting for dependencies...');
+                await new Promise(resolve => {
+                    window.addEventListener('dependenciesReady', resolve, { once: true });
+                });
+            }
+            
+            if (window.DependenciesError) {
+                log('❌ Dependencies failed: ' + window.DependenciesError, 'error');
+                return;
+            }
+            
+            log('✓ Dependencies ready', 'success');
+            
+            // Use React from global scope
+            const { useState } = React;
+            const { createRoot } = ReactDOM;
+            const { CheckCircle, AlertCircle } = window.LucideIcons;
+            
+            log('✓ React available', 'success');
+            log('✓ Lucide icons available', 'success');
+            
+            // Simple React component
+            function TestApp() {
+                const [count, setCount] = useState(0);
+                
+                return (
+                    <div style={{ textAlign: 'center' }}>
+                        <h1 style={{ color: '#667eea', marginBottom: '20px' }}>
+                            ✅ React + Babel 测试成功！
+                        </h1>
+                        <div style={{ fontSize: '48px', margin: '20px 0' }}>
+                            {count}
+                        </div>
+                        <button 
+                            onClick={() => setCount(count + 1)}
+                            style={{
+                                padding: '12px 24px',
+                                fontSize: '16px',
+                                background: '#667eea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            点击 +1
+                        </button>
+                        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                            <CheckCircle style={{ color: '#4caf50' }} />
+                            <span>Lucide 图标正常</span>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Render
+            const root = createRoot(document.getElementById('root'));
+            root.render(<TestApp />);
+            
+            log('✅ React app rendered successfully', 'success');
+            
+        })();
+    </script>
+</body>
+</html>

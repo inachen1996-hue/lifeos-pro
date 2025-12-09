@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>空气感马卡龙 UI 预览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        airy: {
+                            purple: {
+                                DEFAULT: '#C8A2E0',
+                                light: '#F3EBFA',
+                                soft: '#E8D9F3',
+                                deep: '#9B6BB8'
+                            },
+                            pink: {
+                                DEFAULT: '#F5C2D6',
+                                light: '#FDF5F8',
+                                soft: '#F9E5ED',
+                                deep: '#D89BB3'
+                            },
+                            gray: {
+                                bg: '#FDFCFB',
+                                card: '#FFFFFF',
+                                border: '#F0EBE8',
+                                text: '#8B8490',
+                                dark: '#5D576B'
+                            },
+                            blue: '#D4E8F5',
+                            green: '#D9EFE8',
+                            yellow: '#FFF8E1',
+                            orange: '#FFE9D6',
+                            rose: '#FFE5E5'
+                        }
+                    },
+                    boxShadow: {
+                        'airy-purple': '0 8px 24px -4px rgba(200, 162, 224, 0.15)',
+                        'airy-pink': '0 8px 24px -4px rgba(245, 194, 214, 0.15)',
+                        'airy-soft': '0 4px 16px -2px rgba(93, 87, 107, 0.08)',
+                        'airy-hover': '0 12px 32px -4px rgba(200, 162, 224, 0.2)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .airy-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .airy-button:hover {
+            transform: translateY(-1px);
+        }
+        .airy-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .airy-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(200, 162, 224, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- 标题 -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-airy-gray-dark mb-2">空气感马卡龙 UI</h1>
+            <p class="text-airy-gray-text">Airy Macaron Design System v4.0</p>
+        </div>
+
+        <!-- 色板展示 -->
+        <div class="bg-airy-gray-card rounded-3xl p-8 shadow-airy-soft">
+            <h2 class="text-2xl font-bold text-airy-gray-dark mb-6">色板系统</h2>
+            
+            <div class="space-y-6">
+                <!-- 主色调 - 紫色 -->
+                <div>
+                    <h3 class="text-sm font-bold text-airy-gray-text mb-3">主色调 - 紫色系</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-purple rounded-2xl shadow-airy-purple"></div>
+                            <p class="text-xs text-center text-airy-gray-text">鲜艳紫</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-purple-light rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">极淡紫</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-purple-soft rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">柔和紫</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-purple-deep rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">深紫</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 辅助色 - 粉色 -->
+                <div>
+                    <h3 class="text-sm font-bold text-airy-gray-text mb-3">辅助色 - 粉色系</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-pink rounded-2xl shadow-airy-pink"></div>
+                            <p class="text-xs text-center text-airy-gray-text">鲜艳粉</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-pink-light rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">极淡粉</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-pink-soft rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">柔和粉</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-pink-deep rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">深粉</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 功能色 -->
+                <div>
+                    <h3 class="text-sm font-bold text-airy-gray-text mb-3">功能色（低饱和度）</h3>
+                    <div class="grid grid-cols-5 gap-4">
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-blue rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">淡蓝</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-green rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">淡绿</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-yellow rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">淡黄</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-orange rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">淡橙</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-20 bg-airy-rose rounded-2xl"></div>
+                            <p class="text-xs text-center text-airy-gray-text">淡玫瑰</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按钮展示 -->
+        <div class="bg-airy-gray-card rounded-3xl p-8 shadow-airy-soft">
+            <h2 class="text-2xl font-bold text-airy-gray-dark mb-6">按钮样式</h2>
+            
+            <div class="space-y-6">
+                <!-- 主按钮 -->
+                <div>
+                    <h3 class="text-sm font-bold text-airy-gray-text mb-3">主按钮（Primary）</h3>
+                    <div class="flex gap-4">
+                        <button class="bg-gradient-to-r from-airy-purple to-airy-pink text-white px-6 py-3 rounded-2xl font-bold shadow-airy-purple airy-button">
+                            开始计时
+                        </button>
+                        <button class="bg-gradient-to-r from-airy-purple to-airy-pink text-white px-6 py-3 rounded-2xl font-bold shadow-airy-purple airy-button">
+                            保存
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 次要按钮 -->
+                <div>
+                    <h3 class="text-sm font-bold text-airy-gray-text mb-3">次要按钮（Secondary）</h3>
+                    <div class="flex gap-4">
+                        <button class="bg-airy-gray-card text-airy-purple-deep border border-airy-purple-soft px-6 py-3 rounded-2xl font-bold shadow-airy-soft airy-button">
+                            取消
+                        </button>
+                        <button class="bg-airy-gray-card text-airy-gray-dark border border-airy-gray-border px-6 py-3 rounded-2xl font-bold shadow-airy-soft airy-button">
+                            返回
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片展示 -->
+        <div class="bg-airy-gray-card rounded-3xl p-8 shadow-airy-soft">
+            <h2 class="text-2xl font-bold text-airy-gray-dark mb-6">卡片样式</h2>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <!-- 默认卡片 -->
+                <div class="bg-airy-gray-card border border-airy-gray-border rounded-2xl p-6 shadow-airy-soft airy-hover">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-airy-purple-light to-airy-pink-light rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">⏱️</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-airy-gray-dark">工作计时</h3>
+                            <p class="text-sm text-airy-gray-text">正计时模式</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 选中卡片 -->
+                <div class="bg-gradient-to-br from-airy-purple-light to-airy-pink-light border-2 border-airy-purple rounded-2xl p-6 shadow-airy-purple">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 bg-airy-purple rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">📚</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-airy-purple-deep">学习计时</h3>
+                            <p class="text-sm text-airy-purple-deep/70">番茄钟模式</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 投影展示 -->
+        <div class="bg-airy-gray-card rounded-3xl p-8 shadow-airy-soft">
+            <h2 class="text-2xl font-bold text-airy-gray-dark mb-6">投影系统</h2>
+            
+            <div class="grid grid-cols-4 gap-6">
+                <div class="space-y-2">
+                    <div class="h-24 bg-airy-gray-card rounded-2xl shadow-airy-purple flex items-center justify-center">
+                        <span class="text-sm text-airy-gray-text">紫色投影</span>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-24 bg-airy-gray-card rounded-2xl shadow-airy-pink flex items-center justify-center">
+                        <span class="text-sm text-airy-gray-text">粉色投影</span>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-24 bg-airy-gray-card rounded-2xl shadow-airy-soft flex items-center justify-center">
+                        <span class="text-sm text-airy-gray-text">柔和投影</span>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-24 bg-airy-gray-card rounded-2xl shadow-airy-hover flex items-center justify-center">
+                        <span class="text-sm text-airy-gray-text">悬停投影</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设计原则 -->
+        <div class="bg-gradient-to-br from-airy-purple-light to-airy-pink-light rounded-3xl p-8 border-2 border-airy-purple shadow-airy-purple">
+            <h2 class="text-2xl font-bold text-airy-purple-deep mb-4">设计原则</h2>
+            <ul class="space-y-2 text-airy-gray-dark">
+                <li>✨ <strong>轻盈</strong>：大量留白，避免拥挤</li>
+                <li>🎨 <strong>柔和</strong>：低饱和度背景，高饱和度点缀</li>
+                <li>💜 <strong>治愈</strong>：温暖色调，弥散投影</li>
+                <li>📐 <strong>清晰</strong>：层级分明，对比适中</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

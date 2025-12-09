@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Babel Async 测试</title>
+</head>
+<body>
+    <div id="root">测试中...</div>
+    
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script>
+        window.TestReady = true;
+        console.log('✓ Test ready');
+    </script>
+    
+    <script type="text/babel">
+        console.log('1. Babel script loaded');
+        
+        // 测试 1: 简单的同步代码
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+        console.log('2. React destructured');
+        
+        // 测试 2: 使用 Promise.resolve 而不是 async IIFE
+        Promise.resolve().then(() => {
+            console.log('3. Promise resolved');
+            
+            function TestApp() {
+                const [count, setCount] = useState(0);
+                return (
+                    <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <h1>Babel 测试成功！</h1>
+                        <div style={{ fontSize: '48px', margin: '20px' }}>{count}</div>
+                        <button onClick={() => setCount(count + 1)}>点击 +1</button>
+                    </div>
+                );
+            }
+            
+            const root = createRoot(document.getElementById('root'));
+            root.render(<TestApp />);
+            console.log('4. App rendered');
+        });
+    </script>
+</body>
+</html>

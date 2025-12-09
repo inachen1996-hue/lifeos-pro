@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整诊断</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            line-height: 1.6;
+        }
+        h1 { color: #4ec9b0; }
+        h2 { color: #569cd6; margin-top: 30px; }
+        .section {
+            background: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007acc;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+        .info { color: #569cd6; }
+        pre {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 LifeOS 完整诊断</h1>
+    
+    <div>
+        <button onclick="runDiagnostics()">运行诊断</button>
+        <button onclick="location.href='index.html'">打开主应用</button>
+        <button onclick="location.href='test-react-babel.html'">测试 React+Babel</button>
+        <button onclick="location.reload()">刷新页面</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function runDiagnostics() {
+            const results = document.getElementById('results');
+            results.innerHTML = '';
+            
+            function addSection(title, content, type = 'info') {
+                const section = document.createElement('div');
+                section.className = 'section';
+                section.innerHTML = `<h2>${title}</h2><pre class="${type}">${content}</pre>`;
+                results.appendChild(section);
+            }
+            
+            // 1. 基础环境检查
+            let basic = '';
+            basic += `浏览器: ${navigator.userAgent}\n`;
+            basic += `URL: ${window.location.href}\n`;
+            basic += `协议: ${window.location.protocol}\n`;
+            addSection('1️⃣ 基础环境', basic);
+            
+            // 2. React 检查
+            let react = '';
+            react += `window.React: ${typeof window.React}\n`;
+            react += `window.ReactDOM: ${typeof window.ReactDOM}\n`;
+            if (window.React) {
+                react += `React.version: ${window.React.version || '未知'}\n`;
+                react += `✅ React 已加载\n`;
+            } else {
+                react += `❌ React 未加载\n`;
+            }
+            addSection('2️⃣ React 状态', react, window.React ? 'success' : 'error');
+            
+            // 3. TimerBackend 检查
+            let backend = '';
+            backend += `window.TimerBackend: ${!!window.TimerBackend}\n`;
+            backend += `window.TimerBackendReady: ${window.TimerBackendReady}\n`;
+            backend += `window.TimerBackendError: ${window.TimerBackendError || '无'}\n`;
+            if (window.TimerBackend) {
+                backend += `\n包含的模块:\n`;
+                Object.keys(window.TimerBackend).forEach(key => {
+                    backend += `  - ${key}: ${typeof window.TimerBackend[key]}\n`;
+                });
+            }
+            addSection('3️⃣ TimerBackend 状态', backend, window.TimerBackend ? 'success' : 'warning');
+            
+            // 4. Dependencies 检查
+            let deps = '';
+            deps += `window.LucideIcons: ${!!window.LucideIcons}\n`;
+            deps += `window.GoogleGenerativeAI: ${!!window.GoogleGenerativeAI}\n`;
+            deps += `window.DependenciesReady: ${window.DependenciesReady}\n`;
+            deps += `window.DependenciesError: ${window.DependenciesError || '无'}\n`;
+            addSection('4️⃣ Dependencies 状态', deps, window.DependenciesReady ? 'success' : 'warning');
+            
+            // 5. DOM 检查
+            let dom = '';
+            const root = document.getElementById('root');
+            dom += `root element 存在: ${!!root}\n`;
+            if (root) {
+                dom += `root innerHTML 长度: ${root.innerHTML.length}\n`;
+                dom += `root 内容预览:\n${root.innerHTML.substring(0, 200)}...\n`;
+            }
+            addSection('5️⃣ DOM 状态', dom);
+            
+            // 6. localStorage 检查
+            let storage = '';
+            try {
+                const keys = Object.keys(localStorage);
+                storage += `localStorage 可用: ✅\n`;
+                storage += `总键数: ${keys.length}\n`;
+                const lifeosKeys = keys.filter(k => k.startsWith('lifeos_'));
+                storage += `LifeOS 相关键: ${lifeosKeys.length}\n`;
+                lifeosKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    storage += `  - ${key}: ${value ? value.length : 0} 字符\n`;
+                });
+            } catch (e) {
+                storage += `localStorage 不可用: ❌\n`;
+                storage += `错误: ${e.message}\n`;
+            }
+            addSection('6️⃣ localStorage 状态', storage);
+            
+            // 7. 控制台日志
+            let logs = '';
+            logs += `请打开浏览器控制台查看详细日志\n`;
+            logs += `快捷键:\n`;
+            logs += `  - Mac: Cmd + Option + J\n`;
+            logs += `  - Windows/Linux: Ctrl + Shift + J\n`;
+            addSection('7️⃣ 控制台日志', logs, 'info');
+            
+            // 8. 建议
+            let suggestions = '';
+            if (!window.React) {
+                suggestions += `❌ React 未加载 - 检查网络连接或 CDN 可用性\n`;
+            }
+            if (!window.TimerBackend) {
+                suggestions += `⚠️ TimerBackend 未加载 - 检查 dist/ 目录是否存在\n`;
+            }
+            if (!window.DependenciesReady) {
+                suggestions += `⚠️ Dependencies 未就绪 - 等待加载完成\n`;
+            }
+            if (window.React && window.TimerBackend && window.DependenciesReady) {
+                suggestions += `✅ 所有依赖已就绪！\n`;
+                suggestions += `如果应用仍然卡在"加载中"，请:\n`;
+                suggestions += `1. 打开浏览器控制台查看错误\n`;
+                suggestions += `2. 尝试硬刷新 (Cmd+Shift+R 或 Ctrl+Shift+R)\n`;
+                suggestions += `3. 清除 localStorage 并刷新\n`;
+            }
+            addSection('8️⃣ 建议', suggestions, suggestions.includes('✅') ? 'success' : 'warning');
+        }
+        
+        // 自动运行
+        setTimeout(runDiagnostics, 500);
+    </script>
+</body>
+</html>

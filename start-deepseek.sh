@@ -25,7 +25,7 @@ sleep 2
 
 echo ""
 echo "🌐 启动 Web 服务器（端口 8001）..."
-npx http-server -p 8001 &
+npx http-server -p 8001 -a 0.0.0.0 &
 WEB_PID=$!
 sleep 2
 

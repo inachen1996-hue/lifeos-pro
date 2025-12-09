@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试音效导入</title>
+</head>
+<body>
+    <h1>测试音效导入功能</h1>
+    <button id="testBtn">测试按钮</button>
+    <div id="result"></div>
+    
+    <script>
+        console.log('页面加载完成');
+        
+        const btn = document.getElementById('testBtn');
+        console.log('按钮元素:', btn);
+        
+        if (btn) {
+            btn.addEventListener('click', () => {
+                console.log('按钮被点击了！');
+                document.getElementById('result').textContent = '按钮点击成功！';
+                
+                // 测试 localStorage
+                try {
+                    localStorage.setItem('test_key', 'test_value');
+                    const value = localStorage.getItem('test_key');
+                    console.log('localStorage 测试成功:', value);
+                    document.getElementById('result').textContent += '\nlocalStorage 可用';
+                } catch (err) {
+                    console.error('localStorage 错误:', err);
+                    document.getElementById('result').textContent += '\nlocalStorage 不可用: ' + err.message;
+                }
+            });
+            console.log('事件监听器已添加');
+        } else {
+            console.error('找不到按钮元素！');
+        }
+    </script>
+</body>
+</html>

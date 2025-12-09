@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载诊断</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .log {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .log-item {
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid #ccc;
+            padding-left: 12px;
+        }
+        .success { border-color: #4caf50; background: #f1f8f4; }
+        .error { border-color: #f44336; background: #fef1f0; }
+        .warning { border-color: #ff9800; background: #fff8f0; }
+        .info { border-color: #2196f3; background: #f0f7ff; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 LifeOS 加载诊断</h1>
+    
+    <div class="log">
+        <h2>加载日志</h2>
+        <div id="logs"></div>
+    </div>
+
+    <div>
+        <button onclick="location.reload()">刷新页面</button>
+        <button onclick="testModules()">测试模块</button>
+        <button onclick="clearStorage()">清除存储</button>
+    </div>
+
+    <script type="module">
+        const logsDiv = document.getElementById('logs');
+        
+        function addLog(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logItem);
+            console.log(message);
+        }
+
+        addLog('开始加载诊断...', 'info');
+
+        // 1. 检查基础环境
+        addLog('✓ 浏览器支持 ES6 模块', 'success');
+
+        // 2. 尝试加载 Timer Backend 模块
+        try {
+            addLog('正在加载 Timer Backend 模块...', 'info');
+            
+            const { TimerStorage, CategoryStorage, EventStorage } = await import('./dist/storage.js');
+            addLog('✓ storage.js 加载成功', 'success');
+            
+            const { TimerManager } = await import('./dist/timer-manager.js');
+            addLog('✓ timer-manager.js 加载成功', 'success');
+            
+            const { CategoryManager } = await import('./dist/category-manager.js');
+            addLog('✓ category-manager.js 加载成功', 'success');
+            
+            const { StopwatchEngine } = await import('./dist/stopwatch-engine.js');
+            addLog('✓ stopwatch-engine.js 加载成功', 'success');
+            
+            const { CountdownEngine } = await import('./dist/countdown-engine.js');
+            addLog('✓ countdown-engine.js 加载成功', 'success');
+            
+            const { PomodoroEngine } = await import('./dist/pomodoro-engine.js');
+            addLog('✓ pomodoro-engine.js 加载成功', 'success');
+            
+            const { EventManager } = await import('./dist/event-manager.js');
+            addLog('✓ event-manager.js 加载成功', 'success');
+            
+            const { ConflictResolver } = await import('./dist/conflict-resolver.js');
+            addLog('✓ conflict-resolver.js 加载成功', 'success');
+            
+            const { BlankPeriodDetector } = await import('./dist/blank-period-detector.js');
+            addLog('✓ blank-period-detector.js 加载成功', 'success');
+            
+            const { alarmService } = await import('./dist/alarm-service.js');
+            addLog('✓ alarm-service.js 加载成功', 'success');
+            
+            const { DEFAULT_CATEGORIES } = await import('./dist/types.js');
+            addLog('✓ types.js 加载成功', 'success');
+
+            // 暴露到全局
+            window.TimerBackend = {
+                TimerStorage,
+                CategoryStorage,
+                EventStorage,
+                TimerManager,
+                CategoryManager,
+                StopwatchEngine,
+                CountdownEngine,
+                PomodoroEngine,
+                EventManager,
+                ConflictResolver,
+                BlankPeriodDetector,
+                alarmService,
+                DEFAULT_CATEGORIES
+            };
+            
+            addLog('✓ 所有模块加载成功！', 'success');
+            addLog('✓ window.TimerBackend 已设置', 'success');
+            
+        } catch (error) {
+            addLog(`✗ 模块加载失败: ${error.message}`, 'error');
+            addLog(`错误堆栈: ${error.stack}`, 'error');
+            window.TimerBackendError = error.message;
+        }
+
+        // 3. 检查 localStorage
+        try {
+            const testKey = '__test__';
+            localStorage.setItem(testKey, 'test');
+            localStorage.removeItem(testKey);
+            addLog('✓ localStorage 可用', 'success');
+        } catch (error) {
+            addLog(`✗ localStorage 不可用: ${error.message}`, 'error');
+        }
+
+        // 4. 检查现有数据
+        try {
+            const keys = Object.keys(localStorage);
+            addLog(`localStorage 中有 ${keys.length} 个键`, 'info');
+            keys.forEach(key => {
+                if (key.startsWith('lifeos_')) {
+                    const value = localStorage.getItem(key);
+                    addLog(`  - ${key}: ${value ? value.length : 0} 字符`, 'info');
+                }
+            });
+        } catch (error) {
+            addLog(`检查 localStorage 数据时出错: ${error.message}`, 'warning');
+        }
+
+        // 全局测试函数
+        window.testModules = function() {
+            if (window.TimerBackend) {
+                addLog('✓ window.TimerBackend 存在', 'success');
+                addLog(`包含的模块: ${Object.keys(window.TimerBackend).join(', ')}`, 'info');
+                
+                // 测试基本功能
+                try {
+                    const categories = window.TimerBackend.CategoryStorage.loadCategories();
+                    addLog(`✓ 加载了 ${categories.length} 个分类`, 'success');
+                    
+                    const timers = window.TimerBackend.TimerStorage.loadTimers();
+                    addLog(`✓ 加载了 ${timers.length} 个计时器`, 'success');
+                } catch (error) {
+                    addLog(`测试功能时出错: ${error.message}`, 'error');
+                }
+            } else {
+                addLog('✗ window.TimerBackend 不存在', 'error');
+                if (window.TimerBackendError) {
+                    addLog(`错误信息: ${window.TimerBackendError}`, 'error');
+                }
+            }
+        };
+
+        window.clearStorage = function() {
+            if (confirm('确定要清除所有 localStorage 数据吗？')) {
+                localStorage.clear();
+                addLog('✓ localStorage 已清除', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        };
+
+        // 自动测试
+        setTimeout(() => {
+            addLog('--- 自动测试开始 ---', 'info');
+            window.testModules();
+        }, 500);
+    </script>
+</body>
+</html>

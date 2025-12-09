@@ -8,7 +8,7 @@ import { Timer, Event } from './types.js';
 /**
  * Pomodoro state
  */
-export type PomodoroState = 'configured' | 'work_running' | 'work_paused' | 'rest_running' | 'rest_paused' | 'completed';
+export type PomodoroState = 'configured' | 'work_running' | 'work_paused' | 'work_complete' | 'rest_running' | 'rest_paused' | 'rest_complete' | 'completed';
 /**
  * Pomodoro period type
  */
@@ -30,6 +30,7 @@ export declare class PomodoroEngine {
     private onPeriodComplete;
     private onAllComplete;
     private dateProvider;
+    private extendedSeconds;
     constructor(timer: Timer, dateProvider?: () => Date);
     /**
      * Start the Pomodoro session
@@ -118,9 +119,25 @@ export declare class PomodoroEngine {
      */
     private stopInterval;
     /**
+     * Confirm to start rest period (manual transition)
+     */
+    confirmStartRest(): void;
+    /**
+     * Confirm to start next work period (manual transition)
+     */
+    confirmStartWork(): void;
+    /**
+     * Continue current period (extend time)
+     */
+    continueCurrentPeriod(): void;
+    /**
+     * Get extended seconds
+     */
+    getExtendedSeconds(): number;
+    /**
      * Handle period completion
      * Requirement 5.2: Trigger alarms at end of each period
-     * Requirement 5.3: Implement automatic transitions between work and rest periods
+     * Requirement 5.3: Wait for manual confirmation between periods
      */
     private handlePeriodCompletion;
     /**

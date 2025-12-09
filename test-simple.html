@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .log {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 3px solid #666;
+            padding-left: 10px;
+        }
+        .success { border-color: #4ec9b0; color: #4ec9b0; }
+        .error { border-color: #f48771; color: #f48771; }
+        .warning { border-color: #dcdcaa; color: #dcdcaa; }
+        .info { border-color: #569cd6; color: #569cd6; }
+    </style>
+</head>
+<body>
+    <h2>🔍 简单加载测试</h2>
+    <div id="logs"></div>
+
+    <script>
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log ${type}`;
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logItem);
+            console.log(message);
+        }
+
+        log('页面开始加载', 'info');
+        log('检查 window.TimerBackend: ' + (window.TimerBackend ? '存在' : '不存在'), 'info');
+        log('检查 window.TimerBackendReady: ' + window.TimerBackendReady, 'info');
+        log('检查 window.TimerBackendError: ' + window.TimerBackendError, 'info');
+    </script>
+
+    <!-- 测试模块加载 -->
+    <script type="module">
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log ${type}`;
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logItem);
+            console.log(message);
+        }
+
+        log('开始测试模块加载...', 'info');
+
+        try {
+            log('尝试加载 storage.js...', 'info');
+            const storage = await import('./dist/storage.js');
+            log('✓ storage.js 加载成功', 'success');
+            log('  - TimerStorage: ' + (storage.TimerStorage ? '存在' : '不存在'), 'info');
+            log('  - CategoryStorage: ' + (storage.CategoryStorage ? '存在' : '不存在'), 'info');
+            
+            log('尝试加载 types.js...', 'info');
+            const types = await import('./dist/types.js');
+            log('✓ types.js 加载成功', 'success');
+            log('  - DEFAULT_CATEGORIES: ' + (types.DEFAULT_CATEGORIES ? '存在' : '不存在'), 'info');
+            
+            log('测试 CategoryStorage.loadCategories()...', 'info');
+            const categories = storage.CategoryStorage.loadCategories();
+            log('✓ 加载了 ' + categories.length + ' 个分类', 'success');
+            
+            log('测试 TimerStorage.loadTimers()...', 'info');
+            const timers = storage.TimerStorage.loadTimers();
+            log('✓ 加载了 ' + timers.length + ' 个计时器', 'success');
+            
+            log('=== 所有测试通过 ===', 'success');
+            
+        } catch (error) {
+            log('✗ 错误: ' + error.message, 'error');
+            log('堆栈: ' + error.stack, 'error');
+        }
+    </script>
+
+    <!-- 监听 timerBackendReady 事件 -->
+    <script>
+        function log(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log ${type}`;
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logItem);
+            console.log(message);
+        }
+
+        window.addEventListener('timerBackendReady', () => {
+            log('收到 timerBackendReady 事件', 'success');
+            log('window.TimerBackend: ' + (window.TimerBackend ? '存在' : '不存在'), 'info');
+            log('window.TimerBackendReady: ' + window.TimerBackendReady, 'info');
+        });
+
+        log('已设置 timerBackendReady 事件监听器', 'info');
+    </script>
+</body>
+</html>

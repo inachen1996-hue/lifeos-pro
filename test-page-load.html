@@ -3,26 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>测试页面加载</title>
+    <title>页面加载测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
-    <div id="root">加载中...</div>
-    <script>
-        console.log('页面开始加载');
-        
-        // 测试 React 加载
-        import('https://esm.sh/react@18.2.0').then(React => {
-            console.log('React 加载成功', React);
-        }).catch(err => {
-            console.error('React 加载失败', err);
-        });
-        
-        // 测试后端模块加载
-        import('./dist/storage.js').then(module => {
-            console.log('Storage 模块加载成功', module);
-        }).catch(err => {
-            console.error('Storage 模块加载失败', err);
-        });
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+    <div id="debug" class="mt-4 p-4 bg-white rounded shadow"></div>
+
+    <script type="text/babel" data-type="module">
+        import * as React from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        const { useState, useEffect } = React;
+
+        function TestApp() {
+            const [status, setStatus] = useState('初始化中...');
+
+            useEffect(() => {
+                setStatus('✅ React 已加载');
+                
+                // 检查 TimerBackend
+                if (window.TimerBackend) {
+                    setStatus(prev => prev + '\n✅ TimerBackend 已加载');
+                } else {
+                    setStatus(prev => prev + '\n❌ TimerBackend 未加载');
+                }
+
+                // 检查 Tailwind
+                if (typeof tailwind !== 'undefined') {
+                    setStatus(prev => prev + '\n✅ Tailwind 已加载');
+                } else {
+                    setStatus(prev => prev + '\n❌ Tailwind 未加载');
+                }
+            }, []);
+
+            return (
+                <div className="p-8 bg-blue-100 rounded-lg">
+                    <h1 className="text-2xl font-bold mb-4">页面加载测试</h1>
+                    <pre className="whitespace-pre-wrap">{status}</pre>
+                </div>
+            );
+        }
+
+        try {
+            const root = createRoot(document.getElementById('root'));
+            root.render(<TestApp />);
+            document.getElementById('debug').innerHTML = '<p class="text-green-600 font-bold">✅ React 渲染成功</p>';
+        } catch (error) {
+            document.getElementById('debug').innerHTML = `<p class="text-red-600 font-bold">❌ 错误: ${error.message}</p>`;
+            console.error('渲染错误:', error);
+        }
     </script>
 </body>
 </html>

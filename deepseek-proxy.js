@@ -106,17 +106,37 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+// 获取本机 IP 地址
+import os from 'os';
+const networkInterfaces = os.networkInterfaces();
+let localIP = 'localhost';
+
+// 查找局域网 IP
+for (const interfaceName in networkInterfaces) {
+  const interfaces = networkInterfaces[interfaceName];
+  for (const iface of interfaces) {
+    // 跳过内部和非 IPv4 地址
+    if (iface.family === 'IPv4' && !iface.internal) {
+      localIP = iface.address;
+      break;
+    }
+  }
+  if (localIP !== 'localhost') break;
+}
+
+// 监听所有网络接口（支持手机访问）
+server.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(60));
   console.log('🚀 DeepSeek API 代理服务器已启动！');
   console.log('='.repeat(60));
   console.log(`📡 监听端口: ${PORT}`);
-  console.log(`🌐 代理地址: http://localhost:${PORT}`);
+  console.log(`🌐 电脑访问: http://localhost:${PORT}`);
+  console.log(`📱 手机访问: http://${localIP}:${PORT}`);
   console.log('');
   console.log('💡 使用方法：');
-  console.log('   1. 保持此窗口运行');
-  console.log('   2. 在另一个终端运行: npx http-server -p 8001');
-  console.log('   3. 打开浏览器: http://localhost:8001/index.html');
+  console.log('   电脑: http://localhost:8001/index.html');
+  console.log(`   手机: http://${localIP}:8001/index.html`);
+  console.log('   (确保手机和电脑在同一 WiFi 网络)');
   console.log('');
   console.log('⏹  停止服务器: 按 Ctrl+C');
   console.log('='.repeat(60));

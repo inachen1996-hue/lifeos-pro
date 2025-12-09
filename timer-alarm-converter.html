@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器铃声上传工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        
+        .upload-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-card h3 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-card p {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2d3436;
+            font-size: 18px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-wrapper label {
+            display: block;
+            padding: 15px 30px;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #2d3436;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            font-size: 16px;
+        }
+        
+        .file-input-wrapper label:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #2d3436;
+            min-height: 40px;
+        }
+        
+        .file-info.success {
+            color: #00b894;
+            font-weight: bold;
+        }
+        
+        .preview-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .preview-section h2 {
+            color: #2d3436;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .preview-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            width: 100%;
+        }
+        
+        .preview-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .preview-btn:not(:disabled):hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .import-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            font-size: 18px;
+        }
+        
+        .import-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,184,148,0.4);
+        }
+        
+        .import-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            display: none;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #424242;
+            line-height: 1.8;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            margin-top: 15px;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3436;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ 计时器铃声上传工具</h1>
+        <p class="subtitle">自定义番茄钟和倒计时结束时的铃声</p>
+        
+        <div class="instructions">
+            <h3>📋 使用说明</h3>
+            <ol>
+                <li>上传你的铃声文件（MP3、WAV等格式，建议小于2MB）</li>
+                <li>点击"试听"按钮预览铃声</li>
+                <li>点击"💾 导入到应用"按钮，铃声会自动保存</li>
+                <li>下次番茄钟或倒计时结束时，会自动使用新铃声</li>
+            </ol>
+        </div>
+        
+        <div class="upload-card">
+            <h3>🔔</h3>
+            <p>计时器铃声</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="alarmFile" accept="audio/*">
+                <label for="alarmFile">选择铃声文件</label>
+            </div>
+            <div class="file-info" id="alarmInfo">未选择文件</div>
+        </div>
+        
+        <div class="preview-section">
+            <h2>🔊 试听铃声</h2>
+            <button class="preview-btn" id="previewAlarm" disabled>🔔 试听铃声</button>
+            <div class="stat-card">
+                <div class="label">文件大小</div>
+                <div class="value" id="alarmSize">-</div>
+            </div>
+        </div>
+        
+        <button class="import-btn" id="importBtn" disabled>💾 导入到应用</button>
+        
+        <div class="status" id="status"></div>
+    </div>
+    
+    <script>
+        let alarmSound = null;
+        let audioElement = null;
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function handleFileUpload(file) {
+            if (!file) return;
+            
+            const infoEl = document.getElementById('alarmInfo');
+            const sizeEl = document.getElementById('alarmSize');
+            const previewBtn = document.getElementById('previewAlarm');
+            const importBtn = document.getElementById('importBtn');
+            
+            // 检查文件大小
+            if (file.size > 5 * 1024 * 1024) {
+                infoEl.textContent = '❌ 文件太大（>5MB）';
+                infoEl.className = 'file-info';
+                return;
+            }
+            
+            infoEl.textContent = '⏳ 正在处理...';
+            infoEl.className = 'file-info';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                alarmSound = e.target.result;
+                audioElement = new Audio(alarmSound);
+                
+                infoEl.textContent = `✅ ${file.name}`;
+                infoEl.className = 'file-info success';
+                sizeEl.textContent = formatFileSize(file.size);
+                previewBtn.disabled = false;
+                importBtn.disabled = false;
+            };
+            
+            reader.onerror = function() {
+                infoEl.textContent = '❌ 读取失败';
+                infoEl.className = 'file-info';
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        function showStatus(message, isSuccess) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + (isSuccess ? 'success' : 'error');
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 文件上传监听
+        document.getElementById('alarmFile').addEventListener('change', (e) => {
+            handleFileUpload(e.target.files[0]);
+        });
+        
+        // 试听按钮
+        document.getElementById('previewAlarm').addEventListener('click', () => {
+            if (audioElement) {
+                audioElement.currentTime = 0;
+                audioElement.volume = 0.5;
+                audioElement.play();
+            }
+        });
+        
+        // 导入按钮
+        document.getElementById('importBtn').addEventListener('click', () => {
+            if (!alarmSound) {
+                showStatus('❌ 请先上传铃声文件', false);
+                return;
+            }
+            
+            try {
+                // 保存到 localStorage
+                localStorage.setItem('lifeos_pro_timer_alarm', alarmSound);
+                console.log('✅ 铃声已保存到 localStorage');
+                
+                // 验证保存
+                const saved = localStorage.getItem('lifeos_pro_timer_alarm');
+                if (saved) {
+                    console.log('🔍 验证成功，铃声已保存');
+                    showStatus('✅ 铃声导入成功！下次计时器结束时会使用新铃声', true);
+                } else {
+                    showStatus('❌ 保存失败，请重试', false);
+                }
+                
+            } catch (err) {
+                showStatus('❌ 导入失败：' + err.message, false);
+                console.error('导入失败:', err);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音效转换工具 - 生成代码</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        
+        .upload-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .upload-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .upload-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .upload-card.cheer {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        }
+        
+        .upload-card.clap {
+            background: linear-gradient(135deg, #fab1a0 0%, #ff7675 100%);
+        }
+        
+        .upload-card.drum {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+        }
+        
+        .upload-card h3 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-card p {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-wrapper label {
+            display: block;
+            padding: 12px 20px;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #2d3436;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .file-input-wrapper label:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #2d3436;
+            min-height: 40px;
+        }
+        
+        .file-info.success {
+            color: #00b894;
+            font-weight: bold;
+        }
+        
+        .preview-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .preview-section h2 {
+            color: #2d3436;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .preview-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .preview-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .preview-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .preview-btn.cheer {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        }
+        
+        .preview-btn.clap {
+            background: linear-gradient(135deg, #fab1a0 0%, #ff7675 100%);
+        }
+        
+        .preview-btn.drum {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+        }
+        
+        .preview-btn:not(:disabled):hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .code-section {
+            background: #2d3436;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .code-section h2 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .code-output {
+            background: #1e272e;
+            border-radius: 10px;
+            padding: 20px;
+            color: #00d2d3;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.6;
+        }
+        
+        .copy-btn {
+            margin-top: 15px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            font-size: 16px;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,184,148,0.4);
+        }
+        
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+        }
+        
+        .status {
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #424242;
+            line-height: 1.8;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3436;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音效转换工具</h1>
+        <p class="subtitle">上传音频文件，生成可直接使用的代码</p>
+        
+        <div class="instructions">
+            <h3>📋 使用说明</h3>
+            <ol>
+                <li>上传你的音效文件（MP3、WAV等格式，建议小于2MB）</li>
+                <li>点击"试听"按钮预览音效</li>
+                <li>点击"💾 导入到应用"按钮，音效会自动保存</li>
+                <li>应用会自动使用新音效，无需刷新页面</li>
+            </ol>
+        </div>
+        
+        <div class="upload-section">
+            <div class="upload-card cheer">
+                <h3>🎺</h3>
+                <p>喝彩音效</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="cheerFile" accept="audio/*">
+                    <label for="cheerFile">选择文件</label>
+                </div>
+                <div class="file-info" id="cheerInfo">未选择文件</div>
+            </div>
+            
+            <div class="upload-card clap">
+                <h3>👏</h3>
+                <p>鼓掌音效</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="clapFile" accept="audio/*">
+                    <label for="clapFile">选择文件</label>
+                </div>
+                <div class="file-info" id="clapInfo">未选择文件</div>
+            </div>
+            
+            <div class="upload-card drum">
+                <h3>🥁</h3>
+                <p>打鼓音效</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="drumFile" accept="audio/*">
+                    <label for="drumFile">选择文件</label>
+                </div>
+                <div class="file-info" id="drumInfo">未选择文件</div>
+            </div>
+        </div>
+        
+        <div class="preview-section">
+            <h2>🔊 试听音效</h2>
+            <div class="preview-buttons">
+                <button class="preview-btn cheer" id="previewCheer" disabled>🎺 试听喝彩</button>
+                <button class="preview-btn clap" id="previewClap" disabled>👏 试听鼓掌</button>
+                <button class="preview-btn drum" id="previewDrum" disabled>🥁 试听打鼓</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="label">喝彩大小</div>
+                    <div class="value" id="cheerSize">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">鼓掌大小</div>
+                    <div class="value" id="clapSize">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">打鼓大小</div>
+                    <div class="value" id="drumSize">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-section">
+            <h2>💻 生成的 JSON 数据</h2>
+            <div class="code-output" id="codeOutput">等待上传文件...</div>
+            <div style="display: flex; gap: 15px; margin-top: 15px;">
+                <button class="copy-btn" id="importBtn" disabled style="flex: 2; background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);">💾 导入到应用</button>
+                <button class="copy-btn" id="copyBtn" disabled style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📋 复制数据</button>
+            </div>
+        </div>
+        
+        <div class="status" id="status" style="margin-top: 20px; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; display: none;"></div>
+    </div>
+    
+    <script>
+        const sounds = {
+            cheer: null,
+            clap: null,
+            drum: null
+        };
+        
+        const audioElements = {
+            cheer: null,
+            clap: null,
+            drum: null
+        };
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function handleFileUpload(type, file) {
+            if (!file) return;
+            
+            const infoEl = document.getElementById(`${type}Info`);
+            const sizeEl = document.getElementById(`${type}Size`);
+            const previewBtn = document.getElementById(`preview${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            
+            // 检查文件大小
+            if (file.size > 5 * 1024 * 1024) {
+                infoEl.textContent = '❌ 文件太大（>5MB）';
+                infoEl.className = 'file-info';
+                return;
+            }
+            
+            infoEl.textContent = '⏳ 正在处理...';
+            infoEl.className = 'file-info';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                sounds[type] = e.target.result;
+                audioElements[type] = new Audio(sounds[type]);
+                
+                infoEl.textContent = `✅ ${file.name}`;
+                infoEl.className = 'file-info success';
+                sizeEl.textContent = formatFileSize(file.size);
+                previewBtn.disabled = false;
+                
+                generateCode();
+            };
+            
+            reader.onerror = function() {
+                infoEl.textContent = '❌ 读取失败';
+                infoEl.className = 'file-info';
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        function generateCode() {
+            const hasAnySound = sounds.cheer || sounds.clap || sounds.drum;
+            if (!hasAnySound) {
+                document.getElementById('codeOutput').textContent = '等待上传文件...';
+                document.getElementById('copyBtn').disabled = true;
+                document.getElementById('importBtn').disabled = true;
+                return;
+            }
+            
+            // 直接生成纯 JSON 数据
+            const fullData = {
+                cheer: sounds.cheer,
+                clap: sounds.clap,
+                drum: sounds.drum
+            };
+            
+            const jsonOutput = JSON.stringify(fullData, null, 2);
+            
+            document.getElementById('codeOutput').textContent = jsonOutput;
+            document.getElementById('copyBtn').disabled = false;
+            document.getElementById('importBtn').disabled = false;
+        }
+        
+        // 显示状态消息
+        function showStatus(message, isSuccess) {
+            const statusEl = document.getElementById('status');
+            if (!statusEl) {
+                console.error('找不到 status 元素');
+                alert(message);
+                return;
+            }
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + (isSuccess ? 'success' : 'error');
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 导入到应用
+        const importBtn = document.getElementById('importBtn');
+        console.log('导入按钮元素:', importBtn);
+        
+        if (importBtn) {
+            importBtn.addEventListener('click', (e) => {
+                console.log('🔥 导入按钮被点击！', e);
+                console.log('按钮状态 - disabled:', importBtn.disabled);
+                console.log('当前音效数据:', sounds);
+                
+                const hasAnySound = sounds.cheer || sounds.clap || sounds.drum;
+                if (!hasAnySound) {
+                    showStatus('❌ 请先上传音频文件', false);
+                    return;
+                }
+                
+                try {
+                    const fullData = {
+                        cheer: sounds.cheer,
+                        clap: sounds.clap,
+                        drum: sounds.drum
+                    };
+                    
+                    console.log('📦 准备保存的数据:', {
+                        cheer: sounds.cheer ? `${sounds.cheer.substring(0, 50)}...` : 'null',
+                        clap: sounds.clap ? `${sounds.clap.substring(0, 50)}...` : 'null',
+                        drum: sounds.drum ? `${sounds.drum.substring(0, 50)}...` : 'null'
+                    });
+                    
+                    // 保存到 localStorage
+                    const jsonString = JSON.stringify(fullData);
+                    console.log('📝 JSON 字符串长度:', jsonString.length);
+                    localStorage.setItem('lifeos_pro_custom_sounds', jsonString);
+                    
+                    // 验证保存
+                    const saved = localStorage.getItem('lifeos_pro_custom_sounds');
+                    const parsed = JSON.parse(saved);
+                    console.log('✅ 音效已保存到 localStorage');
+                    console.log('🔍 验证保存的数据:', {
+                        cheer: parsed.cheer ? '已保存' : 'null',
+                        clap: parsed.clap ? '已保存' : 'null',
+                        drum: parsed.drum ? '已保存' : 'null'
+                    });
+                    
+                    showStatus('✅ 音效导入成功！应用会自动使用新音效（无需刷新）', true);
+                    
+                } catch (err) {
+                    showStatus('❌ 导入失败：' + err.message, false);
+                    console.error('导入失败:', err);
+                }
+            });
+            console.log('✅ 导入按钮事件监听器已添加');
+        } else {
+            console.error('❌ 找不到导入按钮元素！');
+        }
+        
+        // 文件上传监听
+        document.getElementById('cheerFile').addEventListener('change', (e) => {
+            handleFileUpload('cheer', e.target.files[0]);
+        });
+        
+        document.getElementById('clapFile').addEventListener('change', (e) => {
+            handleFileUpload('clap', e.target.files[0]);
+        });
+        
+        document.getElementById('drumFile').addEventListener('change', (e) => {
+            handleFileUpload('drum', e.target.files[0]);
+        });
+        
+        // 试听按钮
+        document.getElementById('previewCheer').addEventListener('click', () => {
+            if (audioElements.cheer) {
+                audioElements.cheer.currentTime = 0;
+                audioElements.cheer.volume = 0.5;
+                audioElements.cheer.play();
+            }
+        });
+        
+        document.getElementById('previewClap').addEventListener('click', () => {
+            if (audioElements.clap) {
+                audioElements.clap.currentTime = 0;
+                audioElements.clap.volume = 0.5;
+                audioElements.clap.play();
+            }
+        });
+        
+        document.getElementById('previewDrum').addEventListener('click', () => {
+            if (audioElements.drum) {
+                audioElements.drum.currentTime = 0;
+                audioElements.drum.volume = 0.5;
+                audioElements.drum.play();
+            }
+        });
+        
+        // 复制代码
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const code = document.getElementById('codeOutput').textContent;
+            const btn = document.getElementById('copyBtn');
+            
+            try {
+                await navigator.clipboard.writeText(code);
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已复制！';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                alert('复制失败，请手动复制');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Habit Feature</title>
+</head>
+<body>
+    <h1>Testing Habit Feature</h1>
+    <div id="error"></div>
+    
+    <script>
+        // 测试习惯打卡功能的基本逻辑
+        try {
+            // 模拟数据
+            const habits = [];
+            const habitSearchQuery = '';
+            const habitFilterType = 'all';
+            
+            // 过滤逻辑
+            const filteredHabits = habits.filter(habit => {
+                // 按频率类型筛选
+                if (habitFilterType !== 'all' && habit.frequency.type !== habitFilterType) {
+                    return false;
+                }
+                
+                // 按搜索关键词筛选
+                if (!habitSearchQuery.trim()) return true;
+                const query = habitSearchQuery.toLowerCase();
+                return (
+                    habit.name.toLowerCase().includes(query) ||
+                    habit.eventKeywords.some(keyword => keyword.toLowerCase().includes(query))
+                );
+            });
+            
+            document.getElementById('error').innerHTML = '<p style="color: green;">✅ 习惯打卡逻辑测试通过</p>';
+            console.log('Filtered habits:', filteredHabits);
+        } catch (e) {
+            document.getElementById('error').innerHTML = '<p style="color: red;">❌ 错误: ' + e.message + '</p>';
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

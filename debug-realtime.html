@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>实时调试</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        .log { padding: 5px; margin: 2px 0; border-left: 3px solid #00ff00; padding-left: 10px; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .warning { border-color: #ffaa00; color: #ffaa00; }
+        .success { border-color: #00ff00; color: #00ff00; }
+        #status { position: fixed; top: 10px; right: 10px; background: #000; padding: 15px; border: 2px solid #00ff00; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 实时调试监控</h1>
+    <div id="status">
+        <div>React: <span id="react-status">检查中...</span></div>
+        <div>TimerBackend: <span id="backend-status">检查中...</span></div>
+        <div>Dependencies: <span id="deps-status">检查中...</span></div>
+    </div>
+    <div id="logs"></div>
+    
+    <script>
+        const logs = document.getElementById('logs');
+        
+        function log(msg, type = 'log') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logs.appendChild(div);
+            console.log(msg);
+        }
+        
+        function updateStatus() {
+            document.getElementById('react-status').textContent = window.React ? '✅' : '❌';
+            document.getElementById('backend-status').textContent = window.TimerBackend ? '✅' : '❌';
+            document.getElementById('deps-status').textContent = window.DependenciesReady ? '✅' : '❌';
+        }
+        
+        // 监控全局变量变化
+        setInterval(updateStatus, 100);
+        
+        // 监听事件
+        window.addEventListener('timerBackendReady', () => {
+            log('✅ 收到 timerBackendReady 事件', 'success');
+        });
+        
+        window.addEventListener('dependenciesReady', () => {
+            log('✅ 收到 dependenciesReady 事件', 'success');
+        });
+        
+        // 捕获错误
+        window.addEventListener('error', (e) => {
+            log(`❌ ERROR: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`❌ PROMISE ERROR: ${e.reason}`, 'error');
+        });
+        
+        // 重写 console
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args[0] && typeof args[0] === 'string') {
+                if (args[0].includes('✅') || args[0].includes('✓')) {
+                    log(args.join(' '), 'success');
+                } else if (args[0].includes('❌') || args[0].includes('✗')) {
+                    log(args.join(' '), 'error');
+                } else if (args[0].includes('⏳') || args[0].includes('⚠️')) {
+                    log(args.join(' '), 'warning');
+                } else {
+                    log(args.join(' '));
+                }
+            }
+            originalLog.apply(console, args);
+        };
+        
+        const originalError = console.error;
+        console.error = function(...args) {
+            log('ERROR: ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+        
+        log('🚀 调试监控已启动');
+        log('正在加载主应用脚本...');
+        
+        // 加载主应用的所有脚本
+        setTimeout(() => {
+            // 加载 React UMD
+            const reactScript = document.createElement('script');
+            reactScript.src = 'https://unpkg.com/react@18.2.0/umd/react.production.min.js';
+            reactScript.onload = () => log('✓ React UMD 加载成功', 'success');
+            reactScript.onerror = () => log('✗ React UMD 加载失败', 'error');
+            document.body.appendChild(reactScript);
+            
+            const reactDOMScript = document.createElement('script');
+            reactDOMScript.src = 'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js';
+            reactDOMScript.onload = () => log('✓ ReactDOM UMD 加载成功', 'success');
+            reactDOMScript.onerror = () => log('✗ ReactDOM UMD 加载失败', 'error');
+            document.body.appendChild(reactDOMScript);
+            
+            // 加载 Babel
+            const babelScript = document.createElement('script');
+            babelScript.src = 'https://unpkg.com/@babel/standalone/babel.min.js';
+            babelScript.onload = () => log('✓ Babel 加载成功', 'success');
+            babelScript.onerror = () => log('✗ Babel 加载失败', 'error');
+            document.body.appendChild(babelScript);
+        }, 500);
+    </script>
+</body>
+</html>

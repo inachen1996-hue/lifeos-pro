@@ -6,17 +6,58 @@
  */
 
 /**
+ * Sound type for different alarm scenarios
+ */
+export type SoundType = 'cheer' | 'clap' | 'drum';
+
+/**
  * Alarm Service - Handles audio and visual alarms
  */
 export class AlarmService {
   private audioContext: AudioContext | null = null;
   private isPlaying: boolean = false;
+  private customSounds: { cheer: string | null; clap: string | null; drum: string | null } = {
+    cheer: null,
+    clap: null,
+    drum: null,
+  };
+
+  constructor() {
+    this.loadCustomSounds();
+  }
+
+  /**
+   * Load custom sounds from localStorage
+   */
+  private loadCustomSounds(): void {
+    try {
+      const stored = localStorage.getItem('lifeos_pro_custom_sounds');
+      if (stored) {
+        const sounds = JSON.parse(stored);
+        this.customSounds = {
+          cheer: sounds.cheer || null,
+          clap: sounds.clap || null,
+          drum: sounds.drum || null,
+        };
+        console.log('✅ 自定义音效已加载');
+      }
+    } catch (error) {
+      console.warn('Failed to load custom sounds:', error);
+    }
+  }
+
+  /**
+   * Reload custom sounds from localStorage
+   */
+  reloadCustomSounds(): void {
+    this.loadCustomSounds();
+  }
 
   /**
    * Play alarm sound
    * Requirement 4.3, 5.2, 5.3: Trigger alarm when countdown/Pomodoro period completes
    */
-  playAlarm(): void {
+  playAlarm(soundType: SoundType = 'cheer'): void {
     if (this.isPlaying) {
       return; // Already playing
     }
@@ -24,13 +65,44 @@ export class AlarmService {
     this.isPlaying = true;
 
     try {
-      // Try Web Audio API first
-      this.playWebAudioAlarm();
+      // Try to play custom sound first
+      const customSound = this.customSounds[soundType];
+      if (customSound) {
+        this.playCustomSound(customSound);
+      } else {
+        // Fallback to Web Audio API beep
+        this.playWebAudioAlarm();
+      }
     } catch (error) {
-      console.warn('Web Audio API failed, falling back to visual alarm:', error);
+      console.warn('Audio playback failed, falling back to visual alarm:', error);
       // Fallback to visual alarm
       this.showVisualAlarm();
     }
+  }
+
+  /**
+   * Play custom sound from data URL
+   */
+  private playCustomSound(dataUrl: string): void {
+    const audio = new Audio(dataUrl);
+    audio.volume = 0.5;
+    
+    audio.onended = () => {
+      this.isPlaying = false;
+    };
+    
+    audio.onerror = (error) => {
+      console.error('Failed to play custom sound:', error);
+      this.isPlaying = false;
+      // Fallback to beep
+      this.playWebAudioAlarm();
+    };
+    
+    audio.play().catch((error) => {
+      console.error('Audio play failed:', error);
+      this.isPlaying = false;
+      this.playWebAudioAlarm();
+    });
   }
 
   /**

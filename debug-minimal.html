@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最小化测试</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: sans-serif; }
+        .test-box { padding: 20px; margin: 10px 0; border-radius: 10px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>LifeOS 诊断测试</h1>
+    <div id="tests"></div>
+
+    <script>
+        const tests = document.getElementById('tests');
+        
+        function addTest(name, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-box ${status}`;
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            tests.appendChild(div);
+        }
+
+        // 测试 1: 基本HTML
+        addTest('HTML加载', 'success', '✅ HTML已正确加载');
+
+        // 测试 2: localStorage
+        try {
+            localStorage.setItem('test', 'value');
+            localStorage.removeItem('test');
+            addTest('localStorage', 'success', '✅ localStorage可用');
+        } catch (e) {
+            addTest('localStorage', 'error', '❌ localStorage不可用: ' + e.message);
+        }
+
+        // 测试 3: 检查是否有保存的数据
+        const hasHistory = localStorage.getItem('lifeos_pro_history_v2');
+        const hasApiConfig = localStorage.getItem('lifeos_pro_api_config');
+        const hasTimers = localStorage.getItem('lifeos_timers');
+        
+        addTest('数据检查', 'info', `
+            历史数据: ${hasHistory ? '✅ 存在' : '❌ 不存在'}<br>
+            API配置: ${hasApiConfig ? '✅ 存在' : '❌ 不存在'}<br>
+            计时器数据: ${hasTimers ? '✅ 存在' : '❌ 不存在'}
+        `);
+
+        // 测试 4: 加载Tailwind CSS
+        const tailwindScript = document.createElement('script');
+        tailwindScript.src = 'https://cdn.tailwindcss.com';
+        tailwindScript.onload = () => {
+            addTest('Tailwind CSS', 'success', '✅ Tailwind CSS已加载');
+            testReact();
+        };
+        tailwindScript.onerror = () => {
+            addTest('Tailwind CSS', 'error', '❌ Tailwind CSS加载失败');
+        };
+        document.head.appendChild(tailwindScript);
+
+        // 测试 5: 加载React
+        function testReact() {
+            const reactScript = document.createElement('script');
+            reactScript.type = 'module';
+            reactScript.textContent = `
+                import * as React from 'https://esm.sh/react@18.2.0';
+                import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+                
+                const tests = document.getElementById('tests');
+                const div = document.createElement('div');
+                div.className = 'test-box success';
+                div.innerHTML = '<strong>React:</strong> ✅ React已加载并可以渲染';
+                tests.appendChild(div);
+
+                // 测试Timer Backend模块
+                import('./dist/storage.js')
+                    .then(() => {
+                        const div2 = document.createElement('div');
+                        div2.className = 'test-box success';
+                        div2.innerHTML = '<strong>Timer Backend:</strong> ✅ 模块加载成功';
+                        tests.appendChild(div2);
+                    })
+                    .catch(error => {
+                        const div2 = document.createElement('div');
+                        div2.className = 'test-box error';
+                        div2.innerHTML = '<strong>Timer Backend:</strong> ❌ 模块加载失败: ' + error.message;
+                        tests.appendChild(div2);
+                    });
+            `;
+            document.body.appendChild(reactScript);
+        }
+    </script>
+</body>
+</html>
