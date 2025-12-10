@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/deepseek.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/deepseek",
+      "destination": "/api/deepseek.js"
+    }
+  ]
+}

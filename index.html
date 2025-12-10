@@ -485,18 +485,26 @@
             const data = await response.json();
             return data.choices[0].message.content;
           } else if (provider === 'deepseek') {
-            // DeepSeek API 调用 - 通过代理服务器避免 CORS 问题
+            // DeepSeek API 调用 - 智能检测环境
             const enhancedPrompt = `${prompt}\n\n重要：请确保你的回复是有效的JSON格式。`;
             
-            // 自动检测代理地址（支持手机访问）
+            // 智能检测代理地址
             const getProxyUrl = () => {
               const hostname = window.location.hostname;
-              // 如果是通过 IP 访问（手机），使用相同的 IP
-              // 如果是 localhost（电脑），使用 localhost
-              if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                return `http://${hostname}:3000`;
+              
+              // Vercel 或其他在线部署环境
+              if (hostname.includes('vercel.app') || 
+                  hostname.includes('netlify.app') || 
+                  hostname.includes('github.io') ||
+                  (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.match(/^\d+\.\d+\.\d+\.\d+$/))) {
+                return '/api/deepseek';  // 使用 Vercel API 路由
               }
-              return 'http://localhost:3000';
+              
+              // 本地环境（包括手机访问）
+              if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+                return `http://${hostname}:3000`;  // 手机通过IP访问
+              }
+              return 'http://localhost:3000';  // 本地电脑访问
             };
             
             const proxyUrl = getProxyUrl();
