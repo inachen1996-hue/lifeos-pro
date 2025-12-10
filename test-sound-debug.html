@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音效调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cheer { background: linear-gradient(45deg, #fbbf24, #f59e0b); color: white; }
+        .clap { background: linear-gradient(45deg, #f472b6, #ec4899); color: white; }
+        .drum { background: linear-gradient(45deg, #a855f7, #8b5cf6); color: white; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 音效调试测试</h1>
+    
+    <div class="info">
+        <strong>当前地址：</strong><span id="currentUrl"></span><br>
+        <strong>AudioContext 状态：</strong><span id="audioContextState">未检测</span><br>
+        <strong>用户交互状态：</strong><span id="interactionState">未交互</span>
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 测试1：AudioContext 基础测试</h3>
+        <button onclick="testAudioContext()">测试 AudioContext</button>
+        <button onclick="resumeAudioContext()">恢复 AudioContext</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🎺 测试2：内置音效测试</h3>
+        <button class="cheer" onclick="playBuiltinSound('cheer')">🎺 喝彩</button>
+        <button class="clap" onclick="playBuiltinSound('clap')">👏 鼓掌</button>
+        <button class="drum" onclick="playBuiltinSound('drum')">🥁 打鼓</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔊 测试3：简单音频测试</h3>
+        <button onclick="playSimpleBeep()">播放简单蜂鸣</button>
+        <button onclick="playTestTone()">播放测试音调</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 调试日志</h3>
+        <button onclick="clearLog()">清除日志</button>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let hasUserInteracted = false;
+
+        // 更新页面信息
+        document.getElementById('currentUrl').textContent = window.location.href;
+
+        // 监听用户交互
+        document.addEventListener('click', () => {
+            if (!hasUserInteracted) {
+                hasUserInteracted = true;
+                document.getElementById('interactionState').textContent = '已交互';
+                log('✅ 用户已交互');
+            }
+        });
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function testAudioContext() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                log(`🎵 AudioContext 创建成功，状态: ${audioContext.state}`);
+                document.getElementById('audioContextState').textContent = audioContext.state;
+                
+                if (audioContext.state === 'suspended') {
+                    log('⚠️ AudioContext 被暂停，需要用户交互来恢复');
+                }
+            } catch (error) {
+                log(`❌ AudioContext 创建失败: ${error.message}`);
+            }
+        }
+
+        function resumeAudioContext() {
+            if (!audioContext) {
+                log('❌ 请先创建 AudioContext');
+                return;
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    log('✅ AudioContext 已恢复');
+                    document.getElementById('audioContextState').textContent = audioContext.state;
+                }).catch(err => {
+                    log(`❌ AudioContext 恢复失败: ${err.message}`);
+                });
+            } else {
+                log(`ℹ️ AudioContext 当前状态: ${audioContext.state}`);
+            }
+        }
+
+        function playSimpleBeep() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                log('🔊 简单蜂鸣播放成功');
+            } catch (error) {
+                log(`❌ 简单蜂鸣播放失败: ${error.message}`);
+            }
+        }
+
+        function playTestTone() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                // 创建一个简单的音调
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // C大调音阶
+                const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00];
+                let time = audioContext.currentTime;
+                
+                frequencies.forEach((freq, index) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    
+                    gain.gain.setValueAtTime(0.2, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                    
+                    osc.start(time);
+                    osc.stop(time + 0.3);
+                    
+                    time += 0.2;
+                });
+                
+                log('🎵 测试音调播放成功');
+            } catch (error) {
+                log(`❌ 测试音调播放失败: ${error.message}`);
+            }
+        }
+
+        function playBuiltinSound(type) {
+            log(`🎵 开始播放内置音效: ${type}`);
+            
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    log(`🎵 AudioContext 创建，状态: ${audioContext.state}`);
+                }
+                
+                if (audioContext.state === 'suspended') {
+                    log('⚠️ AudioContext 被暂停，尝试恢复...');
+                    audioContext.resume().then(() => {
+                        log('✅ AudioContext 已恢复');
+                        actuallyPlaySound(type);
+                    }).catch(err => {
+                        log(`❌ AudioContext 恢复失败: ${err.message}`);
+                    });
+                } else {
+                    actuallyPlaySound(type);
+                }
+            } catch (error) {
+                log(`❌ 播放音效失败: ${error.message}`);
+            }
+        }
+
+        function actuallyPlaySound(type) {
+            const masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+            masterGain.gain.value = 0.5;
+            
+            if (type === 'cheer') {
+                log('🎺 播放喝彩音效');
+                // 简化的喝彩音效
+                const duration = 1.5;
+                const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                
+                frequencies.forEach((freq, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    
+                    oscillator.frequency.value = freq;
+                    oscillator.type = 'triangle';
+                    
+                    const startTime = audioContext.currentTime + index * 0.1;
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.4);
+                });
+                
+            } else if (type === 'clap') {
+                log('👏 播放鼓掌音效');
+                // 简化的鼓掌音效
+                for (let i = 0; i < 5; i++) {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    
+                    for (let j = 0; j < data.length; j++) {
+                        data[j] = Math.random() * 2 - 1;
+                    }
+                    
+                    noise.buffer = buffer;
+                    
+                    const filter = audioContext.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 1000 + Math.random() * 500;
+                    
+                    const gainNode = audioContext.createGain();
+                    
+                    noise.connect(filter);
+                    filter.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    
+                    const startTime = audioContext.currentTime + i * 0.15;
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1);
+                    
+                    noise.start(startTime);
+                    noise.stop(startTime + 0.1);
+                }
+                
+            } else if (type === 'drum') {
+                log('🥁 播放打鼓音效');
+                // 简化的打鼓音效
+                for (let i = 0; i < 3; i++) {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    
+                    oscillator.frequency.value = 60 + Math.random() * 40; // 低频鼓声
+                    oscillator.type = 'triangle';
+                    
+                    const startTime = audioContext.currentTime + i * 0.3;
+                    gainNode.gain.setValueAtTime(0.5, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.2);
+                }
+            }
+            
+            log(`✅ ${type} 音效播放完成`);
+        }
+
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            log('📄 页面加载完成');
+            testAudioContext();
+        });
+    </script>
+</body>
+</html>

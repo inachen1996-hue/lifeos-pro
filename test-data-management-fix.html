@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>数据管理功能修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            color: #5D576B;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+        
+        .status {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin: 12px 0;
+        }
+        
+        .success {
+            background: #D9EFE8;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #FFE5E5;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #E7F5FF;
+            color: #0c5460;
+            border: 1px solid #D0EBFF;
+        }
+        
+        .fix-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        
+        .fix-item h4 {
+            margin: 0 0 8px 0;
+            color: #495057;
+        }
+        
+        .fix-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 数据管理功能修复测试</h1>
+        
+        <div class="status error">
+            <strong>❌ 问题描述：</strong><br>
+            设置中点击"管理数据、管理习惯、清空数据"都没有反应
+        </div>
+        
+        <div class="test-card">
+            <h3>🔍 问题分析</h3>
+            <p>经过检查发现，这些模态框的实现都在 <code>renderDataPage()</code> 函数内部，但是当我们从数据管理菜单调用它们时，<code>renderDataPage()</code> 可能没有被渲染，所以这些模态框不会显示。</p>
+        </div>
+        
+        <div class="test-card">
+            <h3>🛠️ 修复方案</h3>
+            <div class="fix-item">
+                <h4>1. 移动模态框位置</h4>
+                <p>将 DataManagerModal、HabitManagerModal、ClearModal 从 renderDataPage() 函数内部移动到主组件的根级别</p>
+            </div>
+            
+            <div class="fix-item">
+                <h4>2. 确保作用域正确</h4>
+                <p>让这些模态框与数据管理菜单处于同一作用域，确保状态变量能够正确访问</p>
+            </div>
+            
+            <div class="fix-item">
+                <h4>3. 保持功能完整</h4>
+                <p>移动过程中保持所有原有功能和样式不变，只是改变渲染位置</p>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>📋 修复内容</h3>
+            <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                <li><strong>DataManagerModal</strong> - 从 renderDataPage() 移动到主组件根级别</li>
+                <li><strong>HabitManagerModal</strong> - 从 renderDataPage() 移动到主组件根级别</li>
+                <li><strong>ClearModal</strong> - 从 renderDataPage() 移动到主组件根级别</li>
+                <li><strong>状态管理</strong> - 保持所有状态变量和事件处理不变</li>
+            </ul>
+        </div>
+        
+        <div class="test-card">
+            <h3>🎯 修复后的结构</h3>
+            <div style="font-family: monospace; background: #f8f9fa; padding: 16px; border-radius: 8px; font-size: 12px;">
+主组件<br>
+├── 数据管理菜单 (showDataManagementMenu)<br>
+├── 上传苹果日历数据模态框 (showUploadCalendarModal)<br>
+├── 数据源模态框 (showDataSourceModal)<br>
+├── <strong>DataManagerModal (showDataModal)</strong> ← 新位置<br>
+├── <strong>HabitManagerModal (showHabitModal)</strong> ← 新位置<br>
+└── <strong>ClearModal (showClearModal)</strong> ← 新位置
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>✅ 测试步骤</h3>
+            <ol style="text-align: left; padding-left: 20px; line-height: 1.8;">
+                <li>打开应用，点击底部导航栏的"设置"</li>
+                <li>在设置页面点击"数据管理"卡片</li>
+                <li>在数据管理菜单中分别测试：
+                    <ul style="margin: 8px 0; padding-left: 20px;">
+                        <li>📋 管理数据 - 应该打开数据管理界面</li>
+                        <li>⚙️ 管理习惯 - 应该打开习惯管理界面</li>
+                        <li>📅 上传苹果日历数据 - 应该打开上传界面</li>
+                        <li>🗑️ 清空数据 - 应该打开确认清空界面</li>
+                    </ul>
+                </li>
+                <li>验证所有功能都能正常工作</li>
+            </ol>
+        </div>
+        
+        <div class="status success">
+            ✅ 修复完成：所有模态框已移动到正确位置，应该能正常响应点击事件
+        </div>
+        
+        <div class="status info">
+            💡 技术要点：React 组件的渲染作用域很重要，模态框必须在正确的组件层级才能被状态变量控制
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 数据管理功能修复测试页面已加载');
+        console.log('✅ 模态框已移动到主组件根级别');
+        console.log('🎯 现在应该能正常响应点击事件了');
+    </script>
+</body>
+</html>

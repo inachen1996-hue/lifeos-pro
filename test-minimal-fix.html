@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最小化测试</title>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center;">
+            <h2>加载中...</h2>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        const TestApp = () => {
+            const [selectedCategory, setSelectedCategory] = useState('uncategorized');
+            const [categories] = useState([
+                { id: 'work', name: '工作', color: 'bg-blue-200' },
+                { id: 'study', name: '学习', color: 'bg-green-200' }
+            ]);
+
+            return (
+                <div style={{ padding: '20px' }}>
+                    <h1>测试页面</h1>
+                    <p>当前分类: {selectedCategory}</p>
+                    
+                    <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
+                        <button 
+                            onClick={() => setSelectedCategory('uncategorized')}
+                            style={{ 
+                                padding: '10px 20px', 
+                                backgroundColor: selectedCategory === 'uncategorized' ? '#007bff' : '#f8f9fa',
+                                color: selectedCategory === 'uncategorized' ? 'white' : 'black',
+                                border: '1px solid #ccc',
+                                borderRadius: '5px'
+                            }}
+                        >
+                            待分类
+                        </button>
+                        
+                        {categories.map(category => (
+                            <button 
+                                key={category.id}
+                                onClick={() => setSelectedCategory(category.id)}
+                                style={{ 
+                                    padding: '10px 20px', 
+                                    backgroundColor: selectedCategory === category.id ? '#007bff' : '#f8f9fa',
+                                    color: selectedCategory === category.id ? 'white' : 'black',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '5px'
+                                }}
+                            >
+                                {category.name}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+                        <h3>选中的分类信息:</h3>
+                        <p>ID: {selectedCategory}</p>
+                        <p>类型: {selectedCategory === 'uncategorized' ? '待分类' : '正常分类'}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // 等待 React 加载完成
+        if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+            const root = createRoot(document.getElementById('root'));
+            root.render(<TestApp />);
+        } else {
+            document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;">React 加载失败</div>';
+        }
+    </script>
+</body>
+</html>

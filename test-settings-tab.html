@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置Tab测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 设置Tab功能测试</h1>
+        
+        <div class="test-item">
+            <h3>✅ 功能实现清单</h3>
+            <ul>
+                <li>✅ 底部导航栏新增"设置"tab</li>
+                <li>✅ 设置页面包含菜单栏</li>
+                <li>✅ 菜单第一项是"AI设置"</li>
+                <li>✅ AI设置复用原有API配置功能</li>
+                <li>✅ 移除顶部设置按钮</li>
+                <li>✅ 添加其他设置项预览</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>🎨 设计特点</h3>
+            <ul>
+                <li><strong>空气感马卡龙风格</strong>：与整体UI保持一致</li>
+                <li><strong>灰色主题</strong>：设置tab使用灰色系，符合设置页面的中性特征</li>
+                <li><strong>卡片式布局</strong>：每个设置项都是独立的卡片</li>
+                <li><strong>状态指示</strong>：显示当前AI服务提供商</li>
+                <li><strong>即将推出</strong>：为未来功能预留位置</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>🔍 测试步骤</h3>
+            <ol>
+                <li>打开主应用</li>
+                <li>点击底部导航栏的"设置"tab（灰色图标）</li>
+                <li>查看设置页面是否正确显示</li>
+                <li>点击"AI设置"卡片</li>
+                <li>验证API配置模态框是否正常弹出</li>
+                <li>测试AI服务切换和API Key设置</li>
+            </ol>
+        </div>
+
+        <div class="test-item success">
+            <h3>✨ 预期效果</h3>
+            <p><strong>底部导航栏：</strong>现在有5个tab（计时器、日记、复盘、计划、设置）</p>
+            <p><strong>设置页面：</strong>包含AI设置、主题设置、数据管理、通知设置等菜单项</p>
+            <p><strong>AI设置：</strong>点击后弹出原有的API配置界面</p>
+            <p><strong>顶部：</strong>不再有设置按钮，界面更简洁</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index.html" class="btn">🚀 打开主应用测试</a>
+            <a href="http://localhost:8000" class="btn">🌐 访问本地服务器</a>
+        </div>
+
+        <div class="test-item">
+            <h3>📱 移动端适配</h3>
+            <p>设置页面完全适配移动端，所有卡片都支持触摸操作，字体大小和间距都针对手机屏幕优化。</p>
+        </div>
+    </div>
+
+    <script>
+        // 简单的功能检查
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 设置Tab测试页面加载完成');
+            
+            // 检查是否能访问主应用
+            fetch('index.html')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ 主应用文件可访问');
+                    } else {
+                        console.log('❌ 主应用文件访问失败');
+                    }
+                })
+                .catch(error => {
+                    console.log('❌ 网络错误:', error);
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移除顶部LifeOS显示测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .before, .after {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .before {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .after {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .header-demo {
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .old-header {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border: 2px solid #9c27b0;
+        }
+        .new-header {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 移除顶部LifeOS显示完成</h1>
+        
+        <div class="test-item success">
+            <h3>✅ 修改完成</h3>
+            <p>成功移除了顶部的LifeOS品牌显示，界面更加简洁。</p>
+        </div>
+
+        <div class="test-item">
+            <h3>📐 界面变化对比</h3>
+            <div class="before-after">
+                <div class="before">
+                    <strong>修改前</strong>
+                    <div class="header-demo old-header">
+                        🧠 LifeOS<br>
+                        <small>Airy Macaron v4.0</small>
+                    </div>
+                    <p>高度: 96px (h-24)<br>内容间距: pt-28</p>
+                </div>
+                <div class="after">
+                    <strong>修改后</strong>
+                    <div class="header-demo new-header">
+                        (空白头部)
+                    </div>
+                    <p>高度: 64px (h-16)<br>内容间距: pt-20</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-item">
+            <h3>🔧 具体修改内容</h3>
+            <ul>
+                <li>✅ 移除了LifeOS图标和文字</li>
+                <li>✅ 移除了版本号显示</li>
+                <li>✅ 头部高度从 h-24 (96px) 减少到 h-16 (64px)</li>
+                <li>✅ 主内容区间距从 pt-28 调整到 pt-20</li>
+                <li>✅ 保留了头部的背景和边框样式</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>🎯 设计优势</h3>
+            <ul>
+                <li><strong>更简洁</strong>：去除品牌元素，专注功能</li>
+                <li><strong>更多空间</strong>：为内容释放了32px的垂直空间</li>
+                <li><strong>更现代</strong>：符合极简设计趋势</li>
+                <li><strong>更专业</strong>：减少视觉干扰，提升专业感</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>📱 移动端优化</h3>
+            <p>在移动设备上，减少头部高度特别有价值：</p>
+            <ul>
+                <li>节省宝贵的屏幕空间</li>
+                <li>减少滚动需求</li>
+                <li>提升内容可见性</li>
+                <li>改善单手操作体验</li>
+            </ul>
+        </div>
+
+        <div class="test-item">
+            <h3>🔍 验证步骤</h3>
+            <ol>
+                <li>打开主应用</li>
+                <li>检查顶部是否不再显示LifeOS</li>
+                <li>确认头部高度减少</li>
+                <li>验证内容区域正确对齐</li>
+                <li>测试各个页面的显示效果</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index.html" class="btn">🚀 查看修改效果</a>
+            <a href="test-settings-tab.html" class="btn">⚙️ 设置Tab测试</a>
+        </div>
+
+        <div class="test-item">
+            <h3>💡 技术细节</h3>
+            <p><strong>修改的CSS类：</strong></p>
+            <ul>
+                <li><code>h-24</code> → <code>h-16</code> (头部高度)</li>
+                <li><code>pt-28</code> → <code>pt-20</code> (内容间距)</li>
+                <li>移除了所有LifeOS相关的DOM元素</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 头部移除测试页面加载完成');
+            console.log('📏 预期效果：头部高度减少32px，内容区域上移32px');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS 长按修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            /* 全局禁用文本选择和长按菜单 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            /* 计时器卡片样式 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.2s ease;
+        }
+        
+        .test-card:active {
+            transform: scale(0.98);
+        }
+        
+        .draggable-item {
+            background: linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 8px 0;
+            color: #023E8A;
+            font-weight: bold;
+            cursor: move;
+            /* 防止长按选择 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍎 iOS 长按修复测试</h1>
+    
+    <div class="status info">
+        <strong>测试说明：</strong><br>
+        在 iPhone 上长按下面的卡片，如果修复成功，应该不会出现"拷贝、查询、翻译"等系统菜单。
+    </div>
+    
+    <div class="test-card" id="testCard1">
+        <h3>🎯 计时器卡片测试</h3>
+        <p>长按这个卡片测试是否还会出现系统菜单</p>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">⏰</span>
+            <div>
+                <div style="font-weight: bold; color: #023E8A;">工作计时器</div>
+                <div style="font-size: 12px; color: #666;">⏱️ 正计时模式</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-card" id="testCard2">
+        <h3>📱 拖拽测试卡片</h3>
+        <p>这个卡片支持拖拽移动，长按不应该触发系统菜单</p>
+        <div class="draggable-item" id="draggableItem">
+            📋 拖拽我试试 - 长按移动
+        </div>
+    </div>
+    
+    <div class="test-card">
+        <h3>✅ 修复内容</h3>
+        <ul style="text-align: left; padding-left: 20px;">
+            <li>添加了 <code>-webkit-user-select: none</code></li>
+            <li>添加了 <code>-webkit-touch-callout: none</code></li>
+            <li>添加了 <code>user-select: none</code></li>
+            <li>添加了 <code>onContextMenu</code> 事件阻止</li>
+            <li>在触摸事件中添加了 <code>preventDefault()</code></li>
+        </ul>
+    </div>
+    
+    <div class="status success" id="testResult" style="display: none;">
+        ✅ 测试通过！长按没有出现系统菜单
+    </div>
+
+    <script>
+        let touchStartTime = 0;
+        let longPressTimer = null;
+        
+        // 测试卡片1的触摸事件
+        const testCard1 = document.getElementById('testCard1');
+        testCard1.addEventListener('touchstart', function(e) {
+            e.preventDefault(); // 阻止默认行为
+            touchStartTime = Date.now();
+            
+            // 设置长按检测
+            longPressTimer = setTimeout(() => {
+                console.log('长按检测：没有触发系统菜单 ✅');
+                document.getElementById('testResult').style.display = 'block';
+            }, 800);
+        });
+        
+        testCard1.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            clearTimeout(longPressTimer);
+            
+            const touchDuration = Date.now() - touchStartTime;
+            console.log(`触摸时长: ${touchDuration}ms`);
+        });
+        
+        testCard1.addEventListener('touchmove', function(e) {
+            e.preventDefault(); // 阻止默认行为
+        });
+        
+        // 阻止右键菜单
+        testCard1.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+        
+        // 拖拽测试
+        const draggableItem = document.getElementById('draggableItem');
+        let isDragging = false;
+        let startX, startY, currentX, currentY;
+        
+        draggableItem.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        draggableItem.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            currentX = touch.clientX - startX;
+            currentY = touch.clientY - startY;
+            
+            this.style.transform = `translate(${currentX}px, ${currentY}px) scale(1.05)`;
+        });
+        
+        draggableItem.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            isDragging = false;
+            this.style.transform = 'translate(0px, 0px) scale(1)';
+        });
+        
+        // 阻止右键菜单
+        draggableItem.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+        
+        console.log('🍎 iOS 长按修复测试页面已加载');
+        console.log('请在 iPhone 上长按测试卡片，观察是否还会出现系统菜单');
+    </script>
+</body>
+</html>

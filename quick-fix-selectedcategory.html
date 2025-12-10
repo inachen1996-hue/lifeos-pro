@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复 selectedCategory 错误</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .solution {
+            background: #efe;
+            border: 1px solid #cfc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .code {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 selectedCategory 错误修复</h1>
+        
+        <div class="error">
+            <h3>❌ 检测到的问题:</h3>
+            <p><strong>ReferenceError: selectedCategory is not defined</strong></p>
+            <p>这个错误通常由以下原因引起：</p>
+            <ul>
+                <li>变量定义重复或格式错误</li>
+                <li>作用域问题</li>
+                <li>文件编码问题</li>
+                <li>React 组件渲染时的语法错误</li>
+            </ul>
+        </div>
+
+        <div class="solution">
+            <h3>✅ 解决方案:</h3>
+            <p>我们提供以下几种修复方法：</p>
+        </div>
+
+        <h3>方法 1: 使用备份文件</h3>
+        <p>如果你有可用的备份文件，可以恢复到之前的版本：</p>
+        <button onclick="restoreFromBackup()">恢复备份文件</button>
+
+        <h3>方法 2: 手动修复</h3>
+        <p>检查 index.html 第1031行附近的代码，确保没有重复定义：</p>
+        <div class="code">
+const [selectedCategory, setSelectedCategory] = useState('uncategorized');
+        </div>
+
+        <h3>方法 3: 使用测试页面</h3>
+        <p>先测试简化版本确认功能正常：</p>
+        <button onclick="openTestPage()">打开测试页面</button>
+
+        <h3>方法 4: 重新部署</h3>
+        <p>如果问题持续存在，可以重新部署应用：</p>
+        <button onclick="redeploy()">重新部署</button>
+
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <h4>🔍 诊断信息:</h4>
+            <p>当前时间: <span id="currentTime"></span></p>
+            <p>浏览器: <span id="browserInfo"></span></p>
+            <p>页面URL: <span id="pageUrl"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // 显示诊断信息
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        document.getElementById('browserInfo').textContent = navigator.userAgent;
+        document.getElementById('pageUrl').textContent = window.location.href;
+
+        function restoreFromBackup() {
+            if (confirm('确定要恢复备份文件吗？这将覆盖当前的 index.html')) {
+                alert('请手动执行: cp index.html.backup-airy index.html');
+            }
+        }
+
+        function openTestPage() {
+            window.open('test-minimal-fix.html', '_blank');
+        }
+
+        function redeploy() {
+            if (confirm('确定要重新部署吗？')) {
+                alert('请执行部署脚本或刷新页面');
+                window.location.reload();
+            }
+        }
+
+        // 自动检测问题
+        setTimeout(() => {
+            const errorDiv = document.querySelector('.error');
+            errorDiv.innerHTML += '<p><strong>自动检测结果:</strong> 建议先尝试测试页面，确认问题是否已解决。</p>';
+        }, 1000);
+    </script>
+</body>
+</html>

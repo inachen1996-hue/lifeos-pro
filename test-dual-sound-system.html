@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双音效系统测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .system-card {
+            border-left: 4px solid;
+        }
+        .system-1 { border-left-color: #667eea; }
+        .system-2 { border-left-color: #f093fb; }
+        .test-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        .test-btn.system-2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .upload-section {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0;
+        }
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        input[type="file"] {
+            margin: 8px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 双音效系统测试</h1>
+        <p>测试两个独立的音效系统：音效按钮 vs 计时器铃声</p>
+        
+        <div class="highlight">
+            <strong>重要说明：</strong>这两个音效系统是完全独立的，使用不同的存储键和上传工具。
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📊 系统对比</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>特性</th>
+                    <th>音效按钮系统</th>
+                    <th>计时器铃声系统</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>用途</strong></td>
+                    <td>"复盘" → "当前进度" 的音效按钮</td>
+                    <td>倒计时和番茄钟结束铃声</td>
+                </tr>
+                <tr>
+                    <td><strong>存储键</strong></td>
+                    <td><code>lifeos_pro_custom_sounds</code></td>
+                    <td><code>lifeos_pro_timer_alarm</code></td>
+                </tr>
+                <tr>
+                    <td><strong>音效类型</strong></td>
+                    <td>🎺 喝彩、👏 鼓掌、🥁 打鼓</td>
+                    <td>单一计时器铃声</td>
+                </tr>
+                <tr>
+                    <td><strong>上传工具</strong></td>
+                    <td><a href="sound-converter.html" target="_blank">sound-converter.html</a></td>
+                    <td><a href="timer-alarm-converter.html" target="_blank">timer-alarm-converter.html</a></td>
+                </tr>
+                <tr>
+                    <td><strong>播放方式</strong></td>
+                    <td>单次播放，不循环</td>
+                    <td>循环播放10秒</td>
+                </tr>
+                <tr>
+                    <td><strong>默认回退</strong></td>
+                    <td>Web Audio API 生成音效</td>
+                    <td>800Hz 蜂鸣声</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card system-card system-1">
+        <h3>🎵 系统1：音效按钮系统</h3>
+        <p>用于"复盘" → "当前进度"页面的音效按钮</p>
+        
+        <div class="upload-section">
+            <p>上传音效按钮音频（喝彩音效）</p>
+            <input type="file" id="soundButtonFile" accept="audio/*">
+            <button class="test-btn" onclick="document.getElementById('soundButtonFile').click()">选择音效按钮音频</button>
+        </div>
+        
+        <div>
+            <button class="test-btn" onclick="checkSoundButtons()">检查音效按钮数据</button>
+            <button class="test-btn" onclick="testSoundButton()">测试音效按钮播放</button>
+            <button class="test-btn" onclick="clearSoundButtons()">清空音效按钮</button>
+        </div>
+        
+        <div id="soundButtonStatus"></div>
+    </div>
+
+    <div class="card system-card system-2">
+        <h3>⏰ 系统2：计时器铃声系统</h3>
+        <p>用于倒计时和番茄钟结束时的铃声</p>
+        
+        <div class="upload-section">
+            <p>上传计时器铃声音频</p>
+            <input type="file" id="timerAlarmFile" accept="audio/*">
+            <button class="test-btn system-2" onclick="document.getElementById('timerAlarmFile').click()">选择计时器铃声音频</button>
+        </div>
+        
+        <div>
+            <button class="test-btn system-2" onclick="checkTimerAlarm()">检查计时器铃声数据</button>
+            <button class="test-btn system-2" onclick="testTimerAlarm()">测试计时器铃声播放</button>
+            <button class="test-btn system-2" onclick="clearTimerAlarm()">清空计时器铃声</button>
+        </div>
+        
+        <div id="timerAlarmStatus"></div>
+    </div>
+
+    <div class="card">
+        <h3>🧪 综合测试</h3>
+        <p>测试两个系统的独立性</p>
+        
+        <div>
+            <button class="test-btn" onclick="testBothSystems()">同时测试两个系统</button>
+            <button class="test-btn" onclick="simulateTimerEnd()">模拟计时器结束</button>
+            <button class="test-btn" onclick="simulateSoundButtonClick()">模拟音效按钮点击</button>
+        </div>
+        
+        <div id="comprehensiveStatus"></div>
+    </div>
+
+    <script>
+        // 音效按钮文件上传
+        document.getElementById('soundButtonFile').addEventListener('change', function(event) {
+            handleFileUpload(event, 'soundButton');
+        });
+
+        // 计时器铃声文件上传
+        document.getElementById('timerAlarmFile').addEventListener('change', function(event) {
+            handleFileUpload(event, 'timerAlarm');
+        });
+
+        function handleFileUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('audio/')) {
+                showStatus(type === 'soundButton' ? 'soundButtonStatus' : 'timerAlarmStatus', 
+                          '❌ 请选择音频文件', 'error');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showStatus(type === 'soundButton' ? 'soundButtonStatus' : 'timerAlarmStatus', 
+                          '❌ 文件大小不能超过5MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dataUrl = e.target.result;
+                    
+                    if (type === 'soundButton') {
+                        // 保存为音效按钮数据
+                        const customSounds = {
+                            cheer: dataUrl,
+                            clap: null,
+                            drum: null
+                        };
+                        localStorage.setItem('lifeos_pro_custom_sounds', JSON.stringify(customSounds));
+                        showStatus('soundButtonStatus', `✅ 音效按钮音频上传成功！文件: ${file.name}`, 'success');
+                    } else {
+                        // 保存为计时器铃声数据
+                        localStorage.setItem('lifeos_pro_timer_alarm', dataUrl);
+                        showStatus('timerAlarmStatus', `✅ 计时器铃声上传成功！文件: ${file.name}`, 'success');
+                    }
+                } catch (error) {
+                    showStatus(type === 'soundButton' ? 'soundButtonStatus' : 'timerAlarmStatus', 
+                              '❌ 音频保存失败: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showStatus(type === 'soundButton' ? 'soundButtonStatus' : 'timerAlarmStatus', 
+                          '❌ 文件读取失败', 'error');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function checkSoundButtons() {
+            try {
+                const stored = localStorage.getItem('lifeos_pro_custom_sounds');
+                if (stored) {
+                    const sounds = JSON.parse(stored);
+                    let info = '✅ 找到音效按钮数据：\n\n';
+                    info += `喝彩音效: ${sounds.cheer ? '已设置' : '未设置'}\n`;
+                    info += `鼓掌音效: ${sounds.clap ? '已设置' : '未设置'}\n`;
+                    info += `打鼓音效: ${sounds.drum ? '已设置' : '未设置'}\n`;
+                    showStatus('soundButtonStatus', info, 'success');
+                } else {
+                    showStatus('soundButtonStatus', '❌ 未找到音效按钮数据', 'error');
+                }
+            } catch (error) {
+                showStatus('soundButtonStatus', '❌ 读取音效按钮数据失败: ' + error.message, 'error');
+            }
+        }
+
+        function checkTimerAlarm() {
+            try {
+                const stored = localStorage.getItem('lifeos_pro_timer_alarm');
+                if (stored) {
+                    showStatus('timerAlarmStatus', '✅ 找到计时器铃声数据', 'success');
+                } else {
+                    showStatus('timerAlarmStatus', '❌ 未找到计时器铃声数据', 'error');
+                }
+            } catch (error) {
+                showStatus('timerAlarmStatus', '❌ 读取计时器铃声数据失败: ' + error.message, 'error');
+            }
+        }
+
+        function testSoundButton() {
+            try {
+                const stored = localStorage.getItem('lifeos_pro_custom_sounds');
+                if (!stored) {
+                    showStatus('soundButtonStatus', '❌ 请先上传音效按钮音频', 'error');
+                    return;
+                }
+
+                const sounds = JSON.parse(stored);
+                if (sounds.cheer) {
+                    showStatus('soundButtonStatus', '🔊 播放音效按钮音频...', 'info');
+                    const audio = new Audio(sounds.cheer);
+                    audio.volume = 0.5;
+                    audio.play().then(() => {
+                        showStatus('soundButtonStatus', '✅ 音效按钮播放成功', 'success');
+                    }).catch(err => {
+                        showStatus('soundButtonStatus', '❌ 播放失败: ' + err.message, 'error');
+                    });
+                } else {
+                    showStatus('soundButtonStatus', '❌ 未找到喝彩音效数据', 'error');
+                }
+            } catch (error) {
+                showStatus('soundButtonStatus', '❌ 测试失败: ' + error.message, 'error');
+            }
+        }
+
+        function testTimerAlarm() {
+            try {
+                const stored = localStorage.getItem('lifeos_pro_timer_alarm');
+                if (!stored) {
+                    showStatus('timerAlarmStatus', '❌ 请先上传计时器铃声音频', 'error');
+                    return;
+                }
+
+                showStatus('timerAlarmStatus', '🔊 播放计时器铃声音频（循环3秒）...', 'info');
+                const audio = new Audio(stored);
+                audio.volume = 0.5;
+                audio.loop = true;
+                
+                audio.play().then(() => {
+                    showStatus('timerAlarmStatus', '✅ 计时器铃声播放成功（循环播放）', 'success');
+                    
+                    // 3秒后停止（模拟计时器行为）
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        showStatus('timerAlarmStatus', '⏹️ 计时器铃声已停止', 'info');
+                    }, 3000);
+                }).catch(err => {
+                    showStatus('timerAlarmStatus', '❌ 播放失败: ' + err.message, 'error');
+                });
+            } catch (error) {
+                showStatus('timerAlarmStatus', '❌ 测试失败: ' + error.message, 'error');
+            }
+        }
+
+        function clearSoundButtons() {
+            if (confirm('确定要清空音效按钮数据吗？')) {
+                localStorage.removeItem('lifeos_pro_custom_sounds');
+                showStatus('soundButtonStatus', '✅ 已清空音效按钮数据', 'info');
+            }
+        }
+
+        function clearTimerAlarm() {
+            if (confirm('确定要清空计时器铃声数据吗？')) {
+                localStorage.removeItem('lifeos_pro_timer_alarm');
+                showStatus('timerAlarmStatus', '✅ 已清空计时器铃声数据', 'info');
+            }
+        }
+
+        function testBothSystems() {
+            showStatus('comprehensiveStatus', '🧪 测试两个系统的独立性...', 'info');
+            
+            const soundButtons = localStorage.getItem('lifeos_pro_custom_sounds');
+            const timerAlarm = localStorage.getItem('lifeos_pro_timer_alarm');
+            
+            let result = '📊 系统独立性测试结果：\n\n';
+            result += `音效按钮系统: ${soundButtons ? '✅ 有数据' : '❌ 无数据'}\n`;
+            result += `计时器铃声系统: ${timerAlarm ? '✅ 有数据' : '❌ 无数据'}\n\n`;
+            
+            if (soundButtons && timerAlarm) {
+                result += '🎉 两个系统都有数据，完全独立！';
+                showStatus('comprehensiveStatus', result, 'success');
+            } else if (soundButtons || timerAlarm) {
+                result += '⚠️ 只有一个系统有数据，这是正常的。';
+                showStatus('comprehensiveStatus', result, 'info');
+            } else {
+                result += '❌ 两个系统都没有数据，请先上传音频。';
+                showStatus('comprehensiveStatus', result, 'error');
+            }
+        }
+
+        function simulateTimerEnd() {
+            showStatus('comprehensiveStatus', '⏰ 模拟计时器结束...', 'info');
+            
+            const timerAlarm = localStorage.getItem('lifeos_pro_timer_alarm');
+            if (timerAlarm) {
+                const audio = new Audio(timerAlarm);
+                audio.volume = 0.5;
+                audio.loop = true;
+                
+                audio.play().then(() => {
+                    showStatus('comprehensiveStatus', '🔔 计时器铃声响起（模拟10秒，实际播放3秒）', 'success');
+                    
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        showStatus('comprehensiveStatus', '⏹️ 计时器铃声已停止', 'info');
+                    }, 3000);
+                });
+            } else {
+                // 播放默认蜂鸣声
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+
+                    const now = ctx.currentTime;
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.5);
+
+                    showStatus('comprehensiveStatus', '🔊 播放默认计时器蜂鸣声（800Hz）', 'info');
+                    
+                    oscillator.onended = () => {
+                        ctx.close();
+                    };
+                } catch (error) {
+                    showStatus('comprehensiveStatus', '❌ 无法播放默认蜂鸣声: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function simulateSoundButtonClick() {
+            showStatus('comprehensiveStatus', '🎵 模拟音效按钮点击...', 'info');
+            
+            const soundButtons = localStorage.getItem('lifeos_pro_custom_sounds');
+            if (soundButtons) {
+                try {
+                    const sounds = JSON.parse(soundButtons);
+                    if (sounds.cheer) {
+                        const audio = new Audio(sounds.cheer);
+                        audio.volume = 0.5;
+                        
+                        audio.play().then(() => {
+                            showStatus('comprehensiveStatus', '🎺 音效按钮播放成功（喝彩音效）', 'success');
+                        }).catch(err => {
+                            showStatus('comprehensiveStatus', '❌ 音效按钮播放失败: ' + err.message, 'error');
+                        });
+                    } else {
+                        showStatus('comprehensiveStatus', '❌ 未找到喝彩音效', 'error');
+                    }
+                } catch (error) {
+                    showStatus('comprehensiveStatus', '❌ 解析音效按钮数据失败: ' + error.message, 'error');
+                }
+            } else {
+                showStatus('comprehensiveStatus', '❌ 未找到音效按钮数据', 'error');
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message.replace(/\n/g, '<br>')}</div>`;
+        }
+
+        // 页面加载时检查两个系统的状态
+        window.addEventListener('load', () => {
+            checkSoundButtons();
+            checkTimerAlarm();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试当前修复</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 测试 selectedCategory 修复</h1>
+    
+    <div id="status" class="status info">
+        正在检测问题...
+    </div>
+
+    <div id="actions" style="margin-top: 20px;">
+        <button onclick="testMainPage()">测试主页面</button>
+        <button onclick="testMinimal()">测试简化版本</button>
+        <button onclick="checkConsole()">检查控制台</button>
+        <button onclick="location.reload()">刷新页面</button>
+    </div>
+
+    <div id="details" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+        <h3>检测结果:</h3>
+        <ul id="checkList">
+            <li>正在检查...</li>
+        </ul>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function addCheckResult(message, success = true) {
+            const list = document.getElementById('checkList');
+            const li = document.createElement('li');
+            li.innerHTML = `${success ? '✅' : '❌'} ${message}`;
+            li.style.color = success ? '#155724' : '#721c24';
+            list.appendChild(li);
+        }
+
+        function testMainPage() {
+            updateStatus('正在测试主页面...', 'info');
+            try {
+                window.open('index.html', '_blank');
+                addCheckResult('主页面已打开，请检查是否有错误');
+            } catch (error) {
+                addCheckResult(`打开主页面失败: ${error.message}`, false);
+                updateStatus('测试失败', 'error');
+            }
+        }
+
+        function testMinimal() {
+            updateStatus('正在测试简化版本...', 'info');
+            try {
+                window.open('test-minimal-fix.html', '_blank');
+                addCheckResult('简化版本已打开');
+            } catch (error) {
+                addCheckResult(`打开简化版本失败: ${error.message}`, false);
+            }
+        }
+
+        function checkConsole() {
+            updateStatus('请检查浏览器控制台...', 'info');
+            addCheckResult('请按 F12 打开开发者工具，查看控制台是否有错误');
+        }
+
+        // 自动检测
+        setTimeout(() => {
+            const list = document.getElementById('checkList');
+            list.innerHTML = '';
+            
+            // 检查基本功能
+            addCheckResult('页面加载正常');
+            addCheckResult('JavaScript 执行正常');
+            
+            // 检查 React 相关
+            if (typeof React !== 'undefined') {
+                addCheckResult('React 库可用');
+            } else {
+                addCheckResult('React 库不可用', false);
+            }
+
+            updateStatus('基本检测完成，请测试主页面', 'success');
+        }, 1000);
+    </script>
+</body>
+</html>

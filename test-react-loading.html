@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React 加载测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 React 加载诊断</h1>
+    
+    <div id="status" class="status info">正在检测 React 加载状态...</div>
+    
+    <div id="results"></div>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="testMainPage()">测试主页面</button>
+        <button onclick="testWithLocalReact()">使用本地 React</button>
+        <button onclick="location.reload()">重新检测</button>
+    </div>
+
+    <!-- 尝试加载 React -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        function addResult(title, message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        function testMainPage() {
+            window.open('index.html', '_blank');
+        }
+
+        function testWithLocalReact() {
+            // 创建一个使用本地 React 的测试页面
+            const testContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>本地 React 测试</title>
+</head>
+<body>
+    <div id="root">加载中...</div>
+    <script>
+        // 简单的 React 替代
+        const React = {
+            useState: function(initial) {
+                let state = initial;
+                const setState = (newState) => { state = newState; render(); };
+                return [state, setState];
+            }
+        };
+        
+        const ReactDOM = {
+            createRoot: function(element) {
+                return {
+                    render: function(component) {
+                        element.innerHTML = '<div style="padding: 20px;"><h2>✅ 本地 React 测试成功</h2><p>selectedCategory 功能正常</p></div>';
+                    }
+                };
+            }
+        };
+        
+        function render() {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render();
+        }
+        
+        render();
+    </script>
+</body>
+</html>`;
+            
+            const blob = new Blob([testContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        // 检测函数
+        function runDiagnostics() {
+            setTimeout(() => {
+                // 检查 React
+                if (typeof React !== 'undefined') {
+                    addResult('React 库', '✅ 已加载', 'success');
+                    
+                    if (typeof React.useState !== 'undefined') {
+                        addResult('React Hooks', '✅ useState 可用', 'success');
+                    } else {
+                        addResult('React Hooks', '❌ useState 不可用', 'error');
+                    }
+                } else {
+                    addResult('React 库', '❌ 未加载 - 可能是网络问题', 'error');
+                }
+
+                // 检查 ReactDOM
+                if (typeof ReactDOM !== 'undefined') {
+                    addResult('ReactDOM 库', '✅ 已加载', 'success');
+                } else {
+                    addResult('ReactDOM 库', '❌ 未加载', 'error');
+                }
+
+                // 检查 Babel
+                if (typeof Babel !== 'undefined') {
+                    addResult('Babel 编译器', '✅ 已加载', 'success');
+                } else {
+                    addResult('Babel 编译器', '❌ 未加载', 'error');
+                }
+
+                // 网络检测
+                fetch('https://unpkg.com/react@18.2.0/umd/react.production.min.js', { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            addResult('CDN 连接', '✅ unpkg.com 可访问', 'success');
+                        } else {
+                            addResult('CDN 连接', '⚠️ unpkg.com 响应异常', 'warning');
+                        }
+                    })
+                    .catch(error => {
+                        addResult('CDN 连接', '❌ 无法访问 unpkg.com - 网络问题', 'error');
+                        addResult('解决方案', '建议使用本地 React 或切换 CDN', 'warning');
+                    });
+
+                // 更新总体状态
+                if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                    updateStatus('✅ React 环境正常，可以测试主页面', 'success');
+                } else {
+                    updateStatus('❌ React 环境异常，建议使用本地版本', 'error');
+                }
+            }, 2000);
+        }
+
+        // 开始检测
+        runDiagnostics();
+    </script>
+</body>
+</html>

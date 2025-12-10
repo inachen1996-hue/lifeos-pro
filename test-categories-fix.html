@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories 修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .test-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .primary {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Categories 错误修复</h1>
+        
+        <div class="success">
+            <h3>✅ 修复完成</h3>
+            <p><strong>问题：</strong> ReferenceError: categories is not defined</p>
+            <p><strong>原因：</strong> NavBtn 组件中使用了未定义的 categories 变量</p>
+            <p><strong>解决：</strong> 将 categories={categories} 改为 categories={timerCategories}</p>
+        </div>
+
+        <h3>🔧 修复内容：</h3>
+        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+            <li>✅ 修复了 NavBtn 组件中的 categories 参数</li>
+            <li>✅ 使用正确的 timerCategories 变量</li>
+            <li>✅ 确保所有组件都能正确访问分类数据</li>
+        </ul>
+
+        <h3>🚀 现在测试：</h3>
+        
+        <a href="index.html" class="test-button primary">
+            🏠 测试主页面
+        </a>
+        
+        <a href="test-final-fix.html" class="test-button">
+            📊 查看修复历史
+        </a>
+        
+        <div style="margin-top: 30px; font-size: 14px; opacity: 0.8;">
+            <p>如果主页面正常加载且没有 categories 错误，说明修复成功！</p>
+            <p>修复时间: <span id="time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>

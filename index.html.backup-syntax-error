@@ -1020,7 +1020,7 @@
         ];
 
         // --- Timer Components ---
-        const TimerPage = ({ categories, timers, onCreateTimer, onStartTimer, onCreateCategory, onDeleteCategory, onReorderCategories, expandedCategories, toggleCategory, activeTimerSession, onStopTimer, onDeleteTimer, onMoveTimerToCategory, selectedCategory, setSelectedCategory }) => {
+        const TimerPage = ({ categories, timers, onCreateTimer, onStartTimer, onCreateCategory, onDeleteCategory, onReorderCategories, expandedCategories, toggleCategory, activeTimerSession, onStopTimer, onDeleteTimer, onMoveTimerToCategory }) => {
           const [showCreateModal, setShowCreateModal] = useState(false);
           const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
           const [showManageCategoryModal, setShowManageCategoryModal] = useState(false);
@@ -1028,6 +1028,7 @@
           const [selectedTimer, setSelectedTimer] = useState(null);
           const [showDeleteTimerModal, setShowDeleteTimerModal] = useState(false);
           const [timerToDelete, setTimerToDelete] = useState(null);
+          const [selectedCategory, setSelectedCategory] = useState('uncategorized');
           const [swipedTimerId, setSwipedTimerId] = useState(null);
           const [touchStart, setTouchStart] = useState(null);
           const [touchEnd, setTouchEnd] = useState(null);
@@ -3797,9 +3798,6 @@
           const [showHabitCreateModal, setShowHabitCreateModal] = useState(false);
           const [habitCalendarDate, setHabitCalendarDate] = useState(new Date());
           const [habitName, setHabitName] = useState('');
-          
-          // 计时器页面的选中分类状态
-          const [selectedCategory, setSelectedCategory] = useState('uncategorized');
           const [habitKeywords, setHabitKeywords] = useState('');
           const [habitFreqType, setHabitFreqType] = useState('daily');
           const [habitFreqTarget, setHabitFreqTarget] = useState(1);
@@ -4772,8 +4770,6 @@
                   onStopTimer={handleStopTimer}
                   onDeleteTimer={handleDeleteTimer}
                   onMoveTimerToCategory={handleMoveTimerToCategory}
-                  selectedCategory={selectedCategory}
-                  setSelectedCategory={setSelectedCategory}
                 />
 
                 {activeTimerSession && (
@@ -6447,7 +6443,7 @@
                       setActivePage={setActivePage} 
                       loading={loading}
                       selectedCategory={selectedCategory}
-                      categories={timerCategories}
+                      categories={categories}
                     />
                     
                     {/* 日记 - 抹茶绿 */}

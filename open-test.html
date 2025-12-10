@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速测试入口</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+        .test-button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .test-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .primary {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+        .secondary {
+            background: rgba(33, 150, 243, 0.3);
+            border-color: rgba(33, 150, 243, 0.5);
+        }
+        .info {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 React 诊断测试</h1>
+        
+        <div class="info">
+            <h3>📋 测试说明：</h3>
+            <p>• 首先运行 React 加载测试，检查库是否正常</p>
+            <p>• 然后测试本地版本，验证 selectedCategory 修复</p>
+            <p>• 最后测试完整主页面</p>
+        </div>
+
+        <h3>🚀 选择测试：</h3>
+        
+        <a href="test-react-loading.html" class="test-button primary">
+            🔍 React 加载诊断
+        </a>
+        
+        <a href="index-local-react.html" class="test-button secondary">
+            🧪 本地版本测试
+        </a>
+        
+        <a href="index.html" class="test-button">
+            🏠 完整主页面
+        </a>
+
+        <div style="margin-top: 30px;">
+            <a href="test-current-fix.html" class="test-button">
+                📊 查看之前的测试结果
+            </a>
+        </div>
+
+        <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+            <p>服务器运行在: http://localhost:8080</p>
+            <p>时间: <span id="time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        
+        // 自动跳转到 React 测试页面（3秒后）
+        let countdown = 3;
+        const countdownElement = document.createElement('p');
+        countdownElement.style.marginTop = '20px';
+        countdownElement.style.fontSize = '18px';
+        countdownElement.style.fontWeight = 'bold';
+        document.querySelector('.container').appendChild(countdownElement);
+        
+        const timer = setInterval(() => {
+            countdownElement.textContent = `⏰ ${countdown} 秒后自动打开 React 测试页面...`;
+            countdown--;
+            
+            if (countdown < 0) {
+                clearInterval(timer);
+                window.location.href = 'test-react-loading.html';
+            }
+        }, 1000);
+        
+        // 点击任何按钮都会取消自动跳转
+        document.querySelectorAll('.test-button').forEach(button => {
+            button.addEventListener('click', () => {
+                clearInterval(timer);
+                countdownElement.textContent = '✅ 自动跳转已取消';
+            });
+        });
+    </script>
+</body>
+</html>

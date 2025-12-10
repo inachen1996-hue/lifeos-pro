@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟休息铃声测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .period-indicator {
+            text-align: center;
+            font-size: 24px;
+            margin: 16px 0;
+        }
+        .work-period { color: #e74c3c; }
+        .rest-period { color: #27ae60; }
+        .highlight {
+            background: #fff3cd;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🍅 番茄钟休息铃声测试</h1>
+        <p>测试番茄钟在工作周期和休息周期结束时是否都能正常播放铃声</p>
+        
+        <div class="highlight">
+            <strong>测试重点：</strong>验证休息周期结束时是否会播放铃声
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>⏰ 快速番茄钟测试</h3>
+        <p>创建一个快速的番茄钟来测试两个周期的铃声</p>
+        
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="period-indicator" id="periodIndicator">准备开始</div>
+        
+        <div>
+            <button class="test-btn" onclick="startQuickPomodoro()">开始快速番茄钟（工作10秒，休息5秒）</button>
+            <button class="test-btn" onclick="stopTimer()">停止计时器</button>
+            <button class="test-btn" onclick="resetTimer()">重置计时器</button>
+        </div>
+        
+        <div id="pomodoroStatus"></div>
+    </div>
+
+    <div class="card">
+        <h3>🔊 铃声测试</h3>
+        <p>直接测试计时器铃声播放</p>
+        
+        <div>
+            <button class="test-btn" onclick="testTimerAlarm()">测试计时器铃声</button>
+            <button class="test-btn" onclick="checkTimerAlarmData()">检查铃声数据</button>
+            <button class="test-btn" onclick="uploadTimerAlarm()">上传铃声</button>
+        </div>
+        
+        <div id="alarmStatus"></div>
+    </div>
+
+    <div class="card">
+        <h3>📋 测试步骤</h3>
+        <ol>
+            <li><strong>上传铃声</strong>：先确保有自定义计时器铃声</li>
+            <li><strong>开始番茄钟</strong>：点击"开始快速番茄钟"</li>
+            <li><strong>等待工作周期结束</strong>：10秒后应该听到铃声</li>
+            <li><strong>点击开始休息</strong>：确认进入休息周期</li>
+            <li><strong>等待休息周期结束</strong>：5秒后应该再次听到铃声</li>
+            <li><strong>验证结果</strong>：两个周期都应该有铃声</li>
+        </ol>
+    </div>
+
+    <script>
+        let timerInterval = null;
+        let currentPeriod = 'work'; // 'work' or 'rest'
+        let startTime = null;
+        let workDuration = 10; // 10秒工作
+        let restDuration = 5;  // 5秒休息
+        let hasRung = false;
+
+        function startQuickPomodoro() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            currentPeriod = 'work';
+            startTime = Date.now();
+            hasRung = false;
+            
+            showStatus('pomodoroStatus', '🍅 番茄钟已开始 - 工作周期', 'info');
+            updatePeriodIndicator();
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const duration = currentPeriod === 'work' ? workDuration : restDuration;
+                const remaining = Math.max(0, duration - elapsed);
+                
+                updateTimerDisplay(remaining);
+                
+                // 周期结束时播放铃声
+                if (remaining === 0 && !hasRung) {
+                    playTimerAlarm();
+                    hasRung = true;
+                    
+                    if (currentPeriod === 'work') {
+                        showStatus('pomodoroStatus', '🔔 工作周期结束！点击下方按钮开始休息', 'success');
+                        showPeriodCompleteButton('work');
+                    } else {
+                        showStatus('pomodoroStatus', '🔔 休息周期结束！点击下方按钮开始下一个工作周期', 'success');
+                        showPeriodCompleteButton('rest');
+                    }
+                }
+            }, 1000);
+        }
+
+        function showPeriodCompleteButton(completedPeriod) {
+            const statusDiv = document.getElementById('pomodoroStatus');
+            const nextPeriod = completedPeriod === 'work' ? '休息' : '工作';
+            const nextDuration = completedPeriod === 'work' ? restDuration : workDuration;
+            
+            statusDiv.innerHTML += `
+                <div style="margin-top: 16px;">
+                    <button class="test-btn" onclick="startNextPeriod('${completedPeriod}')">
+                        开始${nextPeriod}（${nextDuration}秒）
+                    </button>
+                </div>
+            `;
+        }
+
+        function startNextPeriod(completedPeriod) {
+            // 切换周期
+            currentPeriod = completedPeriod === 'work' ? 'rest' : 'work';
+            startTime = Date.now();
+            hasRung = false; // 重置铃声标记 - 这是关键修复！
+            
+            updatePeriodIndicator();
+            
+            const periodName = currentPeriod === 'work' ? '工作' : '休息';
+            showStatus('pomodoroStatus', `🔄 已切换到${periodName}周期`, 'info');
+        }
+
+        function updateTimerDisplay(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            
+            document.getElementById('timerDisplay').textContent = timeStr;
+        }
+
+        function updatePeriodIndicator() {
+            const indicator = document.getElementById('periodIndicator');
+            if (currentPeriod === 'work') {
+                indicator.textContent = '🍅 工作周期';
+                indicator.className = 'period-indicator work-period';
+            } else {
+                indicator.textContent = '☕ 休息周期';
+                indicator.className = 'period-indicator rest-period';
+            }
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            showStatus('pomodoroStatus', '⏹️ 计时器已停止', 'info');
+        }
+
+        function resetTimer() {
+            stopTimer();
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+            document.getElementById('periodIndicator').textContent = '准备开始';
+            document.getElementById('periodIndicator').className = 'period-indicator';
+            currentPeriod = 'work';
+            hasRung = false;
+            showStatus('pomodoroStatus', '🔄 计时器已重置', 'info');
+        }
+
+        function playTimerAlarm() {
+            try {
+                // 尝试播放自定义计时器铃声
+                const customAlarm = localStorage.getItem('lifeos_pro_timer_alarm');
+                if (customAlarm) {
+                    const audio = new Audio(customAlarm);
+                    audio.volume = 0.5;
+                    audio.loop = false; // 测试时不循环，避免太吵
+                    
+                    audio.play().then(() => {
+                        console.log('✅ 播放自定义计时器铃声');
+                        showStatus('alarmStatus', '🔊 播放自定义计时器铃声', 'success');
+                    }).catch(err => {
+                        console.error('自定义铃声播放失败:', err);
+                        playDefaultAlarm();
+                    });
+                } else {
+                    playDefaultAlarm();
+                }
+            } catch (error) {
+                console.error('播放铃声失败:', error);
+                playDefaultAlarm();
+            }
+        }
+
+        function playDefaultAlarm() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                const now = ctx.currentTime;
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                oscillator.start(now);
+                oscillator.stop(now + 0.5);
+
+                console.log('✅ 播放默认蜂鸣声');
+                showStatus('alarmStatus', '🔊 播放默认蜂鸣声（800Hz）', 'info');
+
+                oscillator.onended = () => {
+                    ctx.close();
+                };
+            } catch (error) {
+                console.error('播放默认铃声失败:', error);
+                showStatus('alarmStatus', '❌ 播放铃声失败: ' + error.message, 'error');
+            }
+        }
+
+        function testTimerAlarm() {
+            showStatus('alarmStatus', '🧪 测试计时器铃声...', 'info');
+            playTimerAlarm();
+        }
+
+        function checkTimerAlarmData() {
+            const stored = localStorage.getItem('lifeos_pro_timer_alarm');
+            if (stored) {
+                showStatus('alarmStatus', '✅ 找到自定义计时器铃声数据', 'success');
+            } else {
+                showStatus('alarmStatus', '❌ 未找到自定义计时器铃声数据，将使用默认蜂鸣声', 'error');
+            }
+        }
+
+        function uploadTimerAlarm() {
+            const currentDomain = window.location.origin;
+            const uploadUrl = `${currentDomain}/timer-alarm-converter.html`;
+            showStatus('alarmStatus', `📤 请访问上传工具：<a href="${uploadUrl}" target="_blank">${uploadUrl}</a>`, 'info');
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // 页面加载时检查铃声数据
+        window.addEventListener('load', () => {
+            checkTimerAlarmData();
+        });
+    </script>
+</body>
+</html>
