@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 完整效果演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 弹幕效果 */
+        .danmaku {
+            position: fixed;
+            right: -300px;
+            z-index: 1000;
+            pointer-events: none;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: danmaku-move linear;
+        }
+
+        @keyframes danmaku-move {
+            from { right: -300px; }
+            to { right: 100vw; }
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // 模拟数据
+        const mockAchievementData = [
+            {
+                id: '1',
+                timestamp: new Date().toISOString(),
+                category: 'work',
+                duration: 7200, // 2小时
+                title: '完成项目文档',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            },
+            {
+                id: '2',
+                timestamp: new Date().toISOString(),
+                category: 'study',
+                duration: 3600, // 1小时
+                title: '学习React开发',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            },
+            {
+                id: '3',
+                timestamp: new Date().toISOString(),
+                category: 'health',
+                duration: 1800, // 30分钟
+                title: '晨跑锻炼',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            },
+            {
+                id: '4',
+                timestamp: new Date().toISOString(),
+                category: 'hobby',
+                duration: 2700, // 45分钟
+                title: '阅读技术书籍',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            },
+            {
+                id: '5',
+                timestamp: new Date().toISOString(),
+                category: 'life',
+                duration: 1200, // 20分钟
+                title: '整理房间',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            },
+            {
+                id: '6',
+                timestamp: new Date().toISOString(),
+                category: 'entertainment',
+                duration: 3000, // 50分钟
+                title: '看电影放松',
+                metadata: { originalFormat: true, source: 'lifeos' }
+            }
+        ];
+
+        const categoryMap = {
+            work: { name: '工作', color: '#3b82f6' },
+            study: { name: '学习', color: '#10b981' },
+            rest: { name: '休息', color: '#8b5cf6' },
+            sleep: { name: '睡眠', color: '#6366f1' },
+            life: { name: '生活', color: '#f59e0b' },
+            entertainment: { name: '娱乐', color: '#ef4444' },
+            health: { name: '健康', color: '#06b6d4' },
+            hobby: { name: '爱好', color: '#ec4899' }
+        };
+
+        // Achievement Jar 容器组件
+        const AchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 生成粘土球数据
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#gray-500' };
+                    const size = Math.max(25, Math.min(65, (item.duration / 3600) * 35)); // 根据时长计算大小
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color,
+                        size,
+                        x: 60 + (index % 4) * 85 + Math.random() * 15,
+                        y: 80 + Math.floor(index / 4) * 70 + Math.random() * 15,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    {/* 3D 玻璃罐子效果 */}
+                    <div className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg">
+                        <div style={{
+                            width: '420px',
+                            height: '320px',
+                            margin: '0 auto'
+                        }}>
+                            {/* 粘土球 */}
+                            {clayBalls.map((ball) => (
+                                <div
+                                    key={ball.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${ball.x}px`,
+                                        top: `${ball.y}px`,
+                                        width: `${ball.size}px`,
+                                        height: `${ball.size}px`,
+                                        backgroundColor: ball.color
+                                    }}
+                                    onClick={() => onCelebrate('clap')}
+                                    title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                                />
+                            ))}
+                            
+                            {/* 玻璃反光效果 */}
+                            <div 
+                                className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                                style={{ 
+                                    transform: 'rotate(-15deg)',
+                                    background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                    filter: 'blur(1px)'
+                                }}
+                            />
+                            {/* 额外的小反光点 */}
+                            <div 
+                                className="absolute top-8 right-12 w-8 h-16 bg-gradient-to-b from-white to-transparent opacity-25 rounded-full"
+                                style={{ 
+                                    transform: 'rotate(25deg)',
+                                    filter: 'blur(0.5px)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用组件
+        const AchievementJarDemo = () => {
+            const [danmakus, setDanmakus] = useState([]);
+
+            // 播放音效（模拟）
+            const playSound = (type) => {
+                console.log(`🎵 播放音效: ${type}`);
+            };
+
+            // 生成弹幕
+            const generateDanmaku = () => {
+                const DANMAKU_MESSAGES = [
+                    "太棒了！继续保持！ 💪",
+                    "你真的很努力！ ✨", 
+                    "每一分努力都值得！ 🌟",
+                    "进步就是最好的奖励！ 🎯",
+                    "坚持就是胜利！ 🏆"
+                ];
+
+                const shuffled = [...DANMAKU_MESSAGES].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, 3);
+                
+                const newDanmakus = selected.map((text, index) => ({
+                    id: Date.now() + index,
+                    text,
+                    top: 15 + index * 20 + Math.random() * 10,
+                    duration: 4 + Math.random() * 1.5,
+                    delay: 0
+                }));
+                
+                setDanmakus(prev => [...prev, ...newDanmakus]);
+                
+                setTimeout(() => {
+                    setDanmakus(prev => prev.filter(d => !newDanmakus.find(nd => nd.id === d.id)));
+                }, 6000);
+            };
+
+            const onCelebrate = (type) => {
+                playSound(type);
+                generateDanmaku();
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+                        🏺 Achievement Jar 完整效果演示
+                    </h1>
+                    
+                    {/* Achievement Jar 主界面 */}
+                    <div className="achievement-jar-integrated-progress">
+                        {/* 顶部标题 */}
+                        <div className="text-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                                🏺 Achievement Jar
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-2">你的成就收藏罐</p>
+                        </div>
+
+                        {/* Achievement Jar 容器 */}
+                        <AchievementJarContainer 
+                            data={mockAchievementData}
+                            categoryMap={categoryMap}
+                            timeRange="today"
+                            onCelebrate={onCelebrate}
+                        />
+
+                        {/* 庆祝按钮 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-6">
+                            <h3 className="font-bold text-lg mb-4 flex items-center justify-center gap-2">
+                                🎉 庆祝成就
+                            </h3>
+                            <div className="flex gap-3 justify-center">
+                                <button 
+                                    onClick={() => onCelebrate('cheer')}
+                                    className="px-6 py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                                >
+                                    🎉 喝彩
+                                </button>
+                                <button 
+                                    onClick={() => onCelebrate('clap')}
+                                    className="px-6 py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                                >
+                                    👏 鼓掌
+                                </button>
+                                <button 
+                                    onClick={() => onCelebrate('drum')}
+                                    className="px-6 py-3 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                                >
+                                    🥁 打鼓
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 弹幕容器 */}
+                    <div className="fixed inset-0 pointer-events-none z-50">
+                        {danmakus.map((danmaku) => (
+                            <div
+                                key={danmaku.id}
+                                className="danmaku absolute text-lg font-bold"
+                                style={{
+                                    top: `${danmaku.top}%`,
+                                    animationDuration: `${danmaku.duration}s`,
+                                    animationDelay: `${danmaku.delay}s`,
+                                    background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    textShadow: 'none'
+                                }}
+                            >
+                                {danmaku.text}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* 说明信息 */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-8">
+                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                            💡 这就是完整的 Achievement Jar 效果
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="font-bold text-gray-800 mb-3">🎨 视觉效果</h3>
+                                <ul className="space-y-2 text-sm text-gray-600">
+                                    <li>• 透明玻璃罐容器</li>
+                                    <li>• 彩色3D粘土球</li>
+                                    <li>• 玻璃反光效果</li>
+                                    <li>• 实时统计信息</li>
+                                    <li>• 悬停交互动画</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-800 mb-3">🎉 交互功能</h3>
+                                <ul className="space-y-2 text-sm text-gray-600">
+                                    <li>• 点击粘土球查看详情</li>
+                                    <li>• 庆祝按钮音效</li>
+                                    <li>• 弹幕鼓励效果</li>
+                                    <li>• 响应式设计</li>
+                                    <li>• 流畅动画过渡</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                            <h4 className="font-bold text-blue-800 mb-2">📝 为什么主应用显示空状态？</h4>
+                            <p className="text-sm text-blue-600">
+                                主应用中显示"暂无数据"是因为还没有计时记录。开始使用计时器功能，完成一些任务后，
+                                Achievement Jar 就会显示像这里一样的完整效果，包括透明玻璃罐和彩色粘土球。
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 快速访问 */}
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white text-center mt-8">
+                        <h2 className="text-xl font-bold mb-4">🚀 体验完整功能</h2>
+                        <div className="flex gap-4 justify-center">
+                            <a 
+                                href="http://localhost:8080/index.html" 
+                                target="_blank"
+                                className="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                            >
+                                📱 主应用
+                            </a>
+                            <button 
+                                onClick={() => onCelebrate('cheer')}
+                                className="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                            >
+                                🎉 测试庆祝
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 渲染应用
+        const root = createRoot(document.getElementById('root'));
+        root.render(<AchievementJarDemo />);
+
+        console.log('🏺 Achievement Jar 完整效果演示');
+        console.log('✨ 这里展示了有数据时的完整效果');
+        console.log('📱 主应用需要先使用计时器创建数据');
+    </script>
+</body>
+</html>

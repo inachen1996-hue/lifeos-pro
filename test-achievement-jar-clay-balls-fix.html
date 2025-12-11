@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 粘土球修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🏺 Achievement Jar 粘土球修复测试</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 修复前（模拟问题） -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-red-600">修复前（问题演示）</h2>
+                <p class="text-center text-gray-600 mb-4">使用Tailwind类名作为颜色，无法显示粘土球</p>
+                <div id="broken-root"></div>
+            </div>
+            
+            <!-- 修复后 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">修复后</h2>
+                <p class="text-center text-gray-600 mb-4">正确转换颜色值，显示彩色粘土球</p>
+                <div id="fixed-root"></div>
+            </div>
+        </div>
+
+        <!-- 测试数据展示 -->
+        <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-6 border border-blue-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🔍 测试数据</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-semibold text-blue-600 mb-2">测试数据：</h4>
+                    <pre class="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+{JSON.stringify([
+  { id: '1', category: 'work', duration: 7200, title: '完成项目文档' },
+  { id: '2', category: 'study', duration: 3600, title: '学习React开发' },
+  { id: '3', category: 'health', duration: 1800, title: '晨跑锻炼' }
+], null, 2)}
+                    </pre>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-green-600 mb-2">CategoryMap：</h4>
+                    <pre class="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+{JSON.stringify({
+  work: { name: '工作', color: 'bg-airy-blue' },
+  study: { name: '学习', color: 'bg-airy-green' },
+  health: { name: '健康', color: 'bg-airy-orange' }
+}, null, 2)}
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 修复前的组件（有问题的版本）
+        const BrokenAchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#gray-500' };
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    // 问题：直接使用Tailwind类名作为backgroundColor
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color, // 这里是 'bg-airy-blue' 而不是 '#3B82F6'
+                        size,
+                        x: 50 + (index % 5) * 80 + Math.random() * 20,
+                        y: 100 + Math.floor(index / 5) * 80 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                console.log('Broken version - clayBalls:', balls);
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {clayBalls.map((ball) => (
+                            <div
+                                key={ball.id}
+                                className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                style={{
+                                    left: `${ball.x}px`,
+                                    top: `${ball.y}px`,
+                                    width: `${ball.size}px`,
+                                    height: `${ball.size}px`,
+                                    backgroundColor: ball.color // 问题：'bg-airy-blue' 不是有效的CSS颜色
+                                }}
+                                onClick={() => onCelebrate('clap')}
+                                title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                            />
+                        ))}
+                        
+                        {/* 玻璃反光效果 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 修复后的组件
+        const FixedAchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 颜色映射函数
+            const getActualColor = (colorClass) => {
+                const colorMap = {
+                    'bg-airy-blue': '#3B82F6',
+                    'bg-airy-green': '#10B981', 
+                    'bg-airy-pink': '#EC4899',
+                    'bg-airy-purple': '#8B5CF6',
+                    'bg-airy-orange': '#F59E0B',
+                    'bg-airy-red': '#EF4444',
+                    'bg-airy-yellow': '#EAB308',
+                    'bg-airy-teal': '#14B8A6',
+                    'bg-macaron-blue': '#60A5FA',
+                    'bg-macaron-green': '#34D399',
+                    'bg-macaron-pink': '#F472B6',
+                    'bg-macaron-purple': '#A78BFA',
+                    'bg-macaron-orange': '#FBBF24',
+                    'bg-macaron-rose': '#FB7185',
+                    '#gray-500': '#6B7280'
+                };
+                
+                if (colorClass && colorClass.startsWith('#')) {
+                    return colorClass;
+                }
+                
+                return colorMap[colorClass] || '#6B7280';
+            };
+
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const actualColor = getActualColor(category.color);
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: actualColor, // 修复：使用实际的颜色值
+                        size,
+                        x: 50 + (index % 5) * 80 + Math.random() * 20,
+                        y: 100 + Math.floor(index / 5) * 80 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                console.log('Fixed version - clayBalls:', balls);
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {clayBalls.map((ball) => (
+                            <div
+                                key={ball.id}
+                                className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                style={{
+                                    left: `${ball.x}px`,
+                                    top: `${ball.y}px`,
+                                    width: `${ball.size}px`,
+                                    height: `${ball.size}px`,
+                                    backgroundColor: ball.color // 修复：使用实际的颜色值
+                                }}
+                                onClick={() => onCelebrate('clap')}
+                                title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                            />
+                        ))}
+                        
+                        {/* 玻璃反光效果 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 测试数据
+        const categoryMap = {
+            work: { name: '工作', color: 'bg-airy-blue' },
+            study: { name: '学习', color: 'bg-airy-green' },
+            health: { name: '健康', color: 'bg-airy-orange' }
+        };
+
+        const mockData = [
+            { id: '1', category: 'work', duration: 7200, title: '完成项目文档' },
+            { id: '2', category: 'study', duration: 3600, title: '学习React开发' },
+            { id: '3', category: 'health', duration: 1800, title: '晨跑锻炼' }
+        ];
+
+        const playSound = (type) => console.log(`🎵 播放音效: ${type}`);
+        const generateDanmaku = () => console.log('🎊 生成弹幕');
+
+        // 修复前组件
+        const BrokenDemo = () => (
+            <div>
+                <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-red-600">问题版本</h3>
+                    <p className="text-xs text-gray-500">颜色: bg-airy-blue (无效)</p>
+                </div>
+                <BrokenAchievementJarContainer 
+                    data={mockData}
+                    categoryMap={categoryMap}
+                    timeRange="today"
+                    onCelebrate={(type) => {
+                        playSound(type);
+                        generateDanmaku();
+                    }}
+                />
+            </div>
+        );
+
+        // 修复后组件
+        const FixedDemo = () => (
+            <div>
+                <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-green-600">修复版本</h3>
+                    <p className="text-xs text-gray-500">颜色: #3B82F6 (有效)</p>
+                </div>
+                <FixedAchievementJarContainer 
+                    data={mockData}
+                    categoryMap={categoryMap}
+                    timeRange="today"
+                    onCelebrate={(type) => {
+                        playSound(type);
+                        generateDanmaku();
+                    }}
+                />
+            </div>
+        );
+
+        // 渲染组件
+        const brokenContainer = document.getElementById('broken-root');
+        const brokenRoot = ReactDOM.createRoot(brokenContainer);
+        brokenRoot.render(React.createElement(BrokenDemo));
+
+        const fixedContainer = document.getElementById('fixed-root');
+        const fixedRoot = ReactDOM.createRoot(fixedContainer);
+        fixedRoot.render(React.createElement(FixedDemo));
+    </script>
+</body>
+</html>

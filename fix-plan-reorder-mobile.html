@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划拖拽排序移动端修复</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drag-handle {
+            cursor: grab;
+            touch-action: none;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            position: relative;
+        }
+        .drag-over {
+            border: 2px dashed #8b5cf6;
+            background-color: #f3f4f6;
+        }
+        .drag-placeholder {
+            height: 4px;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            border-radius: 2px;
+            margin: 8px 0;
+            opacity: 0.8;
+        }
+        /* 防止移动端选择文本 */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-4">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { Menu, Save, RefreshCcw, Play, Smartphone, Monitor } = lucide;
+
+        function PlanReorderMobileFix() {
+            // 模拟计划数据
+            const [planItems, setPlanItems] = useState([
+                {
+                    id: 1,
+                    time: "09:00 - 10:30",
+                    category: "work",
+                    title: "深度工作",
+                    desc: "专注完成核心任务，避免干扰"
+                },
+                {
+                    id: 2,
+                    time: "10:30 - 11:00",
+                    category: "rest",
+                    title: "休息时间",
+                    desc: "短暂休息，恢复精力"
+                },
+                {
+                    id: 3,
+                    time: "11:00 - 12:00",
+                    category: "study",
+                    title: "学习新技能",
+                    desc: "阅读技术文档，提升专业能力"
+                },
+                {
+                    id: 4,
+                    time: "14:00 - 15:30",
+                    category: "health",
+                    title: "运动锻炼",
+                    desc: "保持身体健康，增强体质"
+                }
+            ]);
+
+            const [draggedIndex, setDraggedIndex] = useState(null);
+            const [hasReordered, setHasReordered] = useState(false);
+            const [dragOverIndex, setDragOverIndex] = useState(null);
+            
+            // 触摸拖拽状态
+            const [touchState, setTouchState] = useState({
+                isDragging: false,
+                startY: 0,
+                currentY: 0,
+                draggedElement: null
+            });
+
+            // 检测是否为移动设备
+            const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const containerRef = useRef(null);
+
+            // 桌面端拖拽处理
+            const handleDragStart = (e, index) => {
+                if (isMobile) return; // 移动端不使用HTML5拖拽
+                
+                console.log('桌面端拖拽开始:', index);
+                setDraggedIndex(index);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', index.toString());
+            };
+
+            const handleDragOver = (e, index) => {
+                if (isMobile) return;
+                
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (draggedIndex === null || draggedIndex === index) return;
+                
+                console.log('桌面端拖拽经过:', draggedIndex, '->', index);
+                
+                const newItems = [...planItems];
+                const draggedItem = newItems[draggedIndex];
+                newItems.splice(draggedIndex, 1);
+                newItems.splice(index, 0, draggedItem);
+                
+                setPlanItems(newItems);
+                setDraggedIndex(index);
+                setHasReordered(true);
+            };
+
+            const handleDragEnd = (e) => {
+                if (isMobile) return;
+                
+                console.log('桌面端拖拽结束');
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+            };
+
+            // 移动端触摸拖拽处理
+            const handleTouchStart = (e, index) => {
+                if (!isMobile) return;
+                
+                e.preventDefault();
+                const touch = e.touches[0];
+                
+                console.log('移动端触摸开始:', index);
+                
+                setDraggedIndex(index);
+                setTouchState({
+                    isDragging: true,
+                    startY: touch.clientY,
+                    currentY: touch.clientY,
+                    draggedElement: e.currentTarget
+                });
+            };
+
+            const handleTouchMove = (e, index) => {
+                if (!isMobile || !touchState.isDragging) return;
+                
+                e.preventDefault();
+                const touch = e.touches[0];
+                const currentY = touch.clientY;
+                
+                setTouchState(prev => ({
+                    ...prev,
+                    currentY
+                }));
+
+                // 计算拖拽到哪个位置
+                const container = containerRef.current;
+                if (!container) return;
+
+                const items = container.querySelectorAll('[data-plan-item]');
+                let targetIndex = draggedIndex;
+
+                items.forEach((item, idx) => {
+                    const rect = item.getBoundingClientRect();
+                    const itemCenter = rect.top + rect.height / 2;
+                    
+                    if (currentY < itemCenter && idx < draggedIndex) {
+                        targetIndex = idx;
+                    } else if (currentY > itemCenter && idx > draggedIndex) {
+                        targetIndex = idx;
+                    }
+                });
+
+                if (targetIndex !== draggedIndex) {
+                    console.log('移动端拖拽移动:', draggedIndex, '->', targetIndex);
+                    
+                    const newItems = [...planItems];
+                    const draggedItem = newItems[draggedIndex];
+                    newItems.splice(draggedIndex, 1);
+                    newItems.splice(targetIndex, 0, draggedItem);
+                    
+                    setPlanItems(newItems);
+                    setDraggedIndex(targetIndex);
+                    setHasReordered(true);
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (!isMobile || !touchState.isDragging) return;
+                
+                console.log('移动端触摸结束');
+                
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+                setTouchState({
+                    isDragging: false,
+                    startY: 0,
+                    currentY: 0,
+                    draggedElement: null
+                });
+            };
+
+            // 重新生成计划
+            const regeneratePlan = () => {
+                console.log('保存新顺序');
+                const now = new Date();
+                let currentMinutes = now.getHours() * 60 + now.getMinutes();
+                
+                const newBlocks = planItems.map(block => {
+                    const [startTime, endTime] = block.time.split(' - ');
+                    const [startH, startM] = startTime.split(':').map(Number);
+                    const [endH, endM] = endTime.split(':').map(Number);
+                    
+                    const duration = (endH * 60 + endM) - (startH * 60 + startM);
+                    
+                    const newStartH = Math.floor(currentMinutes / 60);
+                    const newStartM = currentMinutes % 60;
+                    const newEndMinutes = currentMinutes + duration;
+                    const newEndH = Math.floor(newEndMinutes / 60);
+                    const newEndM = newEndMinutes % 60;
+                    
+                    const newTime = `${String(newStartH).padStart(2, '0')}:${String(newStartM).padStart(2, '0')} - ${String(newEndH).padStart(2, '0')}:${String(newEndM).padStart(2, '0')}`;
+                    
+                    currentMinutes = newEndMinutes;
+                    
+                    return {
+                        ...block,
+                        time: newTime
+                    };
+                });
+                
+                setPlanItems(newBlocks);
+                setHasReordered(false);
+                alert('计划已更新！');
+            };
+
+            const getBorderColor = (category) => {
+                switch(category) {
+                    case 'work': return 'border-l-blue-400';
+                    case 'study': return 'border-l-green-400';
+                    case 'rest': return 'border-l-pink-400';
+                    case 'health': return 'border-l-emerald-400';
+                    case 'hobby': return 'border-l-purple-400';
+                    default: return 'border-l-gray-300';
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            {isMobile ? <Smartphone className="w-6 h-6 text-blue-500" /> : <Monitor className="w-6 h-6 text-green-500" />}
+                            <h1 className="text-2xl font-bold text-gray-800">
+                                计划拖拽排序 - {isMobile ? '移动端' : '桌面端'}修复
+                            </h1>
+                        </div>
+                        <p className="text-gray-600 mb-4">
+                            {isMobile 
+                                ? '移动端：按住计划卡片的拖拽手柄进行触摸拖拽排序' 
+                                : '桌面端：拖拽计划卡片的拖拽手柄进行排序'
+                            }
+                        </p>
+                        <div className="text-sm text-gray-500 space-y-1">
+                            <p>• 设备类型: {isMobile ? '移动设备' : '桌面设备'}</p>
+                            <p>• 拖拽状态: {draggedIndex !== null ? `正在拖拽第 ${draggedIndex + 1} 项` : '未拖拽'}</p>
+                            <p>• 是否重排序: {hasReordered ? '是' : '否'}</p>
+                            {isMobile && touchState.isDragging && (
+                                <p>• 触摸位置: Y={Math.round(touchState.currentY)}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4" ref={containerRef}>
+                        {planItems.map((item, index) => {
+                            const borderColor = getBorderColor(item.category);
+                            const isDragging = draggedIndex === index;
+                            
+                            return (
+                                <div
+                                    key={item.id}
+                                    data-plan-item={index}
+                                    draggable={!isMobile}
+                                    onDragStart={!isMobile ? (e) => handleDragStart(e, index) : undefined}
+                                    onDragOver={!isMobile ? (e) => handleDragOver(e, index) : undefined}
+                                    onDragEnd={!isMobile ? handleDragEnd : undefined}
+                                    onTouchStart={isMobile ? (e) => handleTouchStart(e, index) : undefined}
+                                    onTouchMove={isMobile ? (e) => handleTouchMove(e, index) : undefined}
+                                    onTouchEnd={isMobile ? handleTouchEnd : undefined}
+                                    className={`
+                                        bg-white p-6 rounded-2xl border shadow-sm border-l-8 ${borderColor}
+                                        transition-all duration-200 no-select
+                                        ${isDragging ? 'dragging' : 'hover:shadow-md'}
+                                        drag-handle
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <Menu className="w-5 h-5 text-gray-400 flex-shrink-0 cursor-grab" />
+                                        <div className="flex-1 flex justify-between items-center">
+                                            <span className="font-mono font-bold text-gray-700 text-xl">
+                                                {item.time}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        alert(`开始计时: ${item.title}`);
+                                                    }}
+                                                    className="p-2 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition-all hover:scale-110"
+                                                    title="开始计时"
+                                                >
+                                                    <Play className="w-4 h-4" />
+                                                </button>
+                                                <span className="text-xs font-bold uppercase bg-gray-100 px-2 py-1 rounded text-gray-500">
+                                                    {item.category}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h4 className="font-bold text-gray-800 text-xl mb-1">{item.title}</h4>
+                                    <p className="text-base text-gray-500 mt-1 leading-relaxed">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {hasReordered && (
+                        <button 
+                            onClick={regeneratePlan}
+                            className="w-full mt-6 py-5 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-2xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Save className="w-5 h-5" /> 保存新顺序
+                        </button>
+                    )}
+
+                    <button 
+                        onClick={() => {
+                            setPlanItems([
+                                {
+                                    id: 1,
+                                    time: "09:00 - 10:30",
+                                    category: "work",
+                                    title: "深度工作",
+                                    desc: "专注完成核心任务，避免干扰"
+                                },
+                                {
+                                    id: 2,
+                                    time: "10:30 - 11:00",
+                                    category: "rest",
+                                    title: "休息时间",
+                                    desc: "短暂休息，恢复精力"
+                                },
+                                {
+                                    id: 3,
+                                    time: "11:00 - 12:00",
+                                    category: "study",
+                                    title: "学习新技能",
+                                    desc: "阅读技术文档，提升专业能力"
+                                },
+                                {
+                                    id: 4,
+                                    time: "14:00 - 15:30",
+                                    category: "health",
+                                    title: "运动锻炼",
+                                    desc: "保持身体健康，增强体质"
+                                }
+                            ]);
+                            setHasReordered(false);
+                        }}
+                        className="w-full mt-4 py-5 text-gray-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 rounded-2xl"
+                    >
+                        <RefreshCcw className="w-4 h-4"/> 重置测试数据
+                    </button>
+
+                    <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                        <h3 className="font-bold text-blue-800 mb-2">修复说明</h3>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                            <li>• 自动检测设备类型（移动端/桌面端）</li>
+                            <li>• 移动端使用触摸事件处理拖拽</li>
+                            <li>• 桌面端使用HTML5拖拽API</li>
+                            <li>• 添加了触摸防选择和防默认行为</li>
+                            <li>• 优化了拖拽视觉反馈</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<PlanReorderMobileFix />, document.getElementById('root'));
+    </script>
+</body>
+</html>

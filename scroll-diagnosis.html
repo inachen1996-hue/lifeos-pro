@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滚动问题诊断</title>
+    <style>
+        /* 应用与主页面完全相同的样式 */
+        html, body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* 强制启用滚动 */
+            overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: auto !important;
+            touch-action: auto !important;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #root {
+            overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            touch-action: auto !important;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="scroll-indicator" id="scrollIndicator">
+        滚动: 0px
+    </div>
+
+    <div id="root">
+        <div class="container">
+            <h1>🔍 滚动问题诊断</h1>
+            
+            <div class="status info">
+                <strong>📱 诊断说明：</strong><br>
+                这个页面使用与主页面完全相同的 CSS 样式。<br>
+                如果这个页面可以滚动，说明问题在 React 组件中。
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 1</h2>
+                <p>这是第一个测试区域。如果你能看到这个内容并且可以滚动，说明基础 CSS 是正确的。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 2</h2>
+                <p>继续滚动测试。检查页面是否可以正常上下滚动。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 3</h2>
+                <p>更多内容用于测试滚动功能。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 4</h2>
+                <p>如果你能滚动到这里，说明滚动功能是正常的。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 5</h2>
+                <p>继续测试滚动...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 6</h2>
+                <p>更多测试内容...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 7</h2>
+                <p>滚动测试进行中...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 8</h2>
+                <p>如果能看到这里，滚动功能正常。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 9</h2>
+                <p>继续滚动...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>测试区域 10</h2>
+                <p>最后一个测试区域。如果你能滚动到这里，说明 CSS 滚动设置是正确的。</p>
+            </div>
+
+            <div id="diagnosis" class="status warning">
+                正在诊断...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let maxScrollY = 0;
+        let scrollEvents = 0;
+
+        // 监控滚动事件
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            maxScrollY = Math.max(maxScrollY, scrollY);
+            scrollEvents++;
+            
+            document.getElementById('scrollIndicator').textContent = `滚动: ${scrollY}px (${scrollEvents}次)`;
+            updateDiagnosis();
+        });
+
+        // 监控触摸事件
+        let touchEvents = 0;
+        document.addEventListener('touchstart', () => {
+            touchEvents++;
+            updateDiagnosis();
+        });
+
+        document.addEventListener('touchmove', () => {
+            updateDiagnosis();
+        });
+
+        function updateDiagnosis() {
+            const diagnosisDiv = document.getElementById('diagnosis');
+            
+            if (maxScrollY > 100) {
+                diagnosisDiv.className = 'status success';
+                diagnosisDiv.innerHTML = `
+                    <strong>✅ 滚动功能正常！</strong><br>
+                    • 最大滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滚动事件次数: ${scrollEvents}次<br>
+                    • 触摸事件次数: ${touchEvents}次<br>
+                    <br>
+                    <strong>结论：</strong> CSS 滚动设置是正确的，问题可能在 React 组件中。
+                `;
+            } else if (maxScrollY > 10) {
+                diagnosisDiv.className = 'status info';
+                diagnosisDiv.innerHTML = `
+                    <strong>🧪 检测到滚动</strong><br>
+                    • 当前滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滚动事件次数: ${scrollEvents}次<br>
+                    • 继续滚动测试...
+                `;
+            } else if (touchEvents > 0) {
+                diagnosisDiv.className = 'status warning';
+                diagnosisDiv.innerHTML = `
+                    <strong>⚠️ 检测到触摸但无滚动</strong><br>
+                    • 触摸事件次数: ${touchEvents}次<br>
+                    • 滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 可能存在事件阻止问题
+                `;
+            } else {
+                diagnosisDiv.className = 'status warning';
+                diagnosisDiv.innerHTML = `
+                    <strong>⏳ 等待用户交互</strong><br>
+                    • 请尝试上下滚动页面<br>
+                    • 或触摸屏幕进行测试
+                `;
+            }
+        }
+
+        // 初始化
+        updateDiagnosis();
+
+        // 检测设备类型
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isMobile) {
+            document.querySelector('.container').insertAdjacentHTML('afterbegin', `
+                <div class="status warning">
+                    <strong>⚠️ 桌面设备检测</strong><br>
+                    建议在移动设备上测试，或使用开发者工具模拟移动设备
+                </div>
+            `);
+        }
+
+        // 添加一些调试信息
+        console.log('页面加载完成');
+        console.log('设备类型:', isMobile ? '移动设备' : '桌面设备');
+        console.log('视口高度:', window.innerHeight);
+        console.log('文档高度:', document.documentElement.scrollHeight);
+        console.log('body overflow-y:', getComputedStyle(document.body).overflowY);
+        console.log('html overflow-y:', getComputedStyle(document.documentElement).overflowY);
+    </script>
+</body>
+</html>

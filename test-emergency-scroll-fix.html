@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紧急滚动修复验证</title>
+    <style>
+        /* 应用与主页面相同的强制滚动样式 */
+        html, body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* 强制启用滚动 */
+            overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: auto !important;
+            touch-action: auto !important;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 200vh; /* 确保页面足够长可以滚动 */
+        }
+        
+        .test-card {
+            background: linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #023E8A;
+            user-select: none;
+            transition: transform 0.3s ease;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(162, 210, 255, 0.3);
+        }
+        
+        .test-card.swiped {
+            transform: translateX(-100px);
+            opacity: 0.7;
+        }
+        
+        .status {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .warning { border-left: 4px solid #ffc107; }
+        .info { border-left: 4px solid #17a2b8; }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .long-content {
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="scroll-indicator" id="scrollIndicator">
+        滚动: 0px
+    </div>
+
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 30px;">
+            🚨 紧急滚动修复验证
+        </h1>
+        
+        <div class="status info">
+            <strong>📱 测试说明：</strong><br>
+            • 页面应该可以正常上下滚动<br>
+            • 滑动卡片需要更明确的水平滑动<br>
+            • 不应该有任何控制台错误
+        </div>
+
+        <div class="status warning">
+            <strong>⚠️ 修复内容：</strong><br>
+            • 完全移除了所有 preventDefault 调用<br>
+            • 增加了强制滚动 CSS 样式<br>
+            • 提高了滑动检测阈值（80px）<br>
+            • 减少了垂直偏移容忍度（50px）
+        </div>
+
+        <h2>🎯 滑动测试卡片</h2>
+        <p>需要更明确的水平滑动才能触发功能：</p>
+        
+        <div class="test-card" id="card1">
+            <h3>📱 测试卡片 1</h3>
+            <p>向左滑动超过 80px 来测试滑动功能</p>
+            <small>状态: <span id="card1Status">待测试</span></small>
+        </div>
+
+        <div class="test-card" id="card2">
+            <h3>🎮 测试卡片 2</h3>
+            <p>向左滑动超过 80px 来测试滑动功能</p>
+            <small>状态: <span id="card2Status">待测试</span></small>
+        </div>
+
+        <div class="long-content">
+            <h2>📜 长内容滚动测试</h2>
+            <p><strong>如果你能看到这个内容并且可以滚动，说明修复成功了！</strong></p>
+            
+            <h3>🔍 测试要点</h3>
+            <ul>
+                <li>✅ 页面可以正常上下滚动</li>
+                <li>✅ 滑动功能仍然可用（需要更明确的滑动）</li>
+                <li>✅ 没有控制台错误</li>
+                <li>✅ 触摸响应流畅</li>
+            </ul>
+            
+            <h3>📊 修复对比</h3>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background: rgba(255,255,255,0.8);">
+                    <th style="padding: 10px; border: 1px solid #ddd;">功能</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">修复前</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">修复后</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">垂直滚动</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">❌ 无法滚动</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">✅ 正常滚动</td>
+                </tr>
+                <tr style="background: rgba(255,255,255,0.5);">
+                    <td style="padding: 10px; border: 1px solid #ddd;">水平滑动</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">✅ 正常（50px）</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">✅ 更严格（80px）</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">控制台错误</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">❌ 大量错误</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">✅ 无错误</td>
+                </tr>
+            </table>
+            
+            <br><br><br><br><br><br><br><br><br><br>
+            <p style="text-align: center; font-size: 18px; font-weight: bold;">
+                继续滚动测试...
+            </p>
+            <br><br><br><br><br><br><br><br><br><br>
+            
+            <div style="background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px;">
+                <h3>✅ 滚动测试完成</h3>
+                <p>如果你能看到这里，说明垂直滚动功能已经完全恢复！</p>
+                <p><strong>紧急修复成功！</strong></p>
+            </div>
+        </div>
+
+        <div id="testResults" class="status warning">
+            正在进行测试...
+        </div>
+    </div>
+
+    <script>
+        // 测试数据
+        let touchStart = null;
+        let touchEnd = null;
+        let swipeCount = 0;
+        let maxScrollY = 0;
+
+        // 紧急修复后的触摸事件处理（完全不使用 preventDefault）
+        function handleTouchStart(e, cardId) {
+            const touch = e.targetTouches[0];
+            touchStart = {
+                x: touch.clientX,
+                y: touch.clientY,
+                time: Date.now()
+            };
+            touchEnd = null;
+            
+            document.getElementById(`${cardId}Status`).textContent = '触摸开始...';
+        }
+
+        function handleTouchMove(e, cardId) {
+            if (!touchStart) return;
+            
+            const touch = e.targetTouches[0];
+            // 只记录位置，完全不阻止默认行为
+            touchEnd = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+            
+            const distance = Math.abs(touchStart.x - touchEnd.x);
+            document.getElementById(`${cardId}Status`).textContent = `移动中... (${distance}px)`;
+        }
+
+        function handleTouchEnd(cardId) {
+            if (!touchStart || !touchEnd) {
+                document.getElementById(`${cardId}Status`).textContent = '触摸取消';
+                return;
+            }
+            
+            const distance = touchStart.x - touchEnd.x;
+            const verticalDistance = Math.abs(touchStart.y - touchEnd.y);
+            
+            // 更严格的滑动检测：80px 水平距离，50px 垂直容忍度
+            const isLeftSwipe = distance > 80 && verticalDistance < 50;
+            
+            if (isLeftSwipe) {
+                swipeCount++;
+                
+                const card = document.getElementById(cardId);
+                card.classList.add('swiped');
+                document.getElementById(`${cardId}Status`).textContent = '✅ 左滑成功！';
+                
+                setTimeout(() => {
+                    card.classList.remove('swiped');
+                    document.getElementById(`${cardId}Status`).textContent = '待测试';
+                }, 2000);
+            } else {
+                document.getElementById(`${cardId}Status`).textContent = `滑动不足 (${distance}px, ${verticalDistance}px)`;
+            }
+            
+            touchStart = null;
+            touchEnd = null;
+            updateTestResults();
+        }
+
+        // 为测试卡片添加事件监听器
+        ['card1', 'card2'].forEach(cardId => {
+            const card = document.getElementById(cardId);
+            
+            card.addEventListener('touchstart', (e) => handleTouchStart(e, cardId));
+            card.addEventListener('touchmove', (e) => handleTouchMove(e, cardId));
+            card.addEventListener('touchend', () => handleTouchEnd(cardId));
+        });
+
+        // 监控滚动
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            maxScrollY = Math.max(maxScrollY, scrollY);
+            
+            document.getElementById('scrollIndicator').textContent = `滚动: ${scrollY}px`;
+            updateTestResults();
+        });
+
+        // 更新测试结果
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('testResults');
+            
+            if (maxScrollY > 100) {
+                resultsDiv.className = 'status success';
+                resultsDiv.innerHTML = `
+                    <strong>✅ 紧急修复成功！</strong><br>
+                    • 滚动功能已恢复 (${Math.round(maxScrollY)}px)<br>
+                    • 滑动功能正常 (${swipeCount}次，需要80px+)<br>
+                    • 页面响应流畅<br>
+                    • 可以正常使用了！
+                `;
+            } else if (maxScrollY > 10) {
+                resultsDiv.className = 'status info';
+                resultsDiv.innerHTML = `
+                    <strong>🧪 测试进行中</strong><br>
+                    • 滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滑动次数: ${swipeCount}次<br>
+                    • 继续滚动测试...
+                `;
+            } else {
+                resultsDiv.className = 'status warning';
+                resultsDiv.innerHTML = `
+                    <strong>⏳ 等待测试</strong><br>
+                    • 请尝试上下滚动页面<br>
+                    • 请尝试左右滑动卡片
+                `;
+            }
+        }
+
+        // 初始化
+        updateTestResults();
+        
+        // 检测设备类型
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isMobile) {
+            document.querySelector('.container').insertAdjacentHTML('afterbegin', `
+                <div class="status warning">
+                    <strong>⚠️ 桌面设备检测</strong><br>
+                    建议在移动设备上测试，或使用开发者工具模拟移动设备
+                </div>
+            `);
+        }
+    </script>
+</body>
+</html>

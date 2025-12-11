@@ -150,16 +150,16 @@
             overflow: visible !important;
         }
 
-        /* Achievement Jar 玻璃效果 - 参考真实玻璃罐 - 强制优先级 */
+        /* Achievement Jar 玻璃效果 - 参考真实玻璃罐 */
         .glass-jar-container {
             /* 玻璃罐主体 */
             background: linear-gradient(135deg, 
                 rgba(255,255,255,0.12) 0%, 
                 rgba(240,248,255,0.08) 30%, 
                 rgba(230,245,255,0.1) 70%, 
-                rgba(220,240,255,0.15) 100%) !important;
-            backdrop-filter: blur(20px) saturate(150%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+                rgba(220,240,255,0.15) 100%);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
             
             /* 玻璃质感阴影 */
             box-shadow: 
@@ -170,50 +170,41 @@
                 inset 0 2px 4px rgba(255,255,255,0.8),
                 inset 0 -1px 2px rgba(0,0,0,0.03),
                 /* 边缘光晕 */
-                0 0 0 1px rgba(255,255,255,0.2) !important;
+                0 0 0 1px rgba(255,255,255,0.2);
             
             /* 玻璃边框 */
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            position: relative !important;
-            overflow: hidden !important;
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
             
             /* 罐子形状 - 圆润的储物罐 */
-            border-radius: 20px 20px 25px 25px !important;
+            border-radius: 20px 20px 25px 25px;
         }
         
-        /* 强制覆盖任何可能的灰色背景 */
-        .glass-jar-container:not(.force-glass) {
-            background: linear-gradient(135deg, 
-                rgba(255,255,255,0.12) 0%, 
-                rgba(240,248,255,0.08) 30%, 
-                rgba(230,245,255,0.1) 70%, 
-                rgba(220,240,255,0.15) 100%) !important;
-        }
-        
-        /* 玻璃罐盖子 - 强制优先级 */
+        /* 玻璃罐盖子 */
         .glass-jar-lid {
             background: linear-gradient(135deg, 
                 #D2B48C 0%,     /* 浅棕色 */
                 #CD853F 20%,    /* 秘鲁色 */
                 #A0522D 50%,    /* 赭石色 */
                 #8B4513 80%,    /* 马鞍棕 */
-                #654321 100%) !important;  /* 深棕色 */
+                #654321 100%);  /* 深棕色 */
             
             /* 木质纹理效果 */
             box-shadow: 
                 0 4px 8px rgba(0,0,0,0.2),
                 inset 0 2px 4px rgba(255,255,255,0.3),
-                inset 0 -1px 2px rgba(0,0,0,0.2) !important;
+                inset 0 -1px 2px rgba(0,0,0,0.2);
             
-            border: 2px solid #8B4513 !important;
-            border-radius: 50% !important;
-            position: relative !important;
+            border: 2px solid #8B4513;
+            border-radius: 50%;
+            position: relative;
             
             /* 木质纹理 */
             background-image: 
                 radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 1px, transparent 1px),
                 radial-gradient(circle at 70% 60%, rgba(0,0,0,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, transparent 48%, rgba(0,0,0,0.05) 50%, transparent 52%) !important;
+                linear-gradient(90deg, transparent 48%, rgba(0,0,0,0.05) 50%, transparent 52%);
         }
         
         /* 盖子上的金属环 */
@@ -1519,8 +1510,8 @@
 
           return (
             <div className="flex timer-container-smooth" style={{ gap: '12px', marginRight: '16px' }}>
-              {/* 左侧分类列表 - 马卡龙治愈系设计 | 侧边栏宽度: 68px */}
-              <div className="flex-shrink-0 flex flex-col" style={{ width: '68px', gap: '16px' }}>
+              {/* 左侧分类列表 - 马卡龙治愈系设计 | 侧边栏宽度: 82px */}
+              <div className="flex-shrink-0 flex flex-col" style={{ width: '82px', gap: '16px' }}>
                 {/* 顶部功能按钮组 - 马卡龙圆润风格 | 44px × 44px */}
                 <div className="flex gap-2 flex-shrink-0">
                   {/* 新建分类按钮 */}
@@ -1552,18 +1543,18 @@
                   </button>
                 </div>
 
-                {/* 分类列表 - 马卡龙彩色色块设计（可滚动） | 胶囊: 56px × 56px, 圆角: 18px, 间距: 12px */}
+                {/* 分类列表 - 马卡龙彩色色块设计（可滚动） | 胶囊: 70px × 56px, 圆角: 20px, 间距: 12px */}
                 <div className="overflow-y-auto flex-1 pr-1 min-h-0 pb-20" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {/* 待分类 Tab */}
                   <button
                     onClick={() => setSelectedCategory('uncategorized')}
-                    className={`category-button rounded-[18px] transition-all duration-200 flex items-center justify-center relative overflow-hidden ${
+                    className={`category-button rounded-[20px] transition-all duration-200 flex items-center justify-center relative overflow-hidden ${
                       selectedCategory === 'uncategorized'
                         ? 'bg-gradient-to-br from-[#F5F5F5] to-[#E5E5E5] scale-105 shadow-xl' 
                         : 'bg-transparent shadow-md hover:shadow-lg hover:scale-105'
                     }`}
                     style={{
-                      width: '56px',
+                      width: '70px',
                       height: '56px',
                       WebkitUserSelect: 'none',
                       MozUserSelect: 'none',
@@ -1571,7 +1562,6 @@
                       userSelect: 'none',
                       WebkitTouchCallout: 'none',
                       WebkitTapHighlightColor: 'transparent',
-                      border: 'none',
                       ...(selectedCategory === 'uncategorized' ? {
                         boxShadow: '0 12px 32px -4px rgba(156, 163, 175, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.6)'
                       } : {
@@ -1583,7 +1573,7 @@
                   >
                     <div className="flex flex-col items-center gap-0.5">
                       <Archive className={`w-4 h-4 ${selectedCategory === 'uncategorized' ? 'text-gray-700' : 'text-slate-400'} drop-shadow-sm`} />
-                      <span className={`leading-none ${selectedCategory === 'uncategorized' ? 'text-gray-700' : 'text-slate-400'} drop-shadow-sm`} style={{ fontSize: '12px', fontWeight: '600', marginTop: '4px' }}>
+                      <span className={`leading-none ${selectedCategory === 'uncategorized' ? 'text-gray-700' : 'text-slate-400'} drop-shadow-sm`} style={{ fontSize: '13px', fontWeight: '600' }}>
                         待分类
                       </span>
                     </div>
@@ -1632,13 +1622,13 @@
                       <button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`category-button rounded-[18px] transition-all duration-200 flex items-center justify-center relative overflow-hidden ${
+                        className={`category-button rounded-[20px] transition-all duration-200 flex items-center justify-center relative overflow-hidden ${
                           isSelected 
                             ? `bg-gradient-to-br ${colorScheme.bg} scale-105 shadow-xl` 
                             : 'bg-transparent shadow-md hover:shadow-lg hover:scale-105'
                         }`}
                         style={{
-                          width: '56px',
+                          width: '70px',
                           height: '56px',
                           WebkitUserSelect: 'none',
                           MozUserSelect: 'none',
@@ -1646,7 +1636,6 @@
                           userSelect: 'none',
                           WebkitTouchCallout: 'none',
                           WebkitTapHighlightColor: 'transparent',
-                          border: 'none',
                           ...(isSelected ? {
                             boxShadow: `0 12px 32px -4px ${colorScheme.shadow}, inset 0 2px 8px rgba(255, 255, 255, 0.6)`
                           } : {
@@ -1658,7 +1647,7 @@
                       >
                         {isHorizontal ? (
                           // 横向排列（2个字）
-                          <span className={`${isSelected ? colorScheme.text : 'text-slate-400'} drop-shadow-sm`} style={{ fontSize: '12px', fontWeight: '600', marginTop: '4px' }}>
+                          <span className={`${isSelected ? colorScheme.text : 'text-slate-400'} drop-shadow-sm`} style={{ fontSize: '13px', fontWeight: '600' }}>
                             {category.name}
                           </span>
                         ) : (
@@ -1668,7 +1657,7 @@
                               <span 
                                 key={i} 
                                 className={`leading-none ${isSelected ? colorScheme.text : 'text-slate-400'} drop-shadow-sm`}
-                                style={{ fontSize: '12px', fontWeight: '600' }}
+                                style={{ fontSize: '13px', fontWeight: '600' }}
                               >
                                 {char}
                               </span>
@@ -5717,7 +5706,7 @@
             });
           };
 
-          // 移动端触摸移动 - 智能判断拖拽意图
+          // 移动端触摸移动 - 完全不阻止默认行为
           const handleTouchMove = (e, index) => {
             if (!isMobile || !touchDragState.isDragging) return;
             
@@ -5725,56 +5714,40 @@
             const currentY = touch.clientY;
             const currentX = touch.clientX;
             
-            // 计算移动距离
-            const deltaY = Math.abs(currentY - touchDragState.startY);
-            const deltaX = Math.abs(currentX - touchDragState.startX);
-            
-            // 如果移动距离超过阈值，则认为是拖拽操作
-            if (deltaY > 10 || deltaX > 10) {
-              e.preventDefault(); // 阻止滚动
+            // 只记录位置，不阻止任何默认行为
+            setTouchDragState(prev => ({
+              ...prev,
+              currentY,
+              currentX
+            }));
+
+            // 计算拖拽到哪个位置
+            const planContainer = document.querySelector('[data-plan-container]');
+            if (!planContainer) return;
+
+            const items = planContainer.querySelectorAll('[data-plan-item]');
+            let targetIndex = draggedIndex;
+
+            items.forEach((item, idx) => {
+              const rect = item.getBoundingClientRect();
+              const itemCenter = rect.top + rect.height / 2;
               
-              // 更新触摸状态
-              setTouchDragState(prev => ({
-                ...prev,
-                currentY,
-                currentX
-              }));
-
-              // 计算拖拽到哪个位置
-              const planContainer = document.querySelector('[data-plan-container]');
-              if (!planContainer) return;
-
-              const items = planContainer.querySelectorAll('[data-plan-item]');
-              let targetIndex = draggedIndex;
-
-              items.forEach((item, idx) => {
-                const rect = item.getBoundingClientRect();
-                const itemCenter = rect.top + rect.height / 2;
-                
-                if (currentY < itemCenter && idx < draggedIndex) {
-                  targetIndex = idx;
-                } else if (currentY > itemCenter && idx > draggedIndex) {
-                  targetIndex = idx;
-                }
-              });
-
-              if (targetIndex !== draggedIndex) {
-                const newItems = [...planItems];
-                const draggedItem = newItems[draggedIndex];
-                newItems.splice(draggedIndex, 1);
-                newItems.splice(targetIndex, 0, draggedItem);
-                
-                setPlanItems(newItems);
-                setDraggedIndex(targetIndex);
-                setHasReordered(true);
+              if (currentY < itemCenter && idx < draggedIndex) {
+                targetIndex = idx;
+              } else if (currentY > itemCenter && idx > draggedIndex) {
+                targetIndex = idx;
               }
-            } else {
-              // 移动距离不够，只更新位置，不阻止默认行为
-              setTouchDragState(prev => ({
-                ...prev,
-                currentY,
-                currentX
-              }));
+            });
+
+            if (targetIndex !== draggedIndex) {
+              const newItems = [...planItems];
+              const draggedItem = newItems[draggedIndex];
+              newItems.splice(draggedIndex, 1);
+              newItems.splice(targetIndex, 0, draggedItem);
+              
+              setPlanItems(newItems);
+              setDraggedIndex(targetIndex);
+              setHasReordered(true);
             }
           };
 
@@ -7505,7 +7478,9 @@
              const currentBlockIndex = getCurrentBlockIndex();
              const btnClass = (active, color) => `p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${active ? `${color} border-transparent shadow-airy-soft transform scale-105` : 'bg-white border-slate-100 text-slate-300 hover:border-slate-200'}`;
 
-             // 移除全屏loading，改为在页面中显示
+             if (loading.state && loading.taskType === 'plan') {
+                 return (<div className="flex flex-col items-center justify-center h-[60vh] space-y-6"><div className="w-24 h-24 rounded-full border-4 border-macaron-cream border-t-macaron-purple animate-spin flex items-center justify-center"><span className="font-black text-slate-300 text-xl">{loading.progress}%</span></div><p className="text-slate-400 font-bold animate-pulse text-lg">{loading.text}</p></div>)
+             }
              
              // 如果没有计划，显示状态填写界面
              if (!todayPlan) {
@@ -7601,59 +7576,10 @@
                        </div>
                        <button 
                          onClick={generatePlan} 
-                         disabled={loading.state && loading.taskType === 'plan'}
-                         className={`w-full py-5 rounded-2xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-airy-soft ${
-                           loading.state && loading.taskType === 'plan' 
-                             ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
-                             : 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white hover:shadow-lg hover:shadow-yellow-200/50'
-                         }`}
+                         className="w-full bg-gradient-to-r from-yellow-400 to-amber-500 text-white py-5 rounded-2xl font-bold text-lg flex justify-center items-center gap-2 hover:shadow-lg hover:shadow-yellow-200/50 transition-all shadow-airy-soft"
                        >
-                         {loading.state && loading.taskType === 'plan' ? (
-                           <>
-                             <Loader2 className="w-6 h-6 animate-spin"/>
-                             {loading.text}
-                             <span className="ml-2 font-black">{loading.progress}%</span>
-                           </>
-                         ) : (
-                           <>
-                             生成今日计划 <ArrowRight className="w-6 h-6"/>
-                           </>
-                         )}
+                         生成今日计划 <ArrowRight className="w-6 h-6"/>
                        </button>
-                       
-                       {/* 生成过程中的详细进度显示 */}
-                       {loading.state && loading.taskType === 'plan' && (
-                         <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200">
-                           <div className="flex items-center gap-3 mb-3">
-                             <div className="w-8 h-8 rounded-full border-3 border-yellow-300 border-t-amber-500 animate-spin flex items-center justify-center">
-                               <span className="text-xs font-bold text-amber-600">{loading.progress}%</span>
-                             </div>
-                             <div className="flex-1">
-                               <p className="text-amber-800 font-bold text-sm animate-pulse">{loading.text}</p>
-                               <div className="w-full bg-yellow-200 rounded-full h-2 mt-2">
-                                 <div 
-                                   className="bg-gradient-to-r from-yellow-400 to-amber-500 h-2 rounded-full transition-all duration-300"
-                                   style={{ width: `${loading.progress}%` }}
-                                 ></div>
-                               </div>
-                             </div>
-                           </div>
-                           <div className="text-xs text-amber-700 space-y-1">
-                             <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                               <span>正在分析您的生理状态和能量水平...</span>
-                             </div>
-                             <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                               <span>结合番茄钟设置优化时间分配...</span>
-                             </div>
-                             <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                               <span>生成个性化的一天安排...</span>
-                             </div>
-                           </div>
-                         </div>
-                       )}
                      </div>
                    </div>
                  );
@@ -7663,7 +7589,7 @@
                  <div className="space-y-6 animate-in pb-48">
                      {renderPlanAnalysis()}
                      <div className="bg-gradient-to-r from-macaron-purple/30 to-macaron-blue/30 p-8 rounded-[2.5rem] relative overflow-hidden"><h2 className="text-2xl font-black text-slate-700 mb-3 relative z-10">{todayPlan.theme_title}</h2><p className="text-slate-600 font-medium italic relative z-10 text-base">"{todayPlan.advice}"</p><Footprints className="absolute -bottom-4 -right-4 w-40 h-40 text-white/40 rotate-12"/></div>
-                     <div className="space-y-4" data-plan-container>{planItems.map((b, i) => { const borderColor = b.category === 'work' ? 'border-l-macaron-blue' : b.category === 'study' ? 'border-l-macaron-green' : b.category === 'rest' ? 'border-l-macaron-pink' : b.category === 'health' ? 'border-l-emerald-200' : b.category === 'hobby' ? 'border-l-macaron-rose' : 'border-l-slate-300'; const isCurrentBlock = i === currentBlockIndex; return (<div key={b.id} data-plan-item={i} ref={isCurrentBlock ? currentBlockRef : null} draggable={!isMobile} onDragStart={!isMobile ? (e) => handleDragStart(e, i) : undefined} onDragOver={!isMobile ? (e) => handleDragOver(e, i) : undefined} onDragEnd={!isMobile ? handleDragEnd : undefined} onTouchStart={isMobile ? (e) => handleTouchStart(e, i) : undefined} onTouchMove={isMobile ? (e) => handleTouchMove(e, i) : undefined} onTouchEnd={isMobile ? handleTouchEnd : undefined} className={`bg-white p-6 rounded-2xl border shadow-sm border-l-8 ${borderColor} cursor-move transition-all select-none ${draggedIndex === i ? 'opacity-50 scale-105 shadow-airy-soft' : 'hover:shadow-md'} ${isCurrentBlock ? 'border-slate-200 ring-2 ring-purple-400 ring-offset-2' : 'border-slate-50'}`} style={{ touchAction: isMobile ? 'pan-y' : 'none' }}><div className="flex items-center gap-3 mb-2"><div className="flex flex-col gap-1 flex-shrink-0"><div className="w-1 h-1 bg-slate-400 rounded-full"></div><div className="w-1 h-1 bg-slate-400 rounded-full"></div><div className="w-1 h-1 bg-slate-400 rounded-full"></div></div><div className="flex-1 flex justify-between items-center"><span className="font-mono font-black text-slate-700 text-xl">{b.time}</span><div className="flex items-center gap-2">{isCurrentBlock && <span className="text-xs font-bold bg-purple-500 text-white px-2 py-1 rounded-full animate-pulse">当前</span>}<button onClick={(e) => { e.stopPropagation(); handlePlanItemTimer(b); }} className="p-2 bg-macaron-blue rounded-full text-blue-900 hover:shadow-airy-soft transition-all hover:scale-110" title="开始计时"><Play className="w-4 h-4" /></button><span className="text-xs font-bold uppercase bg-slate-50 px-2 py-1 rounded text-slate-400">{b.category}</span></div></div></div><h4 className="font-bold text-slate-800 text-xl mb-1">{b.title}</h4><p className="text-base text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">{b.desc}</p>{b.sub_blocks && b.sub_blocks.length > 0 && (<div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-3">{b.sub_blocks.map((sb, sbi) => (<div key={sbi} className="flex gap-3 items-center"><div className="font-mono text-xs text-slate-400 w-20 text-right shrink-0">{sb.time}</div><div className={`w-2 h-2 rounded-full shrink-0 ${sb.label.includes('Focus') ? 'bg-airy-blue' : 'bg-airy-green'}`}></div><div className="text-sm font-medium text-slate-600">{sb.detail || sb.label}</div></div>))}</div>)}{b.energy_required==='high' && <div className="mt-3 text-sm text-rose-400 flex items-center gap-1 font-bold"><Zap className="w-4 h-4"/> 高能时刻</div>}</div>) })}</div>
+                     <div className="space-y-4" data-plan-container>{planItems.map((b, i) => { const borderColor = b.category === 'work' ? 'border-l-macaron-blue' : b.category === 'study' ? 'border-l-macaron-green' : b.category === 'rest' ? 'border-l-macaron-pink' : b.category === 'health' ? 'border-l-emerald-200' : b.category === 'hobby' ? 'border-l-macaron-rose' : 'border-l-slate-300'; const isCurrentBlock = i === currentBlockIndex; return (<div key={b.id} data-plan-item={i} ref={isCurrentBlock ? currentBlockRef : null} draggable={!isMobile} onDragStart={!isMobile ? (e) => handleDragStart(e, i) : undefined} onDragOver={!isMobile ? (e) => handleDragOver(e, i) : undefined} onDragEnd={!isMobile ? handleDragEnd : undefined} onTouchStart={isMobile ? (e) => handleTouchStart(e, i) : undefined} onTouchMove={isMobile ? (e) => handleTouchMove(e, i) : undefined} onTouchEnd={isMobile ? handleTouchEnd : undefined} className={`bg-white p-6 rounded-2xl border shadow-sm border-l-8 ${borderColor} cursor-move transition-all select-none ${draggedIndex === i ? 'opacity-50 scale-105 shadow-airy-soft' : 'hover:shadow-md'} ${isCurrentBlock ? 'border-slate-200 ring-2 ring-purple-400 ring-offset-2' : 'border-slate-50'}`} style={{ touchAction: 'none' }}><div className="flex items-center gap-3 mb-2"><Menu className="w-5 h-5 text-slate-400 flex-shrink-0" /><div className="flex-1 flex justify-between items-center"><span className="font-mono font-black text-slate-700 text-xl">{b.time}</span><div className="flex items-center gap-2">{isCurrentBlock && <span className="text-xs font-bold bg-purple-500 text-white px-2 py-1 rounded-full animate-pulse">当前</span>}<button onClick={(e) => { e.stopPropagation(); handlePlanItemTimer(b); }} className="p-2 bg-macaron-blue rounded-full text-blue-900 hover:shadow-airy-soft transition-all hover:scale-110" title="开始计时"><Play className="w-4 h-4" /></button><span className="text-xs font-bold uppercase bg-slate-50 px-2 py-1 rounded text-slate-400">{b.category}</span></div></div></div><h4 className="font-bold text-slate-800 text-xl mb-1">{b.title}</h4><p className="text-base text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">{b.desc}</p>{b.sub_blocks && b.sub_blocks.length > 0 && (<div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-3">{b.sub_blocks.map((sb, sbi) => (<div key={sbi} className="flex gap-3 items-center"><div className="font-mono text-xs text-slate-400 w-20 text-right shrink-0">{sb.time}</div><div className={`w-2 h-2 rounded-full shrink-0 ${sb.label.includes('Focus') ? 'bg-airy-blue' : 'bg-airy-green'}`}></div><div className="text-sm font-medium text-slate-600">{sb.detail || sb.label}</div></div>))}</div>)}{b.energy_required==='high' && <div className="mt-3 text-sm text-rose-400 flex items-center gap-1 font-bold"><Zap className="w-4 h-4"/> 高能时刻</div>}</div>) })}</div>
                      {hasReordered && (<button onClick={regeneratePlan} className="w-full py-5 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-2xl font-bold hover:shadow-airy-soft transition-all flex items-center justify-center gap-2"><Save className="w-5 h-5" /> 保存新顺序</button>)}
                      <button onClick={() => { setTodayPlan(null); }} className="w-full py-5 text-slate-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 rounded-2xl"><RefreshCcw className="w-4 h-4"/> 重新生成</button>
 
@@ -9547,7 +9473,7 @@
           );
         };
 
-        // Achievement Jar 容器组件（完整玻璃效果版）
+        // Achievement Jar 容器组件（简化版）
         const AchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
           const [clayBalls, setClayBalls] = useState([]);
 
@@ -9615,9 +9541,9 @@
           }, [data, categoryMap]);
 
           return (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
-              {/* 真实玻璃罐子效果 */}
-              <div className="relative mx-auto" style={{ width: '400px', height: '380px' }}>
+            <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+              {/* 3D 玻璃罐子效果 - 参考真实玻璃罐 */}
+              <div className="relative mx-auto" style={{ width: '400px' }}>
                 {/* 木质盖子 */}
                 <div 
                   className="glass-jar-lid mx-auto mb-2"
@@ -9627,7 +9553,7 @@
                   }}
                 />
                 
-                {/* 玻璃罐主体 - 使用完整的玻璃效果CSS */}
+                {/* 玻璃罐主体 */}
                 <div 
                   className="glass-jar-container relative mx-auto"
                   style={{
@@ -9649,7 +9575,6 @@
                     className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-4 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 rounded-full"
                     style={{ filter: 'blur(2px)' }}
                   />
-                  
                   {/* 粘土球 */}
                   {clayBalls.map((ball) => (
                     <div
@@ -9662,7 +9587,7 @@
                         height: `${ball.size}px`,
                         backgroundColor: ball.color
                       }}
-                      onClick={() => onCelebrate && onCelebrate('clap')}
+                      onClick={() => onCelebrate('clap')}
                       title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
                     />
                   ))}

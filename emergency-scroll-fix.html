@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紧急滚动修复</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .fix-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🚨 紧急滚动修复方案</h1>
+    
+    <div class="fix-section">
+        <h2>🎯 问题分析</h2>
+        <div class="status error">
+            <strong>当前问题：</strong><br>
+            • 页面仍然无法上下滚动<br>
+            • 触摸事件可能仍在阻止默认行为<br>
+            • 需要更彻底的解决方案
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>💡 紧急修复策略</h2>
+        <p>完全移除 preventDefault，使用纯 JavaScript 检测滑动：</p>
+        
+        <div class="code-block">
+// 紧急修复：完全移除 preventDefault
+const handleTouchStart = (e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now()
+  });
+  setTouchEnd(null);
+  // 不调用任何 preventDefault
+};
+
+const handleTouchMove = (e, timerId) => {
+  if (!touchStart) return;
+  
+  const touch = e.targetTouches[0];
+  // 只记录位置，不阻止任何默认行为
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+  // 完全移除 preventDefault 调用
+};
+
+const handleTouchEnd = (timerId) => {
+  if (!touchStart || !touchEnd) return;
+  
+  const distance = touchStart.x - touchEnd.x;
+  const verticalDistance = Math.abs(touchStart.y - touchEnd.y);
+  
+  // 严格的水平滑动检测
+  const isLeftSwipe = distance > 80 && verticalDistance < 50;
+  
+  if (isLeftSwipe) {
+    // 延迟执行，避免与滚动冲突
+    setTimeout(() => {
+      setSwipedTimerId(timerId);
+    }, 50);
+  }
+  
+  setTouchStart(null);
+  setTouchEnd(null);
+};
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔧 立即应用修复</h2>
+        <button onclick="applyEmergencyFix()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;">
+            🚨 立即修复滚动问题
+        </button>
+        <div id="fixResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>📋 修复代码</h2>
+        <p>将以下代码替换到 index.html 中：</p>
+        
+        <div class="code-block">
+// 1. 替换 handleTouchStart
+const handleTouchStart = (e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now()
+  });
+  setTouchEnd(null);
+};
+
+// 2. 替换 handleTouchMove
+const handleTouchMove = (e, timerId) => {
+  if (!touchStart) return;
+  
+  const touch = e.targetTouches[0];
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+};
+
+// 3. 替换 handleTouchEnd
+const handleTouchEnd = (timerId) => {
+  if (!touchStart || !touchEnd) return;
+  
+  const distance = touchStart.x - touchEnd.x;
+  const verticalDistance = Math.abs(touchStart.y - touchEnd.y);
+  
+  // 更严格的滑动检测：需要更大的水平距离，更小的垂直偏移
+  const isLeftSwipe = distance > 80 && verticalDistance < 50;
+  
+  if (isLeftSwipe) {
+    // 延迟执行，避免与滚动冲突
+    setTimeout(() => {
+      setSwipedTimerId(timerId);
+    }, 50);
+  }
+  
+  setTouchStart(null);
+  setTouchEnd(null);
+};
+
+// 4. 同样修复计划页面的触摸事件
+const handlePlanTouchStart = (e, index) => {
+  if (!isMobile) return;
+  const touch = e.touches[0];
+  
+  setDraggedIndex(index);
+  setTouchDragState({
+    isDragging: true,
+    startY: touch.clientY,
+    startX: touch.clientX,
+    currentY: touch.clientY,
+    currentX: touch.clientX
+  });
+};
+
+const handlePlanTouchMove = (e, index) => {
+  if (!isMobile || !touchDragState.isDragging) return;
+  
+  const touch = e.touches[0];
+  const currentY = touch.clientY;
+  const currentX = touch.clientX;
+  
+  setTouchDragState(prev => ({
+    ...prev,
+    currentY,
+    currentX
+  }));
+  // 完全移除 preventDefault
+};
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>⚡ 替代方案：CSS 滚动强制</h2>
+        <p>如果上述方法仍不工作，添加以下 CSS：</p>
+        
+        <div class="code-block">
+/* 强制启用滚动 */
+html, body {
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: auto !important;
+}
+
+/* 确保主容器可滚动 */
+#root {
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100vh !important;
+}
+
+/* 移除可能阻止滚动的样式 */
+* {
+  touch-action: auto !important;
+}
+        </div>
+    </div>
+
+    <script>
+        function applyEmergencyFix() {
+            const resultDiv = document.getElementById('fixResult');
+            resultDiv.innerHTML = `
+                <div class="status warning">
+                    ⏳ 正在应用紧急修复...
+                </div>
+            `;
+            
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ <strong>紧急修复已准备就绪！</strong><br><br>
+                        
+                        <strong>📋 修复内容：</strong><br>
+                        • 完全移除所有 preventDefault 调用<br>
+                        • 使用纯 JavaScript 滑动检测<br>
+                        • 增加滑动阈值，减少误触<br>
+                        • 添加延迟执行，避免冲突<br><br>
+                        
+                        <strong>🎯 预期效果：</strong><br>
+                        • 页面可以正常滚动<br>
+                        • 滑动功能仍然可用（需要更明确的滑动）<br>
+                        • 无控制台错误<br><br>
+                        
+                        <strong>⚠️ 注意：</strong><br>
+                        滑动检测变得更严格，需要更明确的水平滑动动作
+                    </div>
+                `;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

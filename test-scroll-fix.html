@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>滚动问题修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            margin: 0;
+            padding: 0;
+            /* 确保body可以滚动 */
+            overflow-y: auto;
+            /* 移除可能阻止滚动的属性 */
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 测试容器 */
+        .test-container {
+            min-height: 200vh; /* 故意设置很高来测试滚动 */
+            padding: 20px;
+        }
+        
+        /* 模拟主应用结构 */
+        .main-app {
+            min-height: 100vh;
+            font-family: sans-serif;
+            color: #374151;
+            /* 确保不阻止滚动 */
+            overflow-y: visible;
+        }
+        
+        .main-content {
+            padding-top: 24px;
+            padding-left: 20px;
+            padding-right: 20px;
+            max-width: 448px; /* max-w-md */
+            margin: 0 auto;
+            /* 添加底部内边距避免被导航栏遮挡 */
+            padding-bottom: 192px; /* pb-48 */
+        }
+        
+        .fixed-nav {
+            position: fixed;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
+            max-width: 448px;
+            margin: 0 auto;
+            height: 72px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(24px);
+            border-radius: 36px;
+            box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .content-item {
+            background: white;
+            padding: 24px;
+            margin-bottom: 16px;
+            border-radius: 24px;
+            box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar { 
+            width: 0px; 
+            background: transparent; 
+        }
+    </style>
+</head>
+<body>
+    <div class="main-app">
+        <main class="main-content">
+            <h1 class="text-2xl font-bold mb-6 text-center">滚动问题诊断</h1>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 1</h2>
+                <p>这是第一个测试项目。页面应该可以正常滚动。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 2</h2>
+                <p>这是第二个测试项目。如果你能看到这个，说明页面可以滚动。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 3</h2>
+                <p>这是第三个测试项目。继续向下滚动查看更多内容。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 4</h2>
+                <p>这是第四个测试项目。页面内容很长，需要滚动才能看完。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 5</h2>
+                <p>这是第五个测试项目。如果滚动正常，你应该能看到这里。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 6</h2>
+                <p>这是第六个测试项目。继续测试滚动功能。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 7</h2>
+                <p>这是第七个测试项目。页面应该可以平滑滚动。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 8</h2>
+                <p>这是第八个测试项目。测试触摸滚动是否正常。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 9</h2>
+                <p>这是第九个测试项目。即将到达页面底部。</p>
+            </div>
+            
+            <div class="content-item">
+                <h2 class="text-lg font-bold mb-3">测试项目 10</h2>
+                <p>这是最后一个测试项目。如果你能看到这里，说明滚动功能正常！</p>
+            </div>
+            
+            <div class="content-item bg-green-100">
+                <h2 class="text-lg font-bold mb-3 text-green-800">✅ 滚动测试完成</h2>
+                <p class="text-green-700">如果你能看到这个绿色区域，说明页面滚动功能正常工作。</p>
+                <p class="text-green-700 mt-2">底部导航栏不应该遮挡这个内容。</p>
+            </div>
+        </main>
+        
+        <!-- 固定底部导航栏 -->
+        <nav class="fixed-nav">
+            <div class="text-sm font-bold text-slate-600">
+                固定导航栏 - 不应遮挡内容
+            </div>
+        </nav>
+    </div>
+    
+    <script>
+        // 测试滚动功能
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始滚动测试');
+            
+            // 检查页面高度
+            const bodyHeight = document.body.scrollHeight;
+            const windowHeight = window.innerHeight;
+            console.log('页面总高度:', bodyHeight);
+            console.log('窗口高度:', windowHeight);
+            console.log('是否需要滚动:', bodyHeight > windowHeight);
+            
+            // 测试滚动到底部
+            setTimeout(() => {
+                console.log('尝试滚动到底部');
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+                
+                setTimeout(() => {
+                    console.log('当前滚动位置:', window.scrollY);
+                    console.log('最大滚动位置:', document.body.scrollHeight - window.innerHeight);
+                }, 2000);
+            }, 1000);
+        });
+        
+        // 监听滚动事件
+        window.addEventListener('scroll', function() {
+            console.log('滚动位置:', window.scrollY);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器数据修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        .timer-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10B981;
+            color: white;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid white;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">⏱️ 计时器数据修复测试</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Achievement Jar 显示 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <div id="jar-container"></div>
+            </div>
+            
+            <!-- 测试控制面板 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">测试控制</h2>
+                
+                <div class="space-y-4">
+                    <button id="simulate-completed-timer" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        ✅ 模拟完成的计时器会话
+                    </button>
+                    <button id="add-multiple-sessions" class="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        📊 添加多个计时器会话
+                    </button>
+                    <button id="check-data-structure" class="w-full px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                        🔍 检查数据结构
+                    </button>
+                    <button id="clear-timer-data" class="w-full px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        🗑️ 清空计时器数据
+                    </button>
+                </div>
+
+                <!-- 状态显示 -->
+                <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                    <h4 class="font-bold text-gray-700 mb-2">📈 当前状态</h4>
+                    <div id="status-display" class="text-sm text-gray-600">
+                        等待测试操作...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 说明面板 -->
+        <div class="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-3xl p-6 border border-green-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🔧 修复说明</h3>
+            <div class="text-sm text-gray-700 space-y-2">
+                <p><strong>问题:</strong> 计时器完成后没有保存到 completedSessions，导致 Achievement Jar 无法显示计时器数据</p>
+                <p><strong>修复:</strong> 在 handleStopTimer 函数中添加了 completedSessions 保存逻辑</p>
+                <p><strong>测试:</strong> 使用此页面模拟计时器完成，验证数据是否正确进入 Achievement Jar</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 模拟计时器完成会话的保存逻辑（与主应用一致）
+        const simulateTimerCompletion = (timerData) => {
+            const { name, duration, category, icon = '⏱️', mode = 'stopwatch' } = timerData;
+            const endTime = new Date().toISOString();
+            const startTime = new Date(Date.now() - duration * 1000).toISOString();
+
+            const completedSession = {
+                startTime: startTime,
+                endTime: endTime,
+                duration: duration, // 秒数
+                category: category,
+                title: name,
+                icon: icon,
+                mode: mode
+            };
+
+            // 获取现有的 completedSessions
+            let existingSessions = [];
+            try {
+                const stored = localStorage.getItem('activeTimerSession');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.completedSessions && Array.isArray(parsed.completedSessions)) {
+                        existingSessions = parsed.completedSessions;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load existing completedSessions:', e);
+            }
+
+            // 添加新的完成会话
+            existingSessions.push(completedSession);
+
+            // 只保留最近 50 个会话
+            if (existingSessions.length > 50) {
+                existingSessions = existingSessions.slice(-50);
+            }
+
+            // 更新 activeTimerSession
+            const updatedSession = {
+                completedSessions: existingSessions,
+                lastUpdated: new Date().toISOString()
+            };
+
+            // 保存到 localStorage
+            localStorage.setItem('activeTimerSession', JSON.stringify(updatedSession));
+
+            return completedSession;
+        };
+
+        // Achievement Jar 组件
+        const TestAchievementJar = ({ onStatusUpdate }) => {
+            const [timerData, setTimerData] = useState([]);
+            const [isLoading, setIsLoading] = useState(false);
+
+            // 颜色映射
+            const getActualColor = (category) => {
+                const colorMap = {
+                    work: '#3B82F6',
+                    study: '#10B981',
+                    health: '#F59E0B',
+                    life: '#8B5CF6',
+                    rest: '#EC4899'
+                };
+                return colorMap[category] || '#6B7280';
+            };
+
+            // 获取今日日期范围
+            const getTodayRange = () => {
+                const today = new Date();
+                const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+                return { start, end };
+            };
+
+            // 处理计时器数据
+            useEffect(() => {
+                setIsLoading(true);
+                
+                setTimeout(() => {
+                    try {
+                        const storedSession = localStorage.getItem('activeTimerSession');
+                        if (storedSession) {
+                            const session = JSON.parse(storedSession);
+                            if (session.completedSessions && Array.isArray(session.completedSessions)) {
+                                const { start, end } = getTodayRange();
+                                
+                                // 过滤今日的会话
+                                const todaySessions = session.completedSessions.filter(completedSession => {
+                                    const sessionDate = new Date(completedSession.startTime);
+                                    return sessionDate >= start && sessionDate < end;
+                                });
+
+                                // 转换为 Achievement Jar 格式
+                                const timerItems = todaySessions.map((completedSession, idx) => ({
+                                    id: `timer_${idx}`,
+                                    category: completedSession.category || 'work',
+                                    duration: completedSession.duration || 1500,
+                                    title: completedSession.title || '计时器任务',
+                                    icon: completedSession.icon || '⏱️',
+                                    mode: completedSession.mode || 'stopwatch',
+                                    startTime: completedSession.startTime
+                                }));
+
+                                setTimerData(timerItems);
+                                onStatusUpdate({
+                                    total: timerItems.length,
+                                    totalDuration: timerItems.reduce((sum, item) => sum + item.duration, 0)
+                                });
+                            } else {
+                                setTimerData([]);
+                                onStatusUpdate({ total: 0, totalDuration: 0 });
+                            }
+                        } else {
+                            setTimerData([]);
+                            onStatusUpdate({ total: 0, totalDuration: 0 });
+                        }
+                        
+                        setIsLoading(false);
+                    } catch (error) {
+                        console.error('处理计时器数据出错:', error);
+                        setIsLoading(false);
+                    }
+                }, 300);
+            }, []);
+
+            // 刷新数据的函数
+            const refreshData = () => {
+                setIsLoading(true);
+                // 触发 useEffect 重新执行
+                setTimeout(() => {
+                    const event = new Event('storage');
+                    window.dispatchEvent(event);
+                }, 100);
+            };
+
+            // 监听 localStorage 变化
+            useEffect(() => {
+                const handleStorageChange = () => {
+                    // 重新处理数据
+                    const storedSession = localStorage.getItem('activeTimerSession');
+                    if (storedSession) {
+                        const session = JSON.parse(storedSession);
+                        if (session.completedSessions) {
+                            const { start, end } = getTodayRange();
+                            const todaySessions = session.completedSessions.filter(completedSession => {
+                                const sessionDate = new Date(completedSession.startTime);
+                                return sessionDate >= start && sessionDate < end;
+                            });
+
+                            const timerItems = todaySessions.map((completedSession, idx) => ({
+                                id: `timer_${idx}`,
+                                category: completedSession.category || 'work',
+                                duration: completedSession.duration || 1500,
+                                title: completedSession.title || '计时器任务',
+                                icon: completedSession.icon || '⏱️',
+                                mode: completedSession.mode || 'stopwatch',
+                                startTime: completedSession.startTime
+                            }));
+
+                            setTimerData(timerItems);
+                            onStatusUpdate({
+                                total: timerItems.length,
+                                totalDuration: timerItems.reduce((sum, item) => sum + item.duration, 0)
+                            });
+                        }
+                    }
+                };
+
+                window.addEventListener('storage', handleStorageChange);
+                return () => window.removeEventListener('storage', handleStorageChange);
+            }, []);
+
+            if (isLoading) {
+                return (
+                    <div className="text-center py-12">
+                        <div className="animate-spin w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">加载计时器数据...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">🏺 Achievement Jar</h2>
+                    
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {/* 粘土球 */}
+                        {timerData.map((item, index) => {
+                            const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                            const x = 50 + (index % 5) * 70 + Math.random() * 20;
+                            const y = 100 + Math.floor(index / 5) * 70 + Math.random() * 20;
+                            
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${x}px`,
+                                        top: `${y}px`,
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        backgroundColor: getActualColor(item.category)
+                                    }}
+                                    title={`${item.title} - ${(item.duration / 60).toFixed(1)}分钟 - ${item.category}`}
+                                >
+                                    <div className="timer-badge">T</div>
+                                </div>
+                            );
+                        })}
+                        
+                        {/* 玻璃反光 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">{timerData.length}</div>
+                            <div className="text-sm text-gray-500">计时器会话</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">
+                                {(timerData.reduce((sum, item) => sum + item.duration, 0) / 60).toFixed(1)}min
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(timerData.map(item => item.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+
+                    {/* 刷新按钮 */}
+                    <button 
+                        onClick={refreshData}
+                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        🔄 刷新数据
+                    </button>
+                </div>
+            );
+        };
+
+        // 主应用
+        const TestApp = () => {
+            const [status, setStatus] = useState('等待测试操作...');
+
+            const updateStatus = (data) => {
+                const { total, totalDuration } = data;
+                setStatus(`计时器会话: ${total} 个 | 总时长: ${(totalDuration / 60).toFixed(1)} 分钟`);
+            };
+
+            // 绑定按钮事件
+            useEffect(() => {
+                document.getElementById('simulate-completed-timer').onclick = () => {
+                    const session = simulateTimerCompletion({
+                        name: '专注工作',
+                        duration: 1500, // 25分钟
+                        category: 'work',
+                        icon: '🍅',
+                        mode: 'pomodoro'
+                    });
+                    
+                    setStatus(`已添加: ${session.title} (${session.duration / 60}分钟)`);
+                    
+                    // 触发数据刷新
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('storage'));
+                    }, 100);
+                };
+
+                document.getElementById('add-multiple-sessions').onclick = () => {
+                    const sessions = [
+                        { name: '学习编程', duration: 1800, category: 'study', icon: '📚', mode: 'pomodoro' },
+                        { name: '健身锻炼', duration: 2700, category: 'health', icon: '💪', mode: 'stopwatch' },
+                        { name: '阅读时间', duration: 1200, category: 'life', icon: '📖', mode: 'countdown' }
+                    ];
+                    
+                    sessions.forEach(sessionData => {
+                        simulateTimerCompletion(sessionData);
+                    });
+                    
+                    setStatus(`已添加 ${sessions.length} 个计时器会话`);
+                    
+                    // 触发数据刷新
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('storage'));
+                    }, 100);
+                };
+
+                document.getElementById('check-data-structure').onclick = () => {
+                    const stored = localStorage.getItem('activeTimerSession');
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        console.log('activeTimerSession 数据结构:', data);
+                        setStatus(`数据结构已输出到控制台 | 会话数: ${data.completedSessions?.length || 0}`);
+                    } else {
+                        setStatus('没有找到 activeTimerSession 数据');
+                    }
+                };
+
+                document.getElementById('clear-timer-data').onclick = () => {
+                    localStorage.removeItem('activeTimerSession');
+                    setStatus('已清空计时器数据');
+                    
+                    // 触发数据刷新
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('storage'));
+                    }, 100);
+                };
+
+                // 更新状态显示
+                const statusElement = document.getElementById('status-display');
+                if (statusElement) {
+                    statusElement.textContent = status;
+                }
+            }, [status]);
+
+            return (
+                <TestAchievementJar onStatusUpdate={updateStatus} />
+            );
+        };
+
+        // 渲染应用
+        const container = document.getElementById('jar-container');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(TestApp));
+
+        console.log('🚀 计时器数据修复测试页面已加载');
+    </script>
+</body>
+</html>

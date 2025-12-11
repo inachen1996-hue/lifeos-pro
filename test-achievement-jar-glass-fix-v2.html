@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 玻璃效果修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 - 参考真实玻璃罐 */
+        .glass-jar-container {
+            /* 玻璃罐主体 */
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(240,248,255,0.08) 30%, 
+                rgba(230,245,255,0.1) 70%, 
+                rgba(220,240,255,0.15) 100%);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            
+            /* 玻璃质感阴影 */
+            box-shadow: 
+                /* 外部阴影 - 模拟罐子在表面的投影 */
+                0 20px 40px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.06),
+                /* 内部高光 - 模拟玻璃的反光 */
+                inset 0 2px 4px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.03),
+                /* 边缘光晕 */
+                0 0 0 1px rgba(255,255,255,0.2);
+            
+            /* 玻璃边框 */
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
+            
+            /* 罐子形状 - 圆润的储物罐 */
+            border-radius: 20px 20px 25px 25px;
+        }
+        
+        /* 玻璃罐盖子 */
+        .glass-jar-lid {
+            background: linear-gradient(135deg, 
+                #D2B48C 0%,     /* 浅棕色 */
+                #CD853F 20%,    /* 秘鲁色 */
+                #A0522D 50%,    /* 赭石色 */
+                #8B4513 80%,    /* 马鞍棕 */
+                #654321 100%);  /* 深棕色 */
+            
+            /* 木质纹理效果 */
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 -1px 2px rgba(0,0,0,0.2);
+            
+            border: 2px solid #8B4513;
+            border-radius: 50%;
+            position: relative;
+            
+            /* 木质纹理 */
+            background-image: 
+                radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 1px, transparent 1px),
+                radial-gradient(circle at 70% 60%, rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, transparent 48%, rgba(0,0,0,0.05) 50%, transparent 52%);
+        }
+        
+        /* 盖子上的金属环 */
+        .glass-jar-lid::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 85%;
+            border: 1px solid #696969;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(192,192,192,0.8) 0%, 
+                rgba(169,169,169,0.6) 50%, 
+                rgba(128,128,128,0.8) 100%);
+            box-shadow: 
+                inset 0 1px 2px rgba(255,255,255,0.5),
+                inset 0 -1px 1px rgba(0,0,0,0.3);
+        }
+        
+        /* 玻璃罐底部厚度效果 */
+        .glass-jar-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 15px;
+            background: linear-gradient(180deg, 
+                rgba(255,255,255,0.1) 0%, 
+                rgba(200,220,240,0.2) 100%);
+            border-radius: 0 0 15px 15px;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        
+        /* 玻璃反光效果 */
+        .glass-jar-reflection {
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 25%;
+            height: 40%;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.4) 0%, 
+                rgba(255,255,255,0.1) 50%, 
+                transparent 100%);
+            border-radius: 50px 20px 30px 10px;
+            transform: rotate(-10deg);
+            pointer-events: none;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Achievement Jar 玻璃效果修复测试</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 修复前：简单灰色椭圆 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-xl font-bold mb-4 text-red-600">❌ 修复前（丑陋版本）</h2>
+                <div class="relative mx-auto" style="width: 300px; height: 250px;">
+                    <!-- 简单的灰色椭圆 -->
+                    <div style="
+                        width: 300px;
+                        height: 200px;
+                        background: #E5E7EB;
+                        border-radius: 50%;
+                        border: 2px solid #D1D5DB;
+                        position: relative;
+                        margin: 0 auto;
+                    ">
+                        <!-- 简单的粘土球 -->
+                        <div style="
+                            position: absolute;
+                            width: 30px;
+                            height: 30px;
+                            background: #3B82F6;
+                            border-radius: 50%;
+                            top: 50px;
+                            left: 80px;
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            width: 25px;
+                            height: 25px;
+                            background: #10B981;
+                            border-radius: 50%;
+                            top: 80px;
+                            left: 150px;
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            width: 35px;
+                            height: 35px;
+                            background: #EC4899;
+                            border-radius: 50%;
+                            top: 120px;
+                            left: 100px;
+                        "></div>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mt-4">简单的灰色椭圆，没有玻璃质感，看起来很丑陋。</p>
+            </div>
+
+            <!-- 修复后：真实玻璃效果 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-xl font-bold mb-4 text-green-600">✅ 修复后（美观版本）</h2>
+                <div class="relative mx-auto" style="width: 300px; height: 280px;">
+                    {/* 木质盖子 */}
+                    <div 
+                        className="glass-jar-lid mx-auto mb-2"
+                        style={{
+                            width: '240px',
+                            height: '30px'
+                        }}
+                    />
+                    
+                    {/* 玻璃罐主体 */}
+                    <div 
+                        className="glass-jar-container relative mx-auto"
+                        style={{
+                            width: '300px',
+                            height: '200px'
+                        }}
+                    >
+                        {/* 玻璃反光效果 */}
+                        <div className="glass-jar-reflection" />
+                        
+                        {/* 额外的小反光点 */}
+                        <div 
+                            className="absolute top-8 right-12 w-6 h-12 bg-gradient-to-b from-white to-transparent opacity-30 rounded-full"
+                            style={{ transform: 'rotate(20deg)' }}
+                        />
+                        
+                        {/* 底部反光 */}
+                        <div 
+                            className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 rounded-full"
+                            style={{ filter: 'blur(2px)' }}
+                        />
+                        
+                        {/* 粘土球 */}
+                        <div
+                            className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style={{
+                                left: '60px',
+                                top: '40px',
+                                width: '30px',
+                                height: '30px',
+                                backgroundColor: '#3B82F6'
+                            }}
+                            title="工作 - 2.5小时"
+                        />
+                        <div
+                            className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style={{
+                                left: '120px',
+                                top: '70px',
+                                width: '25px',
+                                height: '25px',
+                                backgroundColor: '#10B981'
+                            }}
+                            title="学习 - 1.8小时"
+                        />
+                        <div
+                            className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style={{
+                                left: '80px',
+                                top: '100px',
+                                width: '35px',
+                                height: '35px',
+                                backgroundColor: '#EC4899'
+                            }}
+                            title="运动 - 3.2小时"
+                        />
+                        <div
+                            className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style={{
+                                left: '150px',
+                                top: '50px',
+                                width: '28px',
+                                height: '28px',
+                                backgroundColor: '#8B5CF6'
+                            }}
+                            title="阅读 - 2.1小时"
+                        />
+                        <div
+                            className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style={{
+                                left: '100px',
+                                top: '130px',
+                                width: '32px',
+                                height: '32px',
+                                backgroundColor: '#F59E0B'
+                            }}
+                            title="娱乐 - 2.8小时"
+                        />
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mt-4">真实的玻璃罐子效果，带有木质盖子、玻璃质感、反光效果和立体粘土球。</p>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+            <h3 class="text-lg font-bold text-blue-800 mb-3">🔧 修复说明</h3>
+            <ul class="text-blue-700 space-y-2">
+                <li>• <strong>玻璃质感</strong>：使用渐变背景和backdrop-filter实现真实玻璃效果</li>
+                <li>• <strong>木质盖子</strong>：添加木质纹理和金属环装饰</li>
+                <li>• <strong>反光效果</strong>：多层反光元素模拟真实光线折射</li>
+                <li>• <strong>立体阴影</strong>：内外阴影组合营造立体感</li>
+                <li>• <strong>粘土球增强</strong>：添加高光和阴影，悬停时有动画效果</li>
+            </ul>
+        </div>
+
+        <div class="mt-6 text-center">
+            <button 
+                onclick="window.location.href='index.html'"
+                class="px-6 py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors"
+            >
+                返回主应用查看效果
+            </button>
+        </div>
+    </div>
+</body>
+</html>

@@ -88,91 +88,179 @@ export const AchievementJarContainer: React.FC<AchievementJarContainerProps> = (
             maxWidth: jarDimensions.maxWidth
           }}
         >
-          {/* Frosted Glass Jar with Airy Macaron Styling */}
-          <div className="jar-glass absolute inset-0 rounded-t-[60px] rounded-b-[40px] overflow-hidden">
-            {/* Enhanced Glass Effect Background */}
-            <div 
-              className="absolute inset-0 airy-backdrop-blur"
-              style={{
-                ...glassStyle,
-                borderRadius: '60px 60px 40px 40px',
-                background: supportsBackdropFilter() 
-                  ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 252, 0.3) 50%, rgba(241, 245, 249, 0.2) 100%)'
-                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(248, 250, 252, 0.8) 50%, rgba(241, 245, 249, 0.75) 100%)',
-                border: '2px solid rgba(255, 255, 255, 0.4)',
-                boxShadow: `
-                  0 12px 40px rgba(148, 163, 184, 0.12),
-                  0 4px 16px rgba(203, 213, 225, 0.08),
-                  inset 0 2px 16px rgba(255, 255, 255, 0.6),
-                  inset 0 -2px 16px rgba(148, 163, 184, 0.05)
-                `
-              }}
-            />
-          
-            {/* Enhanced Jar Rim with Airy Styling */}
-            <div 
-              className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1"
-              style={{
-                width: '90%',
-                height: '12px',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.6) 50%, rgba(241, 245, 249, 0.4) 100%)',
-                borderRadius: '50px',
-                boxShadow: '0 4px 12px rgba(148, 163, 184, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.5)'
-              }}
-            />
-            
-            {/* Subtle Jar Opening Shadow */}
-            <div 
-              className="absolute top-0 left-1/2 transform -translate-x-1/2"
-              style={{
-                width: '85%',
-                height: '8px',
-                background: 'linear-gradient(180deg, rgba(100, 116, 139, 0.08) 0%, transparent 100%)',
-                borderRadius: '50px'
-              }}
-            />
-        </div>
+          {/* 真实玻璃罐子造型 - 瓶颈部分 */}
+          <div 
+            className="jar-neck absolute top-0 left-1/2 transform -translate-x-1/2"
+            style={{
+              width: '35%',
+              height: '20%',
+              background: supportsBackdropFilter() 
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(248, 250, 252, 0.4) 50%, rgba(241, 245, 249, 0.3) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 50%, rgba(241, 245, 249, 0.8) 100%)',
+              borderRadius: '12px 12px 8px 8px',
+              border: '2px solid rgba(255, 255, 255, 0.5)',
+              backdropFilter: 'blur(16px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+              boxShadow: `
+                0 8px 24px rgba(148, 163, 184, 0.1),
+                inset 0 2px 8px rgba(255, 255, 255, 0.7),
+                inset 0 -1px 4px rgba(148, 163, 184, 0.05)
+              `,
+              zIndex: 2
+            }}
+          />
 
-        {/* Content Area - where balls will be rendered */}
-        <div className="jar-content absolute inset-4 top-8 bottom-4 rounded-t-[50px] rounded-b-[30px] overflow-hidden">
-          {isEmpty || isLoading ? (
-            <EmptyJarState isLoading={isLoading} timeRange={timeRange} />
-          ) : (
-            <JarContent categoryStats={displayStats} onBallClick={onBallClick} />
-          )}
-        </div>
+          {/* 瓶颈开口 */}
+          <div 
+            className="jar-opening absolute top-0 left-1/2 transform -translate-x-1/2"
+            style={{
+              width: '30%',
+              height: '8px',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.7) 50%, rgba(241, 245, 249, 0.5) 100%)',
+              borderRadius: '50px',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
+              boxShadow: '0 2px 8px rgba(148, 163, 184, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
+              zIndex: 3
+            }}
+          />
 
-          {/* Enhanced Jar Highlight Effects with Airy Aesthetics */}
+          {/* 瓶颈内部阴影 */}
+          <div 
+            className="jar-opening-shadow absolute top-2 left-1/2 transform -translate-x-1/2"
+            style={{
+              width: '28%',
+              height: '6px',
+              background: 'linear-gradient(180deg, rgba(100, 116, 139, 0.12) 0%, transparent 100%)',
+              borderRadius: '50px',
+              zIndex: 1
+            }}
+          />
+
+          {/* 主罐体 - 圆润的玻璃罐造型 */}
+          <div 
+            className="jar-body absolute"
+            style={{
+              top: '15%',
+              left: '0',
+              right: '0',
+              bottom: '0',
+              background: supportsBackdropFilter() 
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 252, 0.3) 50%, rgba(241, 245, 249, 0.2) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(248, 250, 252, 0.8) 50%, rgba(241, 245, 249, 0.75) 100%)',
+              borderRadius: '50% 50% 40px 40px',
+              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backdropFilter: 'blur(20px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+              boxShadow: `
+                0 16px 48px rgba(148, 163, 184, 0.15),
+                0 8px 24px rgba(203, 213, 225, 0.1),
+                inset 0 4px 20px rgba(255, 255, 255, 0.6),
+                inset 0 -4px 20px rgba(148, 163, 184, 0.05)
+              `,
+              overflow: 'hidden'
+            }}
+          />
+
+          {/* 瓶颈与罐体连接处 */}
+          <div 
+            className="jar-connection absolute left-1/2 transform -translate-x-1/2"
+            style={{
+              top: '18%',
+              width: '45%',
+              height: '8px',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 252, 0.5) 50%, rgba(241, 245, 249, 0.4) 100%)',
+              borderRadius: '50px',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              boxShadow: '0 4px 12px rgba(148, 163, 184, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.7)',
+              zIndex: 2
+            }}
+          />
+
+          {/* Content Area - where balls will be rendered */}
+          <div 
+            className="jar-content absolute overflow-hidden"
+            style={{
+              top: '25%',
+              left: '8px',
+              right: '8px',
+              bottom: '8px',
+              borderRadius: '45% 45% 32px 32px'
+            }}
+          >
+            {isEmpty || isLoading ? (
+              <EmptyJarState isLoading={isLoading} timeRange={timeRange} />
+            ) : (
+              <JarContent categoryStats={displayStats} onBallClick={onBallClick} />
+            )}
+          </div>
+
+          {/* 真实玻璃罐子高光效果 */}
           <div className="jar-highlights absolute inset-0 pointer-events-none">
-            {/* Primary light reflection */}
+            {/* 瓶颈主要反光 */}
             <div 
-              className="absolute left-4 top-12 w-8 h-24 rounded-full opacity-50"
+              className="absolute left-1/2 transform -translate-x-1/2 opacity-60"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.4) 50%, transparent 80%)',
-                filter: 'blur(12px)'
-              }}
-            />
-            
-            {/* Secondary ambient glow */}
-            <div 
-              className="absolute right-6 top-16 w-6 h-32 rounded-full opacity-25"
-              style={{
-                background: 'linear-gradient(225deg, rgba(203, 213, 225, 0.3) 0%, rgba(148, 163, 184, 0.2) 50%, transparent 80%)',
+                top: '2%',
+                width: '20%',
+                height: '15%',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.5) 50%, transparent 80%)',
+                borderRadius: '50%',
                 filter: 'blur(8px)'
               }}
             />
-            
-            {/* Bottom rim glow */}
+
+            {/* 罐体左侧主要反光 */}
             <div 
-              className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-4 rounded-full opacity-30"
+              className="absolute left-4 opacity-50"
               style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(241, 245, 249, 0.4) 50%, transparent 100%)',
-                filter: 'blur(6px)'
+                top: '25%',
+                width: '12%',
+                height: '40%',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.4) 50%, transparent 80%)',
+                borderRadius: '50%',
+                filter: 'blur(14px)'
+              }}
+            />
+            
+            {/* 罐体右侧次要反光 */}
+            <div 
+              className="absolute right-6 opacity-25"
+              style={{
+                top: '30%',
+                width: '8%',
+                height: '35%',
+                background: 'linear-gradient(225deg, rgba(203, 213, 225, 0.4) 0%, rgba(148, 163, 184, 0.2) 50%, transparent 80%)',
+                borderRadius: '50%',
+                filter: 'blur(10px)'
+              }}
+            />
+            
+            {/* 罐底反光 */}
+            <div 
+              className="absolute bottom-6 left-1/2 transform -translate-x-1/2 opacity-30"
+              style={{
+                width: '70%',
+                height: '8%',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(241, 245, 249, 0.5) 50%, transparent 100%)',
+                borderRadius: '50%',
+                filter: 'blur(8px)'
+              }}
+            />
+
+            {/* 罐体曲面高光 */}
+            <div 
+              className="absolute left-1/2 transform -translate-x-1/2 opacity-20"
+              style={{
+                top: '20%',
+                width: '80%',
+                height: '60%',
+                background: 'radial-gradient(ellipse at center top, rgba(255, 255, 255, 0.3) 0%, transparent 40%)',
+                borderRadius: '50%',
+                filter: 'blur(20px)'
               }}
             />
           </div>
-      </div>
+        </div>
 
         {/* Enhanced Jar Label with Airy Typography */}
         <div className="jar-label mt-6 text-center">
@@ -329,14 +417,14 @@ const JarContent: React.FC<{
 
   // Responsive container dimensions for ball positioning
   const containerDimensions = useMemo(() => {
-    const baseWidth = viewport.isMobile ? 240 : 280;
-    const baseHeight = viewport.isMobile ? 260 : 320;
+    const baseWidth = 240;
+    const baseHeight = 260;
     
     return {
-      width: Math.round(baseWidth * responsiveConfig.ballSizes.scale),
-      height: Math.round(baseHeight * responsiveConfig.ballSizes.scale)
+      width: Math.round(baseWidth),
+      height: Math.round(baseHeight)
     };
-  }, [viewport.isMobile, responsiveConfig.ballSizes.scale]);
+  }, []);
 
   return (
     <div className="relative w-full h-full">
@@ -345,7 +433,7 @@ const JarContent: React.FC<{
         onBallClick={onBallClick}
         containerWidth={containerDimensions.width}
         containerHeight={containerDimensions.height}
-        enablePhysics={responsiveConfig.physics.enabled}
+        enablePhysics={true}
         onPerformanceUpdate={(metrics) => {
           // Handle performance metrics and auto-optimization
           if (metrics.fps < 30) {

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TimerControlModal 刷新页面修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🔧 TimerControlModal 刷新页面修复测试</h1>
+        
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-red-600">问题描述</h2>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <h3 class="font-bold text-red-800 mb-2">刷新页面时的错误:</h3>
+                <code class="text-sm text-red-700">
+                    TypeError: Cannot read properties of undefined (reading 'mode')<br>
+                    at TimerControlModal (页面刷新时)
+                </code>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="font-bold text-blue-800 mb-2">根本原因:</h3>
+                <p class="text-blue-700 text-sm">
+                    页面刷新时，从 localStorage 恢复的 <code>activeTimerSession</code> 只包含 <code>completedSessions</code> 数据，
+                    缺少 <code>timer</code> 和 <code>session</code> 属性，导致 TimerControlModal 组件报错。
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">修复方案</h2>
+            <div class="space-y-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">1. 数据结构验证</h3>
+                    <p class="text-green-700 text-sm mb-2">
+                        在 activeTimerSession 初始化时验证数据结构，只有包含 <code>timer</code> 和 <code>session</code> 的对象才是有效的。
+                    </p>
+                    <code class="text-xs text-green-600 bg-green-100 p-2 rounded block">
+                        if (parsed && parsed.timer && parsed.session) {<br>
+                        &nbsp;&nbsp;return parsed; // 有效的 activeTimerSession<br>
+                        }
+                    </code>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">2. 分离数据存储</h3>
+                    <p class="text-green-700 text-sm mb-2">
+                        将 <code>completedSessions</code> 保存到单独的 localStorage 键 <code>completedTimerSessions</code>。
+                    </p>
+                    <code class="text-xs text-green-600 bg-green-100 p-2 rounded block">
+                        localStorage.setItem('completedTimerSessions', JSON.stringify(sessions));
+                    </code>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">3. 更新 Achievement Jar</h3>
+                    <p class="text-green-700 text-sm">
+                        Achievement Jar 从新的 localStorage 键读取计时器完成数据。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-blue-600">测试验证</h2>
+            
+            <div class="space-y-4">
+                <button id="simulate-old-data" class="w-full px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    🚨 模拟旧版本的错误数据结构
+                </button>
+                
+                <button id="test-data-validation" class="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    🔍 测试数据结构验证
+                </button>
+                
+                <button id="simulate-timer-completion" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    ✅ 模拟计时器完成（新逻辑）
+                </button>
+                
+                <button id="check-achievement-jar-data" class="w-full px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                    🏺 检查 Achievement Jar 数据源
+                </button>
+                
+                <button id="simulate-page-refresh" class="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                    🔄 模拟页面刷新恢复
+                </button>
+            </div>
+
+            <!-- 测试结果显示 -->
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                <h4 class="font-bold text-gray-700 mb-2">测试结果:</h4>
+                <div id="test-results" class="text-sm text-gray-600">
+                    点击按钮开始测试...
+                </div>
+            </div>
+        </div>
+
+        <!-- 修复总结 -->
+        <div class="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-3xl p-6 border border-green-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🎉 修复总结</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-bold text-red-700 mb-2">修复前问题:</h4>
+                    <ul class="text-gray-600 space-y-1">
+                        <li>❌ 页面刷新时 TimerControlModal 报错</li>
+                        <li>❌ localStorage 中存储不完整的 activeTimerSession</li>
+                        <li>❌ 数据结构验证缺失</li>
+                        <li>❌ completedSessions 和 activeTimerSession 混合存储</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-green-700 mb-2">修复后效果:</h4>
+                    <ul class="text-gray-600 space-y-1">
+                        <li>✅ 页面刷新不再报错</li>
+                        <li>✅ 数据结构验证确保安全</li>
+                        <li>✅ completedSessions 独立存储</li>
+                        <li>✅ Achievement Jar 正常工作</li>
+                        <li>✅ 计时器功能完全稳定</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const results = document.getElementById('test-results');
+        
+        // 模拟旧版本的错误数据结构
+        function simulateOldData() {
+            const oldData = {
+                completedSessions: [
+                    {
+                        startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                        endTime: new Date().toISOString(),
+                        duration: 1500,
+                        category: 'work',
+                        title: '测试任务',
+                        icon: '🍅',
+                        mode: 'pomodoro'
+                    }
+                ],
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem('activeTimerSession', JSON.stringify(oldData));
+            
+            results.innerHTML = `
+                <div class="text-red-600">🚨 已模拟旧版本错误数据结构</div>
+                <div class="text-xs mt-2 text-red-500">
+                    localStorage['activeTimerSession'] = 只包含 completedSessions 的对象<br>
+                    这种数据在页面刷新时会导致 TimerControlModal 报错
+                </div>
+            `;
+        }
+        
+        // 测试数据结构验证
+        function testDataValidation() {
+            // 模拟新版本的验证逻辑
+            function validateActiveTimerSession(data) {
+                if (data && data.timer && data.session) {
+                    return { valid: true, reason: '包含完整的 timer 和 session 属性' };
+                }
+                if (data && data.completedSessions) {
+                    return { valid: false, reason: '只包含 completedSessions，缺少 timer 和 session' };
+                }
+                return { valid: false, reason: '数据为空或格式错误' };
+            }
+            
+            // 测试不同的数据结构
+            const testCases = [
+                {
+                    name: '有效的 activeTimerSession',
+                    data: {
+                        timer: { id: 1, name: '测试', mode: 'pomodoro' },
+                        session: { status: 'running', startTime: new Date().toISOString() }
+                    }
+                },
+                {
+                    name: '无效的 activeTimerSession (只有 completedSessions)',
+                    data: {
+                        completedSessions: [{ title: '测试' }],
+                        lastUpdated: new Date().toISOString()
+                    }
+                },
+                {
+                    name: '空数据',
+                    data: null
+                }
+            ];
+            
+            let resultHtml = '<div class="text-blue-600">🔍 数据结构验证测试结果:</div>';
+            
+            testCases.forEach(testCase => {
+                const validation = validateActiveTimerSession(testCase.data);
+                const icon = validation.valid ? '✅' : '❌';
+                const color = validation.valid ? 'text-green-600' : 'text-red-600';
+                
+                resultHtml += `
+                    <div class="text-xs mt-1 ${color}">
+                        ${icon} ${testCase.name}: ${validation.reason}
+                    </div>
+                `;
+            });
+            
+            results.innerHTML = resultHtml;
+        }
+        
+        // 模拟计时器完成（新逻辑）
+        function simulateTimerCompletion() {
+            // 1. 保存到新的 completedTimerSessions 键
+            const completedSession = {
+                startTime: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+                endTime: new Date().toISOString(),
+                duration: 1500,
+                category: 'work',
+                title: '新逻辑测试任务',
+                icon: '🍅',
+                mode: 'pomodoro'
+            };
+            
+            let existingSessions = [];
+            try {
+                const stored = localStorage.getItem('completedTimerSessions');
+                if (stored) {
+                    existingSessions = JSON.parse(stored);
+                }
+            } catch (e) {
+                // 忽略错误
+            }
+            
+            existingSessions.push(completedSession);
+            localStorage.setItem('completedTimerSessions', JSON.stringify(existingSessions));
+            
+            // 2. 清除 activeTimerSession
+            localStorage.removeItem('activeTimerSession');
+            
+            results.innerHTML = `
+                <div class="text-green-600">✅ 模拟计时器完成（新逻辑）</div>
+                <div class="text-xs mt-2 text-green-500">
+                    ✓ completedSessions 保存到独立的 localStorage 键<br>
+                    ✓ activeTimerSession 已清除<br>
+                    ✓ 总完成会话数: ${existingSessions.length}
+                </div>
+            `;
+        }
+        
+        // 检查 Achievement Jar 数据源
+        function checkAchievementJarData() {
+            try {
+                const completedSessions = localStorage.getItem('completedTimerSessions');
+                const activeSession = localStorage.getItem('activeTimerSession');
+                
+                let resultHtml = '<div class="text-purple-600">🏺 Achievement Jar 数据源检查:</div>';
+                
+                if (completedSessions) {
+                    const sessions = JSON.parse(completedSessions);
+                    const today = new Date();
+                    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    
+                    const todaySessions = sessions.filter(session => {
+                        const sessionDate = new Date(session.startTime);
+                        return sessionDate >= startOfDay;
+                    });
+                    
+                    resultHtml += `
+                        <div class="text-xs mt-1 text-green-600">
+                            ✅ completedTimerSessions: ${sessions.length} 个会话
+                        </div>
+                        <div class="text-xs mt-1 text-green-600">
+                            ✅ 今日会话: ${todaySessions.length} 个
+                        </div>
+                    `;
+                } else {
+                    resultHtml += `
+                        <div class="text-xs mt-1 text-yellow-600">
+                            ⚠️ completedTimerSessions: 无数据
+                        </div>
+                    `;
+                }
+                
+                if (activeSession) {
+                    resultHtml += `
+                        <div class="text-xs mt-1 text-red-600">
+                            ❌ activeTimerSession: 仍然存在（应该为空）
+                        </div>
+                    `;
+                } else {
+                    resultHtml += `
+                        <div class="text-xs mt-1 text-green-600">
+                            ✅ activeTimerSession: 已清除
+                        </div>
+                    `;
+                }
+                
+                results.innerHTML = resultHtml;
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 检查失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 模拟页面刷新恢复
+        function simulatePageRefresh() {
+            try {
+                // 模拟页面刷新时的 activeTimerSession 恢复逻辑
+                function restoreActiveTimerSession() {
+                    try {
+                        const saved = localStorage.getItem('activeTimerSession');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            // 验证数据结构：只有包含 timer 和 session 的对象才是有效的 activeTimerSession
+                            if (parsed && parsed.timer && parsed.session) {
+                                return { success: true, data: parsed, reason: '恢复有效的 activeTimerSession' };
+                            }
+                            // 如果只包含 completedSessions，说明是计时器完成后的数据，不应该作为 activeTimerSession
+                            return { success: false, data: null, reason: 'localStorage 中的数据不是有效的 activeTimerSession，已忽略' };
+                        }
+                        return { success: true, data: null, reason: 'localStorage 中无 activeTimerSession 数据' };
+                    } catch (e) {
+                        return { success: false, data: null, reason: `恢复失败: ${e.message}` };
+                    }
+                }
+                
+                const restoration = restoreActiveTimerSession();
+                const icon = restoration.success ? '✅' : '❌';
+                const color = restoration.success ? 'text-green-600' : 'text-red-600';
+                
+                results.innerHTML = `
+                    <div class="${color}">🔄 页面刷新恢复测试</div>
+                    <div class="text-xs mt-2 ${color}">
+                        ${icon} ${restoration.reason}
+                    </div>
+                    <div class="text-xs mt-1 text-gray-600">
+                        activeTimerSession: ${restoration.data ? '有数据' : 'null'}
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 测试失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 绑定事件
+        document.getElementById('simulate-old-data').onclick = simulateOldData;
+        document.getElementById('test-data-validation').onclick = testDataValidation;
+        document.getElementById('simulate-timer-completion').onclick = simulateTimerCompletion;
+        document.getElementById('check-achievement-jar-data').onclick = checkAchievementJarData;
+        document.getElementById('simulate-page-refresh').onclick = simulatePageRefresh;
+        
+        // 页面加载时自动检查当前状态
+        window.onload = function() {
+            checkAchievementJarData();
+        };
+    </script>
+</body>
+</html>

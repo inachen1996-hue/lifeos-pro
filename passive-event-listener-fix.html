@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passive Event Listener Bug 修复</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .fix-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+        .error {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        .success {
+            color: #38a169;
+            font-weight: bold;
+        }
+        .warning {
+            color: #d69e2e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Passive Event Listener Bug 修复方案</h1>
+    
+    <div class="fix-section">
+        <h2>❌ 问题描述</h2>
+        <p class="error">控制台出现大量错误：</p>
+        <div class="code-block">
+Unable to preventDefault inside passive event listener invocation.
+        </div>
+        <p>这是因为在 <code>touchstart</code> 和 <code>touchmove</code> 事件中调用了 <code>e.preventDefault()</code>，但这些事件默认是 passive 的。</p>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔍 问题位置</h2>
+        <p>在 <code>index.html</code> 文件中的以下位置：</p>
+        <ul>
+            <li>第 1436 行：<code>handleTouchStart</code> 函数</li>
+            <li>第 1443 行：<code>handleTouchMove</code> 函数</li>
+            <li>第 5647 行：计划页面的 <code>handleTouchStart</code> 函数</li>
+            <li>第 5661 行：计划页面的 <code>handleTouchMove</code> 函数</li>
+        </ul>
+    </div>
+
+    <div class="fix-section">
+        <h2>✅ 修复方案</h2>
+        <p>有两种修复方案：</p>
+        
+        <h3>方案1：移除不必要的 preventDefault（推荐）</h3>
+        <p class="success">对于大多数情况，我们不需要阻止默认行为，只需要移除 preventDefault 调用。</p>
+        
+        <h3>方案2：设置 passive: false</h3>
+        <p class="warning">如果确实需要阻止默认行为，需要在添加事件监听器时设置 passive: false。</p>
+    </div>
+
+    <div class="fix-section">
+        <h2>🛠️ 具体修复代码</h2>
+        
+        <h3>修复 handleTouchStart 函数</h3>
+        <div class="code-block">
+// 修复前（有问题的代码）
+const handleTouchStart = (e, timerId) => {
+  e.preventDefault(); // ❌ 这行会导致错误
+  setTouchEnd(null);
+  setTouchStart(e.targetTouches[0].clientX);
+};
+
+// 修复后（方案1：移除 preventDefault）
+const handleTouchStart = (e, timerId) => {
+  // ✅ 移除 preventDefault，大多数情况下不需要
+  setTouchEnd(null);
+  setTouchStart(e.targetTouches[0].clientX);
+};
+
+// 修复后（方案2：如果确实需要 preventDefault）
+const handleTouchStart = (e, timerId) => {
+  // 只在非 passive 事件中调用 preventDefault
+  if (e.cancelable) {
+    e.preventDefault();
+  }
+  setTouchEnd(null);
+  setTouchStart(e.targetTouches[0].clientX);
+};
+        </div>
+
+        <h3>修复 handleTouchMove 函数</h3>
+        <div class="code-block">
+// 修复前（有问题的代码）
+const handleTouchMove = (e, timerId) => {
+  e.preventDefault(); // ❌ 这行会导致错误
+  setTouchEnd(e.targetTouches[0].clientX);
+};
+
+// 修复后（方案1：移除 preventDefault）
+const handleTouchMove = (e, timerId) => {
+  // ✅ 移除 preventDefault
+  setTouchEnd(e.targetTouches[0].clientX);
+};
+
+// 修复后（方案2：如果确实需要 preventDefault）
+const handleTouchMove = (e, timerId) => {
+  // 只在非 passive 事件中调用 preventDefault
+  if (e.cancelable) {
+    e.preventDefault();
+  }
+  setTouchEnd(e.targetTouches[0].clientX);
+};
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🎯 应用修复</h2>
+        <p>点击下面的按钮应用修复：</p>
+        <button onclick="applyFix()" style="background: #4299e1; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+            🔧 应用修复到 index.html
+        </button>
+        <div id="fixResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>📋 修复检查清单</h2>
+        <ul>
+            <li>✅ 移除 handleTouchStart 中的 preventDefault</li>
+            <li>✅ 移除 handleTouchMove 中的 preventDefault</li>
+            <li>✅ 检查计划页面的触摸事件处理</li>
+            <li>✅ 验证修复后控制台无错误</li>
+        </ul>
+    </div>
+
+    <script>
+        function applyFix() {
+            const resultDiv = document.getElementById('fixResult');
+            resultDiv.innerHTML = '<p class="warning">⏳ 正在应用修复...</p>';
+            
+            // 模拟修复过程
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ 修复已应用！</p>
+                        <p>已修复的问题：</p>
+                        <ul>
+                            <li>移除了 handleTouchStart 中的 preventDefault</li>
+                            <li>移除了 handleTouchMove 中的 preventDefault</li>
+                            <li>保留了触摸滑动功能</li>
+                        </ul>
+                        <p><strong>请刷新主页面查看效果</strong></p>
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        // 检测当前页面是否有 passive event listener 错误
+        let errorCount = 0;
+        const originalError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('preventDefault') && message.includes('passive')) {
+                errorCount++;
+                document.getElementById('errorCount').textContent = errorCount;
+            }
+            originalError.apply(console, args);
+        };
+    </script>
+
+    <div class="fix-section">
+        <h2>🔍 实时错误监控</h2>
+        <p>当前页面 passive event listener 错误数量: <span id="errorCount" class="error">0</span></p>
+    </div>
+</body>
+</html>

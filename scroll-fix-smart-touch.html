@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能触摸事件修复 - 保持滚动功能</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .fix-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .test-area {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .swipe-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 10px 0;
+            user-select: none;
+            transition: transform 0.3s ease;
+            cursor: grab;
+        }
+        .swipe-card:active {
+            cursor: grabbing;
+        }
+        .swipe-card.swiped {
+            transform: translateX(-100px);
+            opacity: 0.7;
+        }
+        .scroll-content {
+            height: 150vh;
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 智能触摸事件修复方案</h1>
+    
+    <div class="fix-section">
+        <h2>🎯 问题分析</h2>
+        <div class="status error">
+            <strong>当前问题：</strong><br>
+            • 移除 preventDefault 后页面无法滑动<br>
+            • 需要区分水平滑动（功能）和垂直滚动（导航）
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>💡 智能解决方案</h2>
+        <p>使用方向检测，只在水平滑动时阻止默认行为：</p>
+        
+        <div class="code-block">
+// 智能触摸事件处理 - 区分水平滑动和垂直滚动
+const handleTouchStart = (e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now()
+  });
+  setTouchEnd(null);
+};
+
+const handleTouchMove = (e, timerId) => {
+  if (!touchStart) return;
+  
+  const touch = e.targetTouches[0];
+  const deltaX = Math.abs(touch.clientX - touchStart.x);
+  const deltaY = Math.abs(touch.clientY - touchStart.y);
+  
+  // 判断是否为水平滑动
+  const isHorizontalSwipe = deltaX > deltaY && deltaX > 10;
+  
+  // 只在水平滑动时阻止默认行为
+  if (isHorizontalSwipe && e.cancelable) {
+    e.preventDefault();
+  }
+  
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+};
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🧪 测试区域</h2>
+        <p>测试智能触摸处理：</p>
+        
+        <div class="test-area" id="testArea">
+            <h3>📱 滑动测试卡片</h3>
+            <div class="swipe-card" id="swipeCard1">
+                <strong>卡片 1</strong><br>
+                水平滑动我 → 触发功能<br>
+                垂直滑动 ↕ 正常滚动
+            </div>
+            <div class="swipe-card" id="swipeCard2">
+                <strong>卡片 2</strong><br>
+                水平滑动我 → 触发功能<br>
+                垂直滑动 ↕ 正常滚动
+            </div>
+            
+            <div class="scroll-content">
+                <h4>📜 滚动内容测试</h4>
+                <p>这是一个很长的内容区域，用来测试垂直滚动功能。</p>
+                <p>你应该能够正常上下滚动这个区域。</p>
+                <p>同时，水平滑动卡片应该触发滑动功能。</p>
+                <p>这样就实现了智能的触摸事件处理。</p>
+                <br><br><br><br><br><br><br><br><br><br>
+                <p>继续滚动测试...</p>
+                <br><br><br><br><br><br><br><br><br><br>
+                <p>滚动到底部了！</p>
+            </div>
+        </div>
+        
+        <div id="touchStatus" class="status info">
+            等待触摸事件...
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔧 应用修复</h2>
+        <button onclick="applySmartFix()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px;">
+            ✅ 应用智能修复
+        </button>
+        <button onclick="showFixCode()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            📋 查看修复代码
+        </button>
+        <div id="fixResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        let touchStart = null;
+        let touchEnd = null;
+        let swipeCount = 0;
+
+        // 智能触摸事件处理
+        function handleTouchStart(e, cardId) {
+            const touch = e.targetTouches[0];
+            touchStart = {
+                x: touch.clientX,
+                y: touch.clientY,
+                time: Date.now()
+            };
+            touchEnd = null;
+            
+            updateStatus(`开始触摸 ${cardId} - X: ${touch.clientX}, Y: ${touch.clientY}`);
+        }
+
+        function handleTouchMove(e, cardId) {
+            if (!touchStart) return;
+            
+            const touch = e.targetTouches[0];
+            const deltaX = Math.abs(touch.clientX - touchStart.x);
+            const deltaY = Math.abs(touch.clientY - touchStart.y);
+            
+            // 判断滑动方向
+            const isHorizontalSwipe = deltaX > deltaY && deltaX > 10;
+            const isVerticalScroll = deltaY > deltaX && deltaY > 10;
+            
+            // 只在明确的水平滑动时阻止默认行为
+            if (isHorizontalSwipe && e.cancelable) {
+                e.preventDefault();
+                updateStatus(`🔒 水平滑动检测 - 阻止默认滚动 (ΔX: ${deltaX}, ΔY: ${deltaY})`);
+            } else if (isVerticalScroll) {
+                updateStatus(`📜 垂直滚动检测 - 允许正常滚动 (ΔX: ${deltaX}, ΔY: ${deltaY})`);
+            }
+            
+            touchEnd = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+        }
+
+        function handleTouchEnd(cardId) {
+            if (!touchStart || !touchEnd) {
+                updateStatus('触摸结束 - 无有效滑动');
+                return;
+            }
+            
+            const deltaX = touchStart.x - touchEnd.x;
+            const deltaY = Math.abs(touchStart.y - touchEnd.y);
+            const isLeftSwipe = deltaX > 50 && deltaY < 100; // 水平滑动且垂直偏移不大
+            
+            if (isLeftSwipe) {
+                swipeCount++;
+                const card = document.getElementById(cardId);
+                card.classList.add('swiped');
+                updateStatus(`✅ 成功左滑 ${cardId} - 距离: ${deltaX}px (总计: ${swipeCount}次)`);
+                
+                setTimeout(() => {
+                    card.classList.remove('swiped');
+                }, 2000);
+            } else {
+                updateStatus(`❌ 滑动距离不足或方向错误 - ΔX: ${deltaX}, ΔY: ${deltaY}`);
+            }
+            
+            touchStart = null;
+            touchEnd = null;
+        }
+
+        function updateStatus(message) {
+            const statusDiv = document.getElementById('touchStatus');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+        }
+
+        // 为测试卡片添加事件监听器
+        ['swipeCard1', 'swipeCard2'].forEach(cardId => {
+            const card = document.getElementById(cardId);
+            
+            card.addEventListener('touchstart', (e) => handleTouchStart(e, cardId), { passive: false });
+            card.addEventListener('touchmove', (e) => handleTouchMove(e, cardId), { passive: false });
+            card.addEventListener('touchend', () => handleTouchEnd(cardId));
+        });
+
+        function applySmartFix() {
+            const resultDiv = document.getElementById('fixResult');
+            resultDiv.innerHTML = `
+                <div class="status success">
+                    ✅ <strong>智能修复已准备就绪！</strong><br>
+                    • 保持垂直滚动功能<br>
+                    • 只在水平滑动时阻止默认行为<br>
+                    • 解决 passive event listener 错误<br>
+                    <br>
+                    <strong>点击"查看修复代码"获取具体实现</strong>
+                </div>
+            `;
+        }
+
+        function showFixCode() {
+            const resultDiv = document.getElementById('fixResult');
+            resultDiv.innerHTML = `
+                <div class="status info">
+                    <strong>📋 修复代码已准备</strong><br>
+                    请查看下方的完整修复代码，可以直接应用到 index.html 中
+                </div>
+                <div class="code-block">
+// 智能触摸事件处理 - 修复版本
+const handleTouchStart = (e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now()
+  });
+  setTouchEnd(null);
+};
+
+const handleTouchMove = (e, timerId) => {
+  if (!touchStart) return;
+  
+  const touch = e.targetTouches[0];
+  const deltaX = Math.abs(touch.clientX - touchStart.x);
+  const deltaY = Math.abs(touch.clientY - touchStart.y);
+  
+  // 判断是否为水平滑动
+  const isHorizontalSwipe = deltaX > deltaY && deltaX > 10;
+  
+  // 只在水平滑动时阻止默认行为
+  if (isHorizontalSwipe && e.cancelable) {
+    e.preventDefault();
+  }
+  
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+};
+
+const handleTouchEnd = (timerId) => {
+  if (!touchStart || !touchEnd) return;
+  
+  const distance = touchStart.x - touchEnd.x;
+  const verticalDistance = Math.abs(touchStart.y - touchEnd.y);
+  const isLeftSwipe = distance > 50 && verticalDistance < 100;
+  
+  if (isLeftSwipe) {
+    // 处理左滑逻辑
+    setSwipedTimerId(timerId);
+  }
+  
+  setTouchStart(null);
+  setTouchEnd(null);
+};
+                </div>
+            `;
+        }
+
+        // 初始化
+        updateStatus('页面加载完成，可以开始测试触摸事件');
+    </script>
+</body>
+</html>

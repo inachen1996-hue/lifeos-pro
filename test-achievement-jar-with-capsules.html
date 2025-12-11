@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成就罐子 + 当日进度胶囊测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* 玻璃罐子样式 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(240,248,255,0.08) 30%, 
+                rgba(230,245,255,0.1) 70%, 
+                rgba(220,240,255,0.15) 100%);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.06),
+                inset 0 2px 4px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.03),
+                0 0 0 1px rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px 20px 25px 25px;
+        }
+        
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* 隐藏滚动条 */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // 模拟数据
+        const mockData = [
+            { id: 1, category: 'work', duration: 7200, title: '项目开发', timestamp: new Date().toISOString() },
+            { id: 2, category: 'work', duration: 5400, title: '会议讨论', timestamp: new Date().toISOString() },
+            { id: 3, category: 'work', duration: 3600, title: '代码审查', timestamp: new Date().toISOString() },
+            { id: 4, category: 'study', duration: 7200, title: '学习React', timestamp: new Date().toISOString() },
+            { id: 5, category: 'health', duration: 2700, title: '晨跑', timestamp: new Date().toISOString() },
+            { id: 6, category: 'rest', duration: 4320, title: '午休', timestamp: new Date().toISOString() },
+            { id: 7, category: 'life', duration: 1800, title: '做饭', timestamp: new Date().toISOString() }
+        ];
+
+        const categoryMap = {
+            work: { name: '工作', color: '#3B82F6' },
+            study: { name: '学习', color: '#EC4899' },
+            health: { name: '健康', color: '#10B981' },
+            rest: { name: '休息', color: '#F59E0B' },
+            life: { name: '生活', color: '#8B5CF6' },
+            entertainment: { name: '娱乐', color: '#EF4444' },
+            hobby: { name: '兴趣', color: '#14B8A6' },
+            sleep: { name: '睡眠', color: '#6B7280' }
+        };
+
+        // 根据分类获取图标
+        const getCategoryIcon = (category) => {
+            const iconMap = {
+                'work': '💻',
+                'study': '📖', 
+                'rest': '☕',
+                'sleep': '😴',
+                'life': '🏠',
+                'entertainment': '🎮',
+                'health': '🏃',
+                'hobby': '🎨'
+            };
+            return iconMap[category] || '📝';
+        };
+
+        // 获取实际颜色值
+        const getActualColor = (colorClass) => {
+            if (colorClass && colorClass.startsWith('#')) {
+                return colorClass;
+            }
+            return colorClass || '#6B7280';
+        };
+
+        const AchievementJarContainer = ({ data, categoryMap, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 生成粘土球数据
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const actualColor = getActualColor(category.color);
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: actualColor,
+                        size,
+                        x: 50 + (index % 5) * 60 + Math.random() * 20,
+                        y: 100 + Math.floor(index / 5) * 60 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container rounded-2xl shadow-lg border border-slate-200 p-6 mb-6" style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
+                }}>
+                    {/* 玻璃罐子 */}
+                    <div className="relative mx-auto glass-jar-container" style={{ width: '300px', height: '320px' }}>
+                        
+                        {/* 粘土球容器 */}
+                        <div className="absolute overflow-hidden" style={{
+                            top: '20px',
+                            left: '20px',
+                            right: '20px',
+                            bottom: '20px',
+                            borderRadius: '15px'
+                        }}>
+                            {/* 粘土球 */}
+                            {clayBalls.map((ball) => (
+                                <div
+                                    key={ball.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${Math.min(Math.max(ball.x - 50, 10), 200)}px`,
+                                        top: `${Math.min(Math.max(ball.y - 100, 10), 180)}px`,
+                                        width: `${ball.size}px`,
+                                        height: `${ball.size}px`,
+                                        background: `radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, ${ball.color} 50%, ${ball.color}CC 100%)`,
+                                        boxShadow: `
+                                            0 6px 20px rgba(0,0,0,0.15),
+                                            inset 0 3px 6px rgba(255,255,255,0.6),
+                                            inset 0 -2px 4px rgba(0,0,0,0.1)
+                                        `
+                                    }}
+                                    onClick={() => onCelebrate && onCelebrate('clap')}
+                                    title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                                />
+                            ))}
+
+                            {/* 空状态提示 */}
+                            {clayBalls.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-center">
+                                    <div className="text-sm font-medium mb-3 text-gray-600">
+                                        暂无进度数据
+                                    </div>
+                                    <div className="text-xs leading-relaxed text-gray-500">
+                                        开始计时或记录活动<br />
+                                        彩色小球会在这里堆积
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 当日进度胶囊卡片 */}
+                    <div className="mt-6 mb-4">
+                        <h3 className="text-sm font-bold text-gray-700 mb-3 px-2">📊 当日进度</h3>
+                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 px-2" style={{ scrollSnapType: 'x mandatory' }}>
+                            {(() => {
+                                // 按分类聚合数据
+                                const categoryStats = {};
+                                clayBalls.forEach(ball => {
+                                    if (!categoryStats[ball.category]) {
+                                        categoryStats[ball.category] = {
+                                            category: ball.category,
+                                            totalDuration: 0,
+                                            count: 0,
+                                            color: ball.color
+                                        };
+                                    }
+                                    categoryStats[ball.category].totalDuration += ball.duration;
+                                    categoryStats[ball.category].count += 1;
+                                });
+
+                                // 转换为胶囊卡片数据
+                                const capsuleData = Object.values(categoryStats).map(stat => {
+                                    const categoryInfo = categoryMap[stat.category] || { name: '其他', color: '#6B7280' };
+                                    const hours = stat.totalDuration / 3600;
+                                    const displayTime = hours >= 1 
+                                        ? `${hours.toFixed(1)}h` 
+                                        : `${Math.round(hours * 60)}min`;
+                                    
+                                    return {
+                                        id: stat.category,
+                                        icon: getCategoryIcon(stat.category),
+                                        name: categoryInfo.name,
+                                        time: displayTime,
+                                        color: getActualColor(categoryInfo.color),
+                                        count: stat.count
+                                    };
+                                });
+
+                                // 如果没有数据，显示空状态
+                                if (capsuleData.length === 0) {
+                                    return (
+                                        <div className="flex-shrink-0 flex items-center justify-center w-full py-8">
+                                            <div className="text-center">
+                                                <div className="text-gray-400 text-sm mb-2">🌱</div>
+                                                <div className="text-gray-500 text-xs">开始记录你的进度吧</div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                // 渲染胶囊卡片
+                                return capsuleData.map((capsule) => (
+                                    <div
+                                        key={capsule.id}
+                                        className="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105"
+                                        style={{ 
+                                            scrollSnapAlign: 'start',
+                                            minWidth: '140px'
+                                        }}
+                                        onClick={() => onCelebrate && onCelebrate('clap')}
+                                    >
+                                        <div
+                                            className="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${capsule.color}20 0%, ${capsule.color}10 100%)`,
+                                                borderColor: `${capsule.color}40`,
+                                                boxShadow: `0 4px 12px ${capsule.color}15`
+                                            }}
+                                        >
+                                            {/* 图标 */}
+                                            <div 
+                                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                                style={{
+                                                    background: `linear-gradient(135deg, ${capsule.color} 0%, ${capsule.color}CC 100%)`,
+                                                    color: 'white',
+                                                    boxShadow: `0 2px 6px ${capsule.color}30`
+                                                }}
+                                            >
+                                                {capsule.icon}
+                                            </div>
+                                            
+                                            {/* 文字内容 */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-gray-700 truncate">
+                                                    {capsule.name}
+                                                </div>
+                                                <div className="text-xs text-gray-600 flex items-center gap-1">
+                                                    <span>{capsule.time}</span>
+                                                    {capsule.count > 1 && (
+                                                        <>
+                                                            <span className="opacity-60">·</span>
+                                                            <span>{capsule.count}项</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-4 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [showEmpty, setShowEmpty] = useState(false);
+
+            const handleCelebrate = (type) => {
+                console.log(`庆祝: ${type}`);
+                // 这里可以添加音效或动画
+            };
+
+            return (
+                <div className="min-h-screen p-6">
+                    <div className="max-w-md mx-auto">
+                        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                            🏺 成就罐子 + 当日进度胶囊
+                        </h1>
+                        
+                        {/* 切换按钮 */}
+                        <div className="mb-6 flex gap-2">
+                            <button 
+                                onClick={() => setShowEmpty(false)}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                    !showEmpty 
+                                        ? 'bg-blue-500 text-white shadow-lg' 
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                有数据状态
+                            </button>
+                            <button 
+                                onClick={() => setShowEmpty(true)}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${
+                                    showEmpty 
+                                        ? 'bg-blue-500 text-white shadow-lg' 
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                空状态
+                            </button>
+                        </div>
+
+                        {/* 成就罐子组件 */}
+                        <AchievementJarContainer 
+                            data={showEmpty ? [] : mockData}
+                            categoryMap={categoryMap}
+                            onCelebrate={handleCelebrate}
+                        />
+
+                        {/* 说明 */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <h3 className="font-bold text-blue-800 mb-2">✨ 功能说明</h3>
+                            <ul className="text-sm text-blue-700 space-y-1">
+                                <li>• 玻璃罐子下方显示当日进度胶囊卡片</li>
+                                <li>• 每个胶囊对应一个分类，显示图标、名称和时长</li>
+                                <li>• 支持横向滚动，马卡龙色彩背景</li>
+                                <li>• 点击胶囊或粘土球有交互效果</li>
+                                <li>• 空状态时显示引导提示</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 渲染应用
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

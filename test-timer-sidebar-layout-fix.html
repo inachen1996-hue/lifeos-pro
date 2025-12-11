@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器侧边栏布局修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .sidebar-demo {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        /* 修复前的样式 */
+        .old-sidebar-item {
+            width: 70px;
+            height: 56px;
+            border-radius: 20px;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #FFB5D8, #FFC9E0);
+            box-shadow: 0 12px 32px -4px rgba(255, 181, 216, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        
+        .old-sidebar-text {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 2px;
+            color: #881337;
+        }
+        
+        /* 修复后的样式 */
+        .new-sidebar-item {
+            width: 56px;          /* 保持方形或微长方形，不要太宽 */
+            height: 56px;
+            border-radius: 18px;   /* 更加圆润 */
+            border: none;         /* 去掉边框，保持呼吸感 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #FFB5D8, #FFC9E0);
+            box-shadow: 0 12px 32px -4px rgba(255, 181, 216, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        
+        .new-sidebar-text {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+            color: #881337;
+        }
+        
+        .demo-icon {
+            width: 16px;
+            height: 16px;
+            background: #881337;
+            border-radius: 2px;
+            margin-bottom: 2px;
+        }
+        
+        .highlight {
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #1565c0;
+        }
+        
+        .change-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 8px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #0ea5e9;
+        }
+        
+        .change-icon {
+            width: 16px;
+            height: 16px;
+            background: #0ea5e9;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="text-align: center; color: #1e293b; margin-bottom: 10px;">计时器侧边栏布局修复</h1>
+        <p style="text-align: center; color: #64748b; margin-bottom: 30px;">优化侧边栏选中项样式，提升呼吸感和视觉效果</p>
+        
+        <div style="background: #fef3c7; padding: 16px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+            <h3 style="margin: 0 0 8px 0; color: #92400e;">✨ 修复内容</h3>
+            <div class="change-item">
+                <div class="change-icon"></div>
+                <span>宽度：<span class="highlight">70px → 56px</span> (保持方形，不要太宽)</span>
+            </div>
+            <div class="change-item">
+                <div class="change-icon"></div>
+                <span>圆角：<span class="highlight">20px → 18px</span> (更加圆润)</span>
+            </div>
+            <div class="change-item">
+                <div class="change-icon"></div>
+                <span>边框：<span class="highlight">移除边框</span> (保持呼吸感)</span>
+            </div>
+            <div class="change-item">
+                <div class="change-icon"></div>
+                <span>文字：<span class="highlight">13px → 12px</span> + marginTop: 4px</span>
+            </div>
+            <div class="change-item">
+                <div class="change-icon"></div>
+                <span>容器：<span class="highlight">82px → 68px</span> (适配新按钮宽度)</span>
+            </div>
+        </div>
+        
+        <div class="comparison-grid">
+            <div>
+                <h3 style="text-align: center; color: #dc2626; margin-bottom: 16px;">修复前 (70px × 56px)</h3>
+                <div class="sidebar-demo">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <button class="old-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="old-sidebar-text">工作</span>
+                        </button>
+                        <button class="old-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="old-sidebar-text">学习</span>
+                        </button>
+                        <button class="old-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="old-sidebar-text">休息</span>
+                        </button>
+                    </div>
+                    <div style="margin-top: 20px; padding: 12px; background: #fee2e2; border-radius: 8px; font-size: 12px; color: #991b1b;">
+                        ❌ 问题：按钮过宽，视觉不够紧凑
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="text-align: center; color: #059669; margin-bottom: 16px;">修复后 (56px × 56px)</h3>
+                <div class="sidebar-demo">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <button class="new-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="new-sidebar-text">工作</span>
+                        </button>
+                        <button class="new-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="new-sidebar-text">学习</span>
+                        </button>
+                        <button class="new-sidebar-item">
+                            <div class="demo-icon"></div>
+                            <span class="new-sidebar-text">休息</span>
+                        </button>
+                    </div>
+                    <div style="margin-top: 20px; padding: 12px; background: #dcfce7; border-radius: 8px; font-size: 12px; color: #166534;">
+                        ✅ 优化：更紧凑，更圆润，呼吸感更好
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f1f5f9; border-radius: 12px;">
+            <h3 style="color: #334155; margin-bottom: 12px;">🎯 设计理念</h3>
+            <ul style="color: #64748b; line-height: 1.6; margin: 0; padding-left: 20px;">
+                <li><strong>方形比例：</strong>56px × 56px 保持了良好的方形比例，不会显得过宽</li>
+                <li><strong>圆润感：</strong>18px 圆角比 20px 更加精致，符合现代设计趋势</li>
+                <li><strong>呼吸感：</strong>移除边框避免了视觉干扰，让阴影效果更突出</li>
+                <li><strong>文字优化：</strong>12px 字体 + 4px 上边距，提升可读性和视觉平衡</li>
+                <li><strong>空间效率：</strong>侧边栏宽度从 82px 减少到 68px，节省空间</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 16px; background: linear-gradient(135deg, #e0f2fe, #b3e5fc); border-radius: 12px;">
+            <p style="margin: 0; color: #0277bd; font-weight: 600;">
+                ✨ 修复完成！侧边栏布局已优化，呼吸感和视觉效果得到提升
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🎨 计时器侧边栏布局修复测试');
+        console.log('修复时间:', new Date().toLocaleString());
+        console.log('修复内容: 优化侧边栏选中项样式，提升呼吸感和视觉效果');
+        
+        // 添加交互效果
+        document.querySelectorAll('.old-sidebar-item, .new-sidebar-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'scale(1.05)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

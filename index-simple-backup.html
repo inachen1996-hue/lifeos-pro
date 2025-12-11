@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS Pro - 滚动修复版</title>
+    <style>
+        /* 最简单的滚动设置 */
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            color: #5D576B;
+            /* 确保滚动 */
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .timer-card {
+            background: linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #023E8A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #48CAE4 0%, #A2D2FF 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="scroll-indicator" id="scrollIndicator">
+        滚动: 0px
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎯 LifeOS Pro</h1>
+            <p>滚动修复版 - 简化版本</p>
+        </div>
+        
+        <div class="status info">
+            <strong>📱 测试说明：</strong><br>
+            这是一个简化版本，用于验证滚动功能。<br>
+            如果这个页面可以滚动，我们就知道问题在复杂的React组件中。
+        </div>
+
+        <div class="card">
+            <h2>⏱️ 计时器功能</h2>
+            <p>这里是计时器功能的简化版本。</p>
+            <button class="btn">开始计时</button>
+        </div>
+
+        <div class="timer-card">
+            <div>
+                <h3>工作计时器</h3>
+                <p>00:25:00</p>
+            </div>
+            <button class="btn">▶️</button>
+        </div>
+
+        <div class="timer-card">
+            <div>
+                <h3>学习计时器</h3>
+                <p>01:30:45</p>
+            </div>
+            <button class="btn">⏸️</button>
+        </div>
+
+        <div class="card">
+            <h2>📊 进度统计</h2>
+            <p>今日工作时间: 3小时15分钟</p>
+            <p>本周学习时间: 12小时30分钟</p>
+        </div>
+
+        <div class="card">
+            <h2>🎯 今日计划</h2>
+            <ul>
+                <li>完成项目报告 (2小时)</li>
+                <li>学习新技术 (1小时)</li>
+                <li>运动锻炼 (30分钟)</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>📈 成就系统</h2>
+            <p>连续打卡: 7天</p>
+            <p>本月完成目标: 85%</p>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ 设置</h2>
+            <p>番茄钟时长: 25分钟</p>
+            <p>休息时长: 5分钟</p>
+            <button class="btn">修改设置</button>
+        </div>
+
+        <div class="card">
+            <h2>📱 更多功能</h2>
+            <p>数据导出、主题切换、通知设置等功能。</p>
+        </div>
+
+        <div class="card">
+            <h2>🔄 滚动测试区域</h2>
+            <p>如果你能看到这个区域并且可以继续向下滚动，说明基础滚动功能是正常的。</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 测试内容 1</h2>
+            <p>这是用于测试滚动的内容区域。</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 测试内容 2</h2>
+            <p>继续滚动测试...</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 测试内容 3</h2>
+            <p>更多测试内容...</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 测试内容 4</h2>
+            <p>滚动测试进行中...</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 测试内容 5</h2>
+            <p>如果能看到这里，滚动功能正常。</p>
+        </div>
+
+        <div class="card">
+            <h2>✅ 滚动测试完成</h2>
+            <p>如果你能滚动到这里，说明简化版本的滚动功能是正常的。</p>
+            <p><strong>这意味着问题确实在复杂的React组件中。</strong></p>
+        </div>
+
+        <div id="testResult" class="status info">
+            正在测试滚动功能...
+        </div>
+    </div>
+
+    <script>
+        let maxScrollY = 0;
+        let scrollEvents = 0;
+
+        // 监控滚动
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            maxScrollY = Math.max(maxScrollY, scrollY);
+            scrollEvents++;
+            
+            document.getElementById('scrollIndicator').textContent = `滚动: ${scrollY}px`;
+            updateTestResult();
+        });
+
+        function updateTestResult() {
+            const resultDiv = document.getElementById('testResult');
+            
+            if (maxScrollY > 200) {
+                resultDiv.className = 'status success';
+                resultDiv.innerHTML = `
+                    <strong>✅ 简化版滚动功能正常！</strong><br>
+                    • 最大滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滚动事件次数: ${scrollEvents}次<br>
+                    <br>
+                    <strong>结论：</strong> 问题确实在复杂的React组件中。<br>
+                    建议使用这个简化版本作为临时解决方案。
+                `;
+            } else if (maxScrollY > 50) {
+                resultDiv.className = 'status info';
+                resultDiv.innerHTML = `
+                    <strong>🧪 检测到滚动</strong><br>
+                    • 当前滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 继续滚动测试...
+                `;
+            }
+        }
+
+        // 简单的按钮交互
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // 初始化
+        updateTestResult();
+        
+        console.log('简化版页面加载完成');
+        console.log('文档高度:', document.documentElement.scrollHeight);
+        console.log('视口高度:', window.innerHeight);
+    </script>
+</body>
+</html>

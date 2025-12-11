@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>当日进度胶囊卡片测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* 隐藏滚动条但保持滚动功能 */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-md mx-auto">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">📊 当日进度胶囊卡片测试</h1>
+        
+        <!-- 测试数据展示 -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-700 mb-4">🏺 成就收藏</h2>
+            
+            <!-- 当日进度胶囊卡片 -->}
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-gray-700 mb-3 px-2">📊 当日进度</h3>
+                <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 px-2" style="scroll-snap-type: x mandatory;">
+                    
+                    <!-- 工作胶囊 -->
+                    <div class="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105" 
+                         style="scroll-snap-align: start; min-width: 140px;">
+                        <div class="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                             style="background: linear-gradient(135deg, #3B82F620 0%, #3B82F610 100%); 
+                                    border-color: #3B82F640; 
+                                    box-shadow: 0 4px 12px #3B82F615;">
+                            <!-- 图标 -->
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                 style="background: linear-gradient(135deg, #3B82F6 0%, #3B82F6CC 100%); 
+                                        color: white; 
+                                        box-shadow: 0 2px 6px #3B82F630;">
+                                💻
+                            </div>
+                            <!-- 文字内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">工作</div>
+                                <div class="text-xs text-gray-600 flex items-center gap-1">
+                                    <span>4.5h</span>
+                                    <span class="opacity-60">·</span>
+                                    <span>3项</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 学习胶囊 -->
+                    <div class="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105" 
+                         style="scroll-snap-align: start; min-width: 140px;">
+                        <div class="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                             style="background: linear-gradient(135deg, #EC489920 0%, #EC489910 100%); 
+                                    border-color: #EC489940; 
+                                    box-shadow: 0 4px 12px #EC489915;">
+                            <!-- 图标 -->
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                 style="background: linear-gradient(135deg, #EC4899 0%, #EC4899CC 100%); 
+                                        color: white; 
+                                        box-shadow: 0 2px 6px #EC489930;">
+                                📖
+                            </div>
+                            <!-- 文字内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">学习</div>
+                                <div class="text-xs text-gray-600">2.0h</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 健康胶囊 -->
+                    <div class="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105" 
+                         style="scroll-snap-align: start; min-width: 140px;">
+                        <div class="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                             style="background: linear-gradient(135deg, #10B98120 0%, #10B98110 100%); 
+                                    border-color: #10B98140; 
+                                    box-shadow: 0 4px 12px #10B98115;">
+                            <!-- 图标 -->
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                 style="background: linear-gradient(135deg, #10B981 0%, #10B981CC 100%); 
+                                        color: white; 
+                                        box-shadow: 0 2px 6px #10B98130;">
+                                🏃
+                            </div>
+                            <!-- 文字内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">健康</div>
+                                <div class="text-xs text-gray-600">45min</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 休息胶囊 -->
+                    <div class="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105" 
+                         style="scroll-snap-align: start; min-width: 140px;">
+                        <div class="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                             style="background: linear-gradient(135deg, #F59E0B20 0%, #F59E0B10 100%); 
+                                    border-color: #F59E0B40; 
+                                    box-shadow: 0 4px 12px #F59E0B15;">
+                            <!-- 图标 -->
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                 style="background: linear-gradient(135deg, #F59E0B 0%, #F59E0BCC 100%); 
+                                        color: white; 
+                                        box-shadow: 0 2px 6px #F59E0B30;">
+                                ☕
+                            </div>
+                            <!-- 文字内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">休息</div>
+                                <div class="text-xs text-gray-600">1.2h</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 生活胶囊 -->
+                    <div class="flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105" 
+                         style="scroll-snap-align: start; min-width: 140px;">
+                        <div class="px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border"
+                             style="background: linear-gradient(135deg, #8B5CF620 0%, #8B5CF610 100%); 
+                                    border-color: #8B5CF640; 
+                                    box-shadow: 0 4px 12px #8B5CF615;">
+                            <!-- 图标 -->
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                                 style="background: linear-gradient(135deg, #8B5CF6 0%, #8B5CF6CC 100%); 
+                                        color: white; 
+                                        box-shadow: 0 2px 6px #8B5CF630;">
+                                🏠
+                            </div>
+                            <!-- 文字内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-gray-700 truncate">生活</div>
+                                <div class="text-xs text-gray-600">30min</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 统计信息 -->}
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">8</div>
+                    <div class="text-sm text-gray-500">完成事项</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">8.2h</div>
+                    <div class="text-sm text-gray-500">总时长</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">5</div>
+                    <div class="text-sm text-gray-500">分类数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态测试 -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-bold text-gray-700 mb-4">🌱 空状态测试</h2>
+            
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-gray-700 mb-3 px-2">📊 当日进度</h3>
+                <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 px-2">
+                    <div class="flex-shrink-0 flex items-center justify-center w-full py-8">
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm mb-2">🌱</div>
+                            <div class="text-gray-500 text-xs">开始记录你的进度吧</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <h3 class="font-bold text-blue-800 mb-2">✨ 功能说明</h3>
+            <ul class="text-sm text-blue-700 space-y-1">
+                <li>• 每个胶囊对应一个分类，显示图标、名称和时长</li>
+                <li>• 支持横向滚动，适配手机屏幕</li>
+                <li>• 马卡龙色彩背景，与分类颜色对应</li>
+                <li>• 悬停时有缩放动画效果</li>
+                <li>• 空状态时显示引导提示</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 添加点击效果
+        document.querySelectorAll('.cursor-pointer').forEach(element => {
+            element.addEventListener('click', function() {
+                // 简单的点击反馈
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>

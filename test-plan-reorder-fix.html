@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划拖拽排序修复测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drag-handle {
+            cursor: grab;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .drag-over {
+            border: 2px dashed #8b5cf6;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-4">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Menu, Save, RefreshCcw, Play } = lucide;
+
+        function PlanReorderTest() {
+            // 模拟计划数据
+            const [planItems, setPlanItems] = useState([
+                {
+                    id: 1,
+                    time: "09:00 - 10:30",
+                    category: "work",
+                    title: "深度工作",
+                    desc: "专注完成核心任务，避免干扰"
+                },
+                {
+                    id: 2,
+                    time: "10:30 - 11:00",
+                    category: "rest",
+                    title: "休息时间",
+                    desc: "短暂休息，恢复精力"
+                },
+                {
+                    id: 3,
+                    time: "11:00 - 12:00",
+                    category: "study",
+                    title: "学习新技能",
+                    desc: "阅读技术文档，提升专业能力"
+                },
+                {
+                    id: 4,
+                    time: "14:00 - 15:30",
+                    category: "health",
+                    title: "运动锻炼",
+                    desc: "保持身体健康，增强体质"
+                }
+            ]);
+
+            const [draggedIndex, setDraggedIndex] = useState(null);
+            const [hasReordered, setHasReordered] = useState(false);
+            const [dragOverIndex, setDragOverIndex] = useState(null);
+
+            // 拖拽开始
+            const handleDragStart = (e, index) => {
+                console.log('拖拽开始:', index);
+                setDraggedIndex(index);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', index.toString());
+                
+                // 添加拖拽样式
+                setTimeout(() => {
+                    e.target.classList.add('dragging');
+                }, 0);
+            };
+
+            // 拖拽经过
+            const handleDragOver = (e, index) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (draggedIndex === null || draggedIndex === index) return;
+                
+                console.log('拖拽经过:', draggedIndex, '->', index);
+                setDragOverIndex(index);
+                
+                const newItems = [...planItems];
+                const draggedItem = newItems[draggedIndex];
+                newItems.splice(draggedIndex, 1);
+                newItems.splice(index, 0, draggedItem);
+                
+                setPlanItems(newItems);
+                setDraggedIndex(index);
+                setHasReordered(true);
+            };
+
+            // 拖拽进入
+            const handleDragEnter = (e, index) => {
+                e.preventDefault();
+                setDragOverIndex(index);
+            };
+
+            // 拖拽离开
+            const handleDragLeave = (e, index) => {
+                setDragOverIndex(null);
+            };
+
+            // 拖拽结束
+            const handleDragEnd = (e) => {
+                console.log('拖拽结束');
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+                
+                // 移除拖拽样式
+                e.target.classList.remove('dragging');
+            };
+
+            // 重新生成计划（重新分配时间）
+            const regeneratePlan = () => {
+                console.log('保存新顺序');
+                const now = new Date();
+                let currentMinutes = now.getHours() * 60 + now.getMinutes();
+                
+                const newBlocks = planItems.map(block => {
+                    const [startTime, endTime] = block.time.split(' - ');
+                    const [startH, startM] = startTime.split(':').map(Number);
+                    const [endH, endM] = endTime.split(':').map(Number);
+                    
+                    const duration = (endH * 60 + endM) - (startH * 60 + startM);
+                    
+                    const newStartH = Math.floor(currentMinutes / 60);
+                    const newStartM = currentMinutes % 60;
+                    const newEndMinutes = currentMinutes + duration;
+                    const newEndH = Math.floor(newEndMinutes / 60);
+                    const newEndM = newEndMinutes % 60;
+                    
+                    const newTime = `${String(newStartH).padStart(2, '0')}:${String(newStartM).padStart(2, '0')} - ${String(newEndH).padStart(2, '0')}:${String(newEndM).padStart(2, '0')}`;
+                    
+                    currentMinutes = newEndMinutes;
+                    
+                    return {
+                        ...block,
+                        time: newTime
+                    };
+                });
+                
+                setPlanItems(newBlocks);
+                setHasReordered(false);
+                alert('计划已更新！');
+            };
+
+            const getBorderColor = (category) => {
+                switch(category) {
+                    case 'work': return 'border-l-blue-400';
+                    case 'study': return 'border-l-green-400';
+                    case 'rest': return 'border-l-pink-400';
+                    case 'health': return 'border-l-emerald-400';
+                    case 'hobby': return 'border-l-purple-400';
+                    default: return 'border-l-gray-300';
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
+                        <h1 className="text-2xl font-bold text-gray-800 mb-4">计划拖拽排序测试</h1>
+                        <p className="text-gray-600 mb-4">
+                            测试说明：按住计划卡片的拖拽手柄（三条横线图标）进行拖拽排序
+                        </p>
+                        <div className="text-sm text-gray-500">
+                            <p>• 拖拽状态: {draggedIndex !== null ? `正在拖拽第 ${draggedIndex + 1} 项` : '未拖拽'}</p>
+                            <p>• 是否重排序: {hasReordered ? '是' : '否'}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        {planItems.map((item, index) => {
+                            const borderColor = getBorderColor(item.category);
+                            const isDragging = draggedIndex === index;
+                            const isDragOver = dragOverIndex === index;
+                            
+                            return (
+                                <div
+                                    key={item.id}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, index)}
+                                    onDragOver={(e) => handleDragOver(e, index)}
+                                    onDragEnter={(e) => handleDragEnter(e, index)}
+                                    onDragLeave={(e) => handleDragLeave(e, index)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`
+                                        bg-white p-6 rounded-2xl border shadow-sm border-l-8 ${borderColor}
+                                        transition-all duration-200 select-none
+                                        ${isDragging ? 'dragging' : 'hover:shadow-md'}
+                                        ${isDragOver ? 'drag-over' : ''}
+                                        drag-handle
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <Menu className="w-5 h-5 text-gray-400 flex-shrink-0 cursor-grab" />
+                                        <div className="flex-1 flex justify-between items-center">
+                                            <span className="font-mono font-bold text-gray-700 text-xl">
+                                                {item.time}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        alert(`开始计时: ${item.title}`);
+                                                    }}
+                                                    className="p-2 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition-all hover:scale-110"
+                                                    title="开始计时"
+                                                >
+                                                    <Play className="w-4 h-4" />
+                                                </button>
+                                                <span className="text-xs font-bold uppercase bg-gray-100 px-2 py-1 rounded text-gray-500">
+                                                    {item.category}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h4 className="font-bold text-gray-800 text-xl mb-1">{item.title}</h4>
+                                    <p className="text-base text-gray-500 mt-1 leading-relaxed">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {hasReordered && (
+                        <button 
+                            onClick={regeneratePlan}
+                            className="w-full mt-6 py-5 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-2xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <Save className="w-5 h-5" /> 保存新顺序
+                        </button>
+                    )}
+
+                    <button 
+                        onClick={() => {
+                            setPlanItems([
+                                {
+                                    id: 1,
+                                    time: "09:00 - 10:30",
+                                    category: "work",
+                                    title: "深度工作",
+                                    desc: "专注完成核心任务，避免干扰"
+                                },
+                                {
+                                    id: 2,
+                                    time: "10:30 - 11:00",
+                                    category: "rest",
+                                    title: "休息时间",
+                                    desc: "短暂休息，恢复精力"
+                                },
+                                {
+                                    id: 3,
+                                    time: "11:00 - 12:00",
+                                    category: "study",
+                                    title: "学习新技能",
+                                    desc: "阅读技术文档，提升专业能力"
+                                },
+                                {
+                                    id: 4,
+                                    time: "14:00 - 15:30",
+                                    category: "health",
+                                    title: "运动锻炼",
+                                    desc: "保持身体健康，增强体质"
+                                }
+                            ]);
+                            setHasReordered(false);
+                        }}
+                        className="w-full mt-4 py-5 text-gray-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 rounded-2xl"
+                    >
+                        <RefreshCcw className="w-4 h-4"/> 重置测试数据
+                    </button>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<PlanReorderTest />, document.getElementById('root'));
+    </script>
+</body>
+</html>

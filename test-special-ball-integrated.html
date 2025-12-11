@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>特殊球体功能测试 - 集成版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-cheer { background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; }
+        .btn-clap { background: linear-gradient(135deg, #f472b6, #ec4899); color: white; }
+        .btn-drum { background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: white; }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .status-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .status-error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .status-info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        .console-output {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .console-line {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🎉 特殊球体功能测试</h1>
+        <p class="subtitle">测试 AchievementJarIntegratedProgress 中的特殊球体功能</p>
+
+        <div id="status" class="status status-info">
+            ⏳ 准备测试...
+        </div>
+
+        <div class="button-group">
+            <button class="btn-test" onclick="checkFunction()">
+                🔍 检查函数
+            </button>
+            <button class="btn-test" onclick="clearConsole()">
+                🗑️ 清空日志
+            </button>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-cheer" onclick="testDrop('cheer')">
+                🍬 测试喝彩
+            </button>
+            <button class="btn-clap" onclick="testDrop('clap')">
+                🪙 测试鼓掌
+            </button>
+            <button class="btn-drum" onclick="testDrop('drum')">
+                ⭐ 测试打鼓
+            </button>
+        </div>
+
+        <div class="console-output" id="console"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>📋 测试步骤</h3>
+        <ol>
+            <li>打开主应用：<code>http://localhost:8000</code></li>
+            <li>进入：复盘 → 今日进度</li>
+            <li>打开浏览器控制台（F12）</li>
+            <li>点击庆祝按钮</li>
+            <li>查看控制台是否有 <code>[Integrated]</code> 标记的日志</li>
+        </ol>
+
+        <h3>✅ 预期输出</h3>
+        <pre style="background: #f3f4f6; padding: 10px; border-radius: 4px; overflow-x: auto;">
+✅ [Integrated] dropSpecialBall函数已暴露到全局
+🍬 喝彩按钮被点击
+✅ 调用window.dropSpecialBall(cheer)
+🎯 [Integrated] dropSpecialBall被调用: cheer
+🎉 [Integrated] 创建特殊球体 - 彩虹糖: {...}
+📊 [Integrated] 当前特殊球体数量: 1
+        </pre>
+    </div>
+
+    <script>
+        const consoleEl = document.getElementById('console');
+        const statusEl = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function setStatus(message, type) {
+            statusEl.textContent = message;
+            statusEl.className = `status status-${type}`;
+        }
+
+        function checkFunction() {
+            log('🔍 检查 window.dropSpecialBall...');
+            
+            if (typeof window.dropSpecialBall === 'function') {
+                log('✅ window.dropSpecialBall 存在！', 'success');
+                setStatus('✅ 函数已正确暴露', 'success');
+                
+                // 检查函数源代码中是否包含 [Integrated] 标记
+                const funcStr = window.dropSpecialBall.toString();
+                if (funcStr.includes('[Integrated]')) {
+                    log('✅ 函数包含 [Integrated] 标记 - 使用的是新版本！', 'success');
+                    setStatus('✅ 使用的是集成版本的函数', 'success');
+                } else {
+                    log('⚠️ 函数不包含 [Integrated] 标记 - 可能使用的是旧版本', 'warning');
+                    setStatus('⚠️ 可能使用的是旧版本', 'error');
+                }
+            } else {
+                log('❌ window.dropSpecialBall 不存在！', 'error');
+                setStatus('❌ 函数未找到 - 请先打开主应用', 'error');
+            }
+        }
+
+        function testDrop(type) {
+            log(`🎯 测试掉落: ${type}`);
+            
+            if (typeof window.dropSpecialBall === 'function') {
+                try {
+                    window.dropSpecialBall(type);
+                    log(`✅ 调用成功: window.dropSpecialBall('${type}')`, 'success');
+                    setStatus(`✅ ${type} 测试成功`, 'success');
+                } catch (error) {
+                    log(`❌ 调用失败: ${error.message}`, 'error');
+                    setStatus(`❌ 测试失败: ${error.message}`, 'error');
+                }
+            } else {
+                log('❌ 函数不存在，无法测试', 'error');
+                setStatus('❌ 请先打开主应用', 'error');
+            }
+        }
+
+        function clearConsole() {
+            consoleEl.innerHTML = '';
+            log('🗑️ 日志已清空');
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            log('📄 测试页面已加载');
+            log('💡 提示：请先打开主应用 http://localhost:8000');
+            log('💡 然后进入：复盘 → 今日进度');
+            log('💡 最后点击上面的"检查函数"按钮');
+        });
+
+        // 监听主应用的消息
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'dropSpecialBall') {
+                log(`📨 收到消息: ${JSON.stringify(event.data)}`);
+            }
+        });
+    </script>
+</body>
+</html>

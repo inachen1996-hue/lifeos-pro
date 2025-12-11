@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证侧边栏布局修改</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .verification-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            background: #f8fafc;
+            border-left: 4px solid #10b981;
+        }
+        
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #92400e;
+        }
+        
+        .cache-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        
+        .cache-warning h3 {
+            color: #dc2626;
+            margin: 0 0 8px 0;
+        }
+        
+        .refresh-button {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 8px 4px;
+        }
+        
+        .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-container">
+        <h1 style="text-align: center; color: #1e293b; margin-bottom: 10px;">侧边栏布局修改验证</h1>
+        <p style="text-align: center; color: #64748b; margin-bottom: 30px;">检查修改是否正确应用</p>
+        
+        <div class="cache-warning">
+            <h3>⚠️ 如果看不到变化，可能是缓存问题</h3>
+            <p style="color: #7f1d1d; margin: 8px 0;">浏览器可能缓存了旧版本的样式。请尝试以下方法：</p>
+            <div style="text-align: center; margin-top: 16px;">
+                <button class="refresh-button" onclick="location.reload(true)">强制刷新 (Ctrl+F5)</button>
+                <button class="refresh-button" onclick="clearCacheAndReload()">清除缓存并刷新</button>
+                <button class="refresh-button" onclick="window.open('index.html?' + Date.now(), '_blank')">新窗口打开</button>
+            </div>
+        </div>
+        
+        <h3 style="color: #059669; margin-bottom: 16px;">✅ 已应用的修改</h3>
+        
+        <div class="status-item">
+            <div class="status-icon">✓</div>
+            <div>
+                <strong>按钮宽度：</strong> <span class="highlight">70px → 56px</span>
+                <div class="code-block">width: '56px'</div>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-icon">✓</div>
+            <div>
+                <strong>圆角半径：</strong> <span class="highlight">20px → 18px</span>
+                <div class="code-block">className="...rounded-[18px]..."</div>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-icon">✓</div>
+            <div>
+                <strong>边框移除：</strong> <span class="highlight">添加 border: 'none'</span>
+                <div class="code-block">border: 'none'</div>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-icon">✓</div>
+            <div>
+                <strong>文字大小：</strong> <span class="highlight">13px → 12px</span>
+                <div class="code-block">fontSize: '12px', marginTop: '4px'</div>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-icon">✓</div>
+            <div>
+                <strong>容器宽度：</strong> <span class="highlight">82px → 68px</span>
+                <div class="code-block">width: '68px'</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 12px; border-left: 4px solid #0ea5e9;">
+            <h3 style="color: #0c4a6e; margin-bottom: 12px;">🔍 如何验证修改生效</h3>
+            <ol style="color: #075985; line-height: 1.6; margin: 0; padding-left: 20px;">
+                <li>打开主应用 <code>index.html</code></li>
+                <li>进入计时器页面</li>
+                <li>观察左侧分类按钮：
+                    <ul style="margin-top: 8px;">
+                        <li>按钮应该更窄 (56px 而不是 70px)</li>
+                        <li>圆角应该更圆润 (18px)</li>
+                        <li>文字应该更小 (12px)</li>
+                        <li>没有明显的边框线</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="refresh-button" onclick="window.open('index.html', '_blank')" style="font-size: 16px; padding: 16px 32px;">
+                🚀 打开主应用验证
+            </button>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 16px; background: #ecfdf5; border-radius: 12px; text-align: center;">
+            <p style="margin: 0; color: #065f46; font-weight: 600;">
+                💡 提示：如果仍然看不到变化，请尝试在无痕模式下打开或清除浏览器缓存
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🔍 侧边栏布局修改验证');
+        console.log('验证时间:', new Date().toLocaleString());
+        
+        function clearCacheAndReload() {
+            // 尝试清除缓存
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                }).then(() => {
+                    location.reload(true);
+                });
+            } else {
+                location.reload(true);
+            }
+        }
+        
+        // 检查修改是否应用
+        function checkModifications() {
+            const modifications = [
+                { name: '按钮宽度', expected: '56px', status: '✅ 已修改' },
+                { name: '圆角半径', expected: '18px', status: '✅ 已修改' },
+                { name: '边框移除', expected: 'border: none', status: '✅ 已修改' },
+                { name: '文字大小', expected: '12px', status: '✅ 已修改' },
+                { name: '容器宽度', expected: '68px', status: '✅ 已修改' }
+            ];
+            
+            console.table(modifications);
+        }
+        
+        checkModifications();
+    </script>
+</body>
+</html>

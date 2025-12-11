@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Achievement Jar 数据处理测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🧪 Achievement Jar 数据处理测试</h1>
+        
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-blue-600">测试步骤</h2>
+            
+            <div class="space-y-4">
+                <button id="add-test-data" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    ➕ 添加测试数据到各个数据源
+                </button>
+                
+                <button id="test-data-processing" class="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    🔄 测试数据处理逻辑
+                </button>
+                
+                <button id="clear-test-data" class="w-full px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    🗑️ 清除测试数据
+                </button>
+            </div>
+
+            <!-- 测试结果显示 -->
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                <h4 class="font-bold text-gray-700 mb-2">测试结果:</h4>
+                <div id="test-results" class="text-sm text-gray-600">
+                    点击按钮开始测试...
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据源状态 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl p-4 shadow-lg">
+                <h3 class="text-lg font-bold mb-3 text-blue-600">📚 历史数据</h3>
+                <div id="history-status" class="text-sm text-gray-600">检查中...</div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 shadow-lg">
+                <h3 class="text-lg font-bold mb-3 text-green-600">⏱️ 计时器数据</h3>
+                <div id="timer-status" class="text-sm text-gray-600">检查中...</div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 shadow-lg">
+                <h3 class="text-lg font-bold mb-3 text-purple-600">📋 计划数据</h3>
+                <div id="plan-status" class="text-sm text-gray-600">检查中...</div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 shadow-lg">
+                <h3 class="text-lg font-bold mb-3 text-pink-600">📖 日记数据</h3>
+                <div id="diary-status" class="text-sm text-gray-600">检查中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const results = document.getElementById('test-results');
+        
+        // 获取今日日期范围
+        function getTodayRange() {
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+            return { start: startOfDay, end: endOfDay };
+        }
+        
+        // 格式化日期为 YYYY-M-D 格式
+        function formatDate(date) {
+            return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        }
+        
+        // 添加测试数据
+        function addTestData() {
+            const today = new Date();
+            const todayStr = formatDate(today);
+            
+            try {
+                // 1. 添加历史数据
+                const historyData = `[WORK] ${todayStr}: 🍅 📚 测试工作任务 2h | 09:00-11:00
+[STUDY] ${todayStr}: 📖 ⏰ 学习新技能 1.5h | 14:00-15:30
+[REST] ${todayStr}: ☕ 🎵 休息放松 30min | 16:00-16:30`;
+                
+                localStorage.setItem('lifeos_pro_history_v2', historyData);
+                
+                // 2. 添加计时器数据
+                const timerSessions = [
+                    {
+                        startTime: new Date(today.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2小时前
+                        endTime: new Date(today.getTime() - 1 * 60 * 60 * 1000).toISOString(), // 1小时前
+                        duration: 3600, // 1小时
+                        category: 'work',
+                        title: '测试计时器任务',
+                        icon: '🍅',
+                        mode: 'pomodoro'
+                    },
+                    {
+                        startTime: new Date(today.getTime() - 30 * 60 * 1000).toISOString(), // 30分钟前
+                        endTime: new Date().toISOString(), // 现在
+                        duration: 1800, // 30分钟
+                        category: 'study',
+                        title: '学习计时器',
+                        icon: '📚',
+                        mode: 'stopwatch'
+                    }
+                ];
+                
+                localStorage.setItem('completedTimerSessions', JSON.stringify(timerSessions));
+                
+                // 3. 添加计划数据
+                const planData = {
+                    items: [
+                        {
+                            id: 1,
+                            title: '完成项目文档',
+                            completed: true,
+                            duration: 120, // 2小时
+                            category: 'work',
+                            date: today.toISOString()
+                        },
+                        {
+                            id: 2,
+                            title: '阅读技术书籍',
+                            completed: true,
+                            duration: 60, // 1小时
+                            category: 'study',
+                            date: today.toISOString()
+                        },
+                        {
+                            id: 3,
+                            title: '未完成任务',
+                            completed: false,
+                            duration: 30,
+                            category: 'work',
+                            date: today.toISOString()
+                        }
+                    ]
+                };
+                
+                localStorage.setItem('lifeos_pro_plan', JSON.stringify(planData));
+                
+                // 4. 添加日记数据
+                const diaryEntries = [
+                    {
+                        date: today.toISOString(),
+                        content: '今天工作了3小时，学习了1.5小时，感觉很充实。完成了重要的项目文档，学习了新的技术知识。'
+                    },
+                    {
+                        date: today.toISOString(),
+                        content: '下午休息了30分钟，听音乐放松心情。晚上计划再学习1小时。'
+                    }
+                ];
+                
+                localStorage.setItem('lifeos_pro_diary_v1', JSON.stringify(diaryEntries));
+                
+                results.innerHTML = `
+                    <div class="text-green-600">✅ 测试数据添加成功</div>
+                    <div class="text-xs mt-2 text-green-500">
+                        ✓ 历史数据: 3 条记录<br>
+                        ✓ 计时器数据: 2 个会话<br>
+                        ✓ 计划数据: 3 个项目 (2个已完成)<br>
+                        ✓ 日记数据: 2 条记录
+                    </div>
+                `;
+                
+                updateDataStatus();
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 添加测试数据失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试数据处理逻辑（模拟 Achievement Jar 的处理）
+        function testDataProcessing() {
+            try {
+                console.log('🔄 开始测试数据处理逻辑...');
+                
+                const { start, end } = getTodayRange();
+                const todayStr = formatDate(new Date());
+                
+                // 1. 处理历史数据
+                const fullHistory = localStorage.getItem('lifeos_pro_history_v2') || '';
+                const historyLines = fullHistory.split('\n').filter(l => l.trim());
+                const todayHistoryLines = historyLines.filter(line => line.includes(todayStr));
+                
+                console.log('📚 历史数据处理:', {
+                    总行数: historyLines.length,
+                    今日行数: todayHistoryLines.length,
+                    今日数据: todayHistoryLines
+                });
+                
+                // 2. 处理计时器数据
+                const timerSessions = JSON.parse(localStorage.getItem('completedTimerSessions') || '[]');
+                const todayTimerSessions = timerSessions.filter(session => {
+                    const sessionDate = new Date(session.startTime);
+                    return sessionDate >= start && sessionDate < end;
+                });
+                
+                console.log('⏱️ 计时器数据处理:', {
+                    总会话数: timerSessions.length,
+                    今日会话数: todayTimerSessions.length,
+                    今日数据: todayTimerSessions
+                });
+                
+                // 3. 处理计划数据
+                const planData = JSON.parse(localStorage.getItem('lifeos_pro_plan') || '{}');
+                const planItems = planData.items || [];
+                const completedPlanItems = planItems.filter(item => item.completed);
+                const todayCompletedItems = completedPlanItems.filter(item => {
+                    const itemDate = new Date(item.date);
+                    return itemDate >= start && itemDate < end;
+                });
+                
+                console.log('📋 计划数据处理:', {
+                    总项目数: planItems.length,
+                    已完成数: completedPlanItems.length,
+                    今日完成数: todayCompletedItems.length,
+                    今日数据: todayCompletedItems
+                });
+                
+                // 4. 处理日记数据
+                const diaryEntries = JSON.parse(localStorage.getItem('lifeos_pro_diary_v1') || '[]');
+                const todayDiaryEntries = diaryEntries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate >= start && entryDate < end;
+                });
+                
+                console.log('📖 日记数据处理:', {
+                    总条数: diaryEntries.length,
+                    今日条数: todayDiaryEntries.length,
+                    今日数据: todayDiaryEntries
+                });
+                
+                // 5. 汇总结果
+                const totalItems = todayHistoryLines.length + todayTimerSessions.length + todayCompletedItems.length + todayDiaryEntries.length;
+                
+                results.innerHTML = `
+                    <div class="text-blue-600">🔄 数据处理测试完成</div>
+                    <div class="text-xs mt-2 space-y-1">
+                        <div>📚 历史数据: ${todayHistoryLines.length} 项</div>
+                        <div>⏱️ 计时器数据: ${todayTimerSessions.length} 项</div>
+                        <div>📋 计划数据: ${todayCompletedItems.length} 项</div>
+                        <div>📖 日记数据: ${todayDiaryEntries.length} 项</div>
+                        <div class="font-bold text-blue-700">总计: ${totalItems} 项</div>
+                    </div>
+                    <div class="mt-2 text-xs ${totalItems > 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${totalItems > 0 ? '✅ 有数据，Achievement Jar 应该显示内容' : '❌ 无数据，Achievement Jar 会显示空罐子'}
+                    </div>
+                `;
+                
+                updateDataStatus();
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 数据处理测试失败: ${error.message}</div>`;
+                console.error('数据处理测试错误:', error);
+            }
+        }
+        
+        // 清除测试数据
+        function clearTestData() {
+            try {
+                localStorage.removeItem('lifeos_pro_history_v2');
+                localStorage.removeItem('completedTimerSessions');
+                localStorage.removeItem('lifeos_pro_plan');
+                localStorage.removeItem('lifeos_pro_diary_v1');
+                
+                results.innerHTML = `
+                    <div class="text-orange-600">🗑️ 测试数据已清除</div>
+                    <div class="text-xs mt-2 text-orange-500">
+                        所有测试数据已从 localStorage 中删除
+                    </div>
+                `;
+                
+                updateDataStatus();
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 清除数据失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 更新数据源状态显示
+        function updateDataStatus() {
+            // 历史数据状态
+            const historyData = localStorage.getItem('lifeos_pro_history_v2') || '';
+            const historyLines = historyData.split('\n').filter(l => l.trim()).length;
+            document.getElementById('history-status').innerHTML = historyLines > 0 
+                ? `✅ ${historyLines} 条记录` 
+                : '❌ 无数据';
+            
+            // 计时器数据状态
+            const timerSessions = JSON.parse(localStorage.getItem('completedTimerSessions') || '[]');
+            document.getElementById('timer-status').innerHTML = timerSessions.length > 0 
+                ? `✅ ${timerSessions.length} 个会话` 
+                : '❌ 无数据';
+            
+            // 计划数据状态
+            const planData = JSON.parse(localStorage.getItem('lifeos_pro_plan') || '{}');
+            const planItems = (planData.items || []).length;
+            document.getElementById('plan-status').innerHTML = planItems > 0 
+                ? `✅ ${planItems} 个项目` 
+                : '❌ 无数据';
+            
+            // 日记数据状态
+            const diaryEntries = JSON.parse(localStorage.getItem('lifeos_pro_diary_v1') || '[]');
+            document.getElementById('diary-status').innerHTML = diaryEntries.length > 0 
+                ? `✅ ${diaryEntries.length} 条记录` 
+                : '❌ 无数据';
+        }
+        
+        // 绑定事件
+        document.getElementById('add-test-data').onclick = addTestData;
+        document.getElementById('test-data-processing').onclick = testDataProcessing;
+        document.getElementById('clear-test-data').onclick = clearTestData;
+        
+        // 页面加载时更新状态
+        window.onload = function() {
+            updateDataStatus();
+            testDataProcessing(); // 自动测试一次
+        };
+    </script>
+</body>
+</html>

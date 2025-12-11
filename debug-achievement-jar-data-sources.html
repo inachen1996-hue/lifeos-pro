@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Achievement Jar 数据源调试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+        .data-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px -2px rgba(0,0,0,0.1);
+        }
+        .data-item {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-left: 4px solid #007bff;
+        }
+        .empty-state {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            color: #856404;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🔍 Achievement Jar 数据源调试</h1>
+        
+        <div class="mb-6 text-center">
+            <button id="refresh-data" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold">
+                🔄 刷新数据检查
+            </button>
+        </div>
+
+        <!-- 1. 历史数据 (fullHistory) -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">📚 历史数据 (fullHistory)</h2>
+            <div id="history-data">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+
+        <!-- 2. 计时器数据 (completedTimerSessions) -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-green-600">⏱️ 计时器数据 (completedTimerSessions)</h2>
+            <div id="timer-data">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+
+        <!-- 3. 计划数据 (lifeos_pro_plan) -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-purple-600">📋 计划数据 (lifeos_pro_plan)</h2>
+            <div id="plan-data">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+
+        <!-- 4. 日记数据 (lifeos_pro_diary_v1) -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-pink-600">📖 日记数据 (lifeos_pro_diary_v1)</h2>
+            <div id="diary-data">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+
+        <!-- 5. 今日数据过滤测试 -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-orange-600">📅 今日数据过滤测试</h2>
+            <div id="date-filter-test">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+
+        <!-- 6. Achievement Jar 最终数据 -->
+        <div class="data-section">
+            <h2 class="text-2xl font-bold mb-4 text-red-600">🏺 Achievement Jar 最终数据</h2>
+            <div id="final-data">
+                <div class="empty-state">正在检查...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取今日日期范围
+        function getTodayRange() {
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+            return {
+                start: startOfDay,
+                end: endOfDay,
+                startStr: startOfDay.toISOString(),
+                endStr: endOfDay.toISOString()
+            };
+        }
+
+        // 检查历史数据
+        function checkHistoryData() {
+            const container = document.getElementById('history-data');
+            
+            try {
+                const fullHistory = localStorage.getItem('lifeos_pro_history_v2') || '';
+                
+                if (!fullHistory.trim()) {
+                    container.innerHTML = '<div class="empty-state">❌ fullHistory 为空</div>';
+                    return [];
+                }
+
+                const lines = fullHistory.split('\n').filter(l => l.trim());
+                const { start, end } = getTodayRange();
+                
+                let html = `<div class="mb-4"><strong>总行数:</strong> ${lines.length}</div>`;
+                
+                const todayLines = lines.filter(line => {
+                    const dateMatch = line.match(/(\d{4}-\d{1,2}-\d{1,2})/);
+                    if (dateMatch) {
+                        const lineDate = new Date(dateMatch[1]);
+                        return lineDate >= start && lineDate < end;
+                    }
+                    return false;
+                });
+
+                html += `<div class="mb-4"><strong>今日行数:</strong> ${todayLines.length}</div>`;
+                
+                if (todayLines.length > 0) {
+                    html += '<div class="mb-2"><strong>今日数据示例:</strong></div>';
+                    todayLines.slice(0, 3).forEach(line => {
+                        html += `<div class="data-item">${line}</div>`;
+                    });
+                } else {
+                    html += '<div class="empty-state">❌ 没有今日历史数据</div>';
+                }
+
+                container.innerHTML = html;
+                return todayLines;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ 错误: ${error.message}</div>`;
+                return [];
+            }
+        }
+
+        // 检查计时器数据
+        function checkTimerData() {
+            const container = document.getElementById('timer-data');
+            
+            try {
+                const storedSessions = localStorage.getItem('completedTimerSessions');
+                
+                if (!storedSessions) {
+                    container.innerHTML = '<div class="empty-state">❌ completedTimerSessions 不存在</div>';
+                    return [];
+                }
+
+                const sessions = JSON.parse(storedSessions);
+                if (!Array.isArray(sessions)) {
+                    container.innerHTML = '<div class="empty-state">❌ completedTimerSessions 不是数组</div>';
+                    return [];
+                }
+
+                const { start, end } = getTodayRange();
+                
+                let html = `<div class="mb-4"><strong>总会话数:</strong> ${sessions.length}</div>`;
+                
+                const todaySessions = sessions.filter(session => {
+                    const sessionDate = new Date(session.startTime);
+                    return sessionDate >= start && sessionDate < end;
+                });
+
+                html += `<div class="mb-4"><strong>今日会话数:</strong> ${todaySessions.length}</div>`;
+                
+                if (todaySessions.length > 0) {
+                    html += '<div class="mb-2"><strong>今日会话示例:</strong></div>';
+                    todaySessions.slice(0, 3).forEach(session => {
+                        html += `
+                            <div class="data-item">
+                                <strong>${session.title}</strong><br>
+                                时长: ${session.duration}秒 (${(session.duration/60).toFixed(1)}分钟)<br>
+                                开始: ${new Date(session.startTime).toLocaleString()}<br>
+                                分类: ${session.category}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="empty-state">❌ 没有今日计时器数据</div>';
+                }
+
+                container.innerHTML = html;
+                return todaySessions;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ 错误: ${error.message}</div>`;
+                return [];
+            }
+        }
+
+        // 检查计划数据
+        function checkPlanData() {
+            const container = document.getElementById('plan-data');
+            
+            try {
+                const planData = localStorage.getItem('lifeos_pro_plan');
+                
+                if (!planData) {
+                    container.innerHTML = '<div class="empty-state">❌ lifeos_pro_plan 不存在</div>';
+                    return [];
+                }
+
+                const plan = JSON.parse(planData);
+                if (!plan || !plan.items || !Array.isArray(plan.items)) {
+                    container.innerHTML = '<div class="empty-state">❌ 计划数据格式错误</div>';
+                    return [];
+                }
+
+                const { start, end } = getTodayRange();
+                
+                let html = `<div class="mb-4"><strong>总计划项:</strong> ${plan.items.length}</div>`;
+                
+                const completedItems = plan.items.filter(item => item.completed);
+                html += `<div class="mb-4"><strong>已完成项:</strong> ${completedItems.length}</div>`;
+                
+                const todayCompletedItems = completedItems.filter(item => {
+                    const itemDate = new Date(item.date || new Date());
+                    return itemDate >= start && itemDate < end;
+                });
+
+                html += `<div class="mb-4"><strong>今日已完成项:</strong> ${todayCompletedItems.length}</div>`;
+                
+                if (todayCompletedItems.length > 0) {
+                    html += '<div class="mb-2"><strong>今日已完成项示例:</strong></div>';
+                    todayCompletedItems.slice(0, 3).forEach(item => {
+                        html += `
+                            <div class="data-item">
+                                <strong>${item.title || item.text}</strong><br>
+                                时长: ${item.duration || 0}分钟<br>
+                                分类: ${item.category || 'work'}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="empty-state">❌ 没有今日已完成的计划项</div>';
+                }
+
+                container.innerHTML = html;
+                return todayCompletedItems;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ 错误: ${error.message}</div>`;
+                return [];
+            }
+        }
+
+        // 检查日记数据
+        function checkDiaryData() {
+            const container = document.getElementById('diary-data');
+            
+            try {
+                const diaryData = localStorage.getItem('lifeos_pro_diary_v1');
+                
+                if (!diaryData) {
+                    container.innerHTML = '<div class="empty-state">❌ lifeos_pro_diary_v1 不存在</div>';
+                    return [];
+                }
+
+                const entries = JSON.parse(diaryData);
+                if (!Array.isArray(entries)) {
+                    container.innerHTML = '<div class="empty-state">❌ 日记数据不是数组</div>';
+                    return [];
+                }
+
+                const { start, end } = getTodayRange();
+                
+                let html = `<div class="mb-4"><strong>总日记条数:</strong> ${entries.length}</div>`;
+                
+                const todayEntries = entries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate >= start && entryDate < end;
+                });
+
+                html += `<div class="mb-4"><strong>今日日记条数:</strong> ${todayEntries.length}</div>`;
+                
+                if (todayEntries.length > 0) {
+                    html += '<div class="mb-2"><strong>今日日记示例:</strong></div>';
+                    todayEntries.slice(0, 3).forEach(entry => {
+                        const timeMatches = entry.content.match(/(\d+(\.\d+)?)\s*(h|小时|hour|分钟|min)/gi);
+                        html += `
+                            <div class="data-item">
+                                <strong>日期:</strong> ${new Date(entry.date).toLocaleDateString()}<br>
+                                <strong>内容:</strong> ${entry.content.substring(0, 100)}...<br>
+                                <strong>时间信息:</strong> ${timeMatches ? timeMatches.join(', ') : '无'}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="empty-state">❌ 没有今日日记数据</div>';
+                }
+
+                container.innerHTML = html;
+                return todayEntries;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ 错误: ${error.message}</div>`;
+                return [];
+            }
+        }
+
+        // 测试日期过滤
+        function testDateFilter() {
+            const container = document.getElementById('date-filter-test');
+            const { start, end, startStr, endStr } = getTodayRange();
+            
+            let html = `
+                <div class="mb-4">
+                    <strong>今日范围:</strong><br>
+                    开始: ${start.toLocaleString()}<br>
+                    结束: ${end.toLocaleString()}
+                </div>
+            `;
+            
+            // 测试一些日期
+            const testDates = [
+                new Date().toISOString(), // 现在
+                new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 昨天
+                new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 明天
+            ];
+            
+            html += '<div class="mb-2"><strong>日期过滤测试:</strong></div>';
+            testDates.forEach((dateStr, idx) => {
+                const testDate = new Date(dateStr);
+                const isInRange = testDate >= start && testDate < end;
+                const labels = ['现在', '昨天', '明天'];
+                html += `
+                    <div class="data-item">
+                        <strong>${labels[idx]}:</strong> ${testDate.toLocaleString()}<br>
+                        <strong>在今日范围内:</strong> ${isInRange ? '✅ 是' : '❌ 否'}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 模拟 Achievement Jar 数据处理
+        function simulateAchievementJarProcessing() {
+            const container = document.getElementById('final-data');
+            
+            try {
+                const historyData = checkHistoryData();
+                const timerData = checkTimerData();
+                const planData = checkPlanData();
+                const diaryData = checkDiaryData();
+                
+                const totalItems = historyData.length + timerData.length + planData.length + diaryData.length;
+                
+                let html = `
+                    <div class="mb-4">
+                        <strong>数据源统计:</strong><br>
+                        历史数据: ${historyData.length} 项<br>
+                        计时器数据: ${timerData.length} 项<br>
+                        计划数据: ${planData.length} 项<br>
+                        日记数据: ${diaryData.length} 项<br>
+                        <strong>总计: ${totalItems} 项</strong>
+                    </div>
+                `;
+                
+                if (totalItems === 0) {
+                    html += `
+                        <div class="empty-state">
+                            ❌ 没有任何今日数据！<br>
+                            这就是为什么 Achievement Jar 显示空罐子的原因。
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            ✅ 找到 ${totalItems} 项今日数据，Achievement Jar 应该显示内容。
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ 错误: ${error.message}</div>`;
+            }
+        }
+
+        // 刷新所有数据检查
+        function refreshAllData() {
+            console.log('🔄 开始数据源调试...');
+            
+            checkHistoryData();
+            checkTimerData();
+            checkPlanData();
+            checkDiaryData();
+            testDateFilter();
+            simulateAchievementJarProcessing();
+            
+            console.log('✅ 数据源调试完成');
+        }
+
+        // 绑定事件
+        document.getElementById('refresh-data').onclick = refreshAllData;
+
+        // 页面加载时自动检查
+        window.onload = refreshAllData;
+    </script>
+</body>
+</html>

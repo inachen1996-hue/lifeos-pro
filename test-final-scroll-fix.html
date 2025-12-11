@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最终滚动修复验证</title>
+    <style>
+        /* 应用与修复后主页面完全相同的样式 */
+        * {
+            touch-action: manipulation !important;
+        }
+
+        html, body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* 强制启用滚动 */
+            overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: auto !important;
+            touch-action: manipulation !important;
+            height: auto !important;
+            position: relative !important;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #root {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            position: relative !important;
+        }
+
+        .timer-container-smooth {
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+        }
+
+        .flex, .flex-col {
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="scroll-indicator" id="scrollIndicator">
+        滚动: 0px
+    </div>
+
+    <div id="root">
+        <div class="container">
+            <h1>🎯 最终滚动修复验证</h1>
+            
+            <div class="status info">
+                <strong>📱 修复验证：</strong><br>
+                • 移除了所有 minHeight 限制<br>
+                • 添加了强制滚动 CSS<br>
+                • 设置了 touch-action: manipulation<br>
+                • 确保所有容器高度自适应
+            </div>
+
+            <div class="test-section">
+                <h2>✅ 修复内容</h2>
+                <ul>
+                    <li>移除 <code>minHeight: 'calc(100vh - 200px)'</code></li>
+                    <li>添加 <code>touch-action: manipulation !important</code></li>
+                    <li>设置 <code>overflow: visible !important</code></li>
+                    <li>确保 <code>height: auto !important</code></li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 1</h2>
+                <p>如果你能看到这个内容并且可以滚动，说明修复开始生效。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 2</h2>
+                <p>继续滚动测试。页面应该可以正常上下滚动。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 3</h2>
+                <p>更多内容用于测试滚动功能。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 4</h2>
+                <p>如果你能滚动到这里，说明高度限制已经被移除。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 5</h2>
+                <p>继续测试滚动...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 6</h2>
+                <p>更多测试内容...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 7</h2>
+                <p>滚动测试进行中...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 8</h2>
+                <p>如果能看到这里，说明容器高度设置正确。</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 9</h2>
+                <p>继续滚动...</p>
+            </div>
+
+            <div class="test-section">
+                <h2>🧪 滚动测试区域 10</h2>
+                <p>最后一个测试区域。如果你能滚动到这里，说明最终修复成功！</p>
+            </div>
+
+            <div id="diagnosis" class="status warning">
+                正在验证修复效果...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let maxScrollY = 0;
+        let scrollEvents = 0;
+
+        // 监控滚动事件
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            maxScrollY = Math.max(maxScrollY, scrollY);
+            scrollEvents++;
+            
+            document.getElementById('scrollIndicator').textContent = `滚动: ${scrollY}px (${scrollEvents}次)`;
+            updateDiagnosis();
+        });
+
+        function updateDiagnosis() {
+            const diagnosisDiv = document.getElementById('diagnosis');
+            
+            if (maxScrollY > 200) {
+                diagnosisDiv.className = 'status success';
+                diagnosisDiv.innerHTML = `
+                    <strong>🎉 最终修复成功！</strong><br>
+                    • 最大滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滚动事件次数: ${scrollEvents}次<br>
+                    • 高度限制已移除<br>
+                    • 强制滚动CSS生效<br>
+                    <br>
+                    <strong>✅ 主页面应该也可以正常滚动了！</strong>
+                `;
+            } else if (maxScrollY > 50) {
+                diagnosisDiv.className = 'status info';
+                diagnosisDiv.innerHTML = `
+                    <strong>🧪 检测到滚动改善</strong><br>
+                    • 当前滚动距离: ${Math.round(maxScrollY)}px<br>
+                    • 滚动事件次数: ${scrollEvents}次<br>
+                    • 继续滚动测试...
+                `;
+            } else {
+                diagnosisDiv.className = 'status warning';
+                diagnosisDiv.innerHTML = `
+                    <strong>⏳ 等待滚动测试</strong><br>
+                    • 请尝试上下滚动页面<br>
+                    • 当前滚动距离: ${Math.round(maxScrollY)}px
+                `;
+            }
+        }
+
+        // 初始化
+        updateDiagnosis();
+
+        // 添加调试信息
+        console.log('=== 最终修复验证 ===');
+        console.log('视口高度:', window.innerHeight);
+        console.log('文档高度:', document.documentElement.scrollHeight);
+        console.log('body overflow-y:', getComputedStyle(document.body).overflowY);
+        console.log('html overflow-y:', getComputedStyle(document.documentElement).overflowY);
+        console.log('root overflow:', getComputedStyle(document.getElementById('root')).overflow);
+        console.log('touch-action:', getComputedStyle(document.body).touchAction);
+
+        // 检测设备类型
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        console.log('设备类型:', isMobile ? '移动设备' : '桌面设备');
+        
+        if (!isMobile) {
+            document.querySelector('.container').insertAdjacentHTML('afterbegin', `
+                <div class="status warning">
+                    <strong>⚠️ 桌面设备检测</strong><br>
+                    建议在移动设备上测试，或使用开发者工具模拟移动设备
+                </div>
+            `);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 玻璃效果修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Achievement Jar 玻璃效果修复测试</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 空状态 -->
+            <div>
+                <h2 class="text-xl font-semibold mb-4 text-center">空状态（透明玻璃罐）</h2>
+                <div id="empty-root"></div>
+            </div>
+            
+            <!-- 有数据状态 -->
+            <div>
+                <h2 class="text-xl font-semibold mb-4 text-center">有数据状态（带粘土球）</h2>
+                <div id="filled-root"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Achievement Jar 容器组件
+        const AchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 生成粘土球数据
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#gray-500' };
+                    const size = Math.max(25, Math.min(65, (item.duration / 3600) * 35));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color,
+                        size,
+                        x: 60 + (index % 4) * 85 + Math.random() * 15,
+                        y: 80 + Math.floor(index / 4) * 70 + Math.random() * 15,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    {/* 3D 玻璃罐子效果 */}
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{
+                            width: '400px',
+                            height: '300px'
+                        }}
+                    >
+                        {/* 粘土球 */}
+                        {clayBalls.map((ball) => (
+                            <div
+                                key={ball.id}
+                                className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                style={{
+                                    left: `${ball.x}px`,
+                                    top: `${ball.y}px`,
+                                    width: `${ball.size}px`,
+                                    height: `${ball.size}px`,
+                                    backgroundColor: ball.color
+                                }}
+                                onClick={() => onCelebrate('clap')}
+                                title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                            />
+                        ))}
+                        
+                        {/* 玻璃反光效果 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                        {/* 额外的小反光点 */}
+                        <div 
+                            className="absolute top-8 right-12 w-8 h-16 bg-gradient-to-b from-white to-transparent opacity-25 rounded-full"
+                            style={{ 
+                                transform: 'rotate(25deg)',
+                                filter: 'blur(0.5px)'
+                            }}
+                        />
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 测试数据
+        const categoryMap = {
+            work: { name: '工作', color: '#3B82F6' },
+            study: { name: '学习', color: '#10B981' },
+            health: { name: '健康', color: '#F59E0B' }
+        };
+
+        const mockData = [
+            { id: '1', category: 'work', duration: 7200, title: '完成项目文档' },
+            { id: '2', category: 'study', duration: 3600, title: '学习React开发' },
+            { id: '3', category: 'health', duration: 1800, title: '晨跑锻炼' }
+        ];
+
+        const playSound = (type) => console.log(`🎵 播放音效: ${type}`);
+        const generateDanmaku = () => console.log('🎊 生成弹幕');
+
+        // 空状态组件
+        const EmptyState = () => (
+            <div className="achievement-jar-integrated-progress">
+                <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                        🏺 Achievement Jar
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-2">空状态演示</p>
+                </div>
+                <AchievementJarContainer 
+                    data={[]}
+                    categoryMap={categoryMap}
+                    timeRange="today"
+                    onCelebrate={(type) => {
+                        playSound(type);
+                        generateDanmaku();
+                    }}
+                />
+            </div>
+        );
+
+        // 有数据状态组件
+        const FilledState = () => (
+            <div className="achievement-jar-integrated-progress">
+                <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                        🏺 Achievement Jar
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-2">有数据演示</p>
+                </div>
+                <AchievementJarContainer 
+                    data={mockData}
+                    categoryMap={categoryMap}
+                    timeRange="today"
+                    onCelebrate={(type) => {
+                        playSound(type);
+                        generateDanmaku();
+                    }}
+                />
+            </div>
+        );
+
+        // 渲染组件
+        const emptyContainer = document.getElementById('empty-root');
+        const emptyRoot = ReactDOM.createRoot(emptyContainer);
+        emptyRoot.render(React.createElement(EmptyState));
+
+        const filledContainer = document.getElementById('filled-root');
+        const filledRoot = ReactDOM.createRoot(filledContainer);
+        filledRoot.render(React.createElement(FilledState));
+    </script>
+</body>
+</html>

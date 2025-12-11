@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划拖动功能最终修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            font-family: system-ui, -apple-system, sans-serif;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .plan-item {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            border-left: 6px solid #3B82F6;
+            cursor: move;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .plan-item:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .plan-item.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.3);
+        }
+        
+        .drag-indicator {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-right: 16px;
+            padding: 4px;
+        }
+        
+        .drag-dot {
+            width: 4px;
+            height: 4px;
+            background: #94A3B8;
+            border-radius: 50%;
+        }
+        
+        .success { color: #10B981; font-weight: bold; }
+        .error { color: #EF4444; font-weight: bold; }
+        .warning { color: #F59E0B; font-weight: bold; }
+        
+        .category-work { border-left-color: #3B82F6; }
+        .category-study { border-left-color: #10B981; }
+        .category-rest { border-left-color: #F59E0B; }
+        .category-health { border-left-color: #EF4444; }
+        .category-hobby { border-left-color: #8B5CF6; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="text-3xl font-bold text-center mb-6">📱 计划拖动功能最终修复</h1>
+        
+        <!-- 修复状态 -->
+        <div class="status-card">
+            <h2 class="text-xl font-bold mb-4">🔧 修复内容</h2>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="success">✅</span>
+                    <span>修复 touchAction 属性：移动端使用 'pan-y'，桌面端使用 'none'</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="success">✅</span>
+                    <span>优化触摸移动处理：智能判断拖拽意图（10px阈值）</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="success">✅</span>
+                    <span>更新拖拽指示器：使用三个小点替代菜单图标</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="success">✅</span>
+                    <span>保持滚动功能：短距离触摸不会触发拖拽</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设备信息 -->
+        <div class="status-card">
+            <h2 class="text-xl font-bold mb-4">📱 设备信息</h2>
+            <div id="deviceInfo" class="space-y-2 text-sm"></div>
+        </div>
+        
+        <!-- 测试说明 -->
+        <div class="status-card">
+            <h2 class="text-xl font-bold mb-4">📋 测试说明</h2>
+            <div class="space-y-2 text-sm">
+                <p><strong>桌面端：</strong>直接拖拽计划项目进行重新排序</p>
+                <p><strong>移动端：</strong>长按并拖拽计划项目进行重新排序</p>
+                <p><strong>滚动测试：</strong>轻触并快速滑动应该可以正常滚动页面</p>
+                <p><strong>拖拽测试：</strong>长按并慢慢移动应该可以重新排序</p>
+            </div>
+        </div>
+        
+        <!-- 拖动测试区域 -->
+        <div class="status-card">
+            <h2 class="text-xl font-bold mb-4">🧪 拖动测试区域</h2>
+            <p class="text-gray-600 mb-4">尝试拖动下面的计划项目来重新排序：</p>
+            
+            <div id="planContainer" class="space-y-3">
+                <!-- 计划项目将通过 JavaScript 生成 -->
+            </div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>操作提示：</strong><br>
+                    • 看到三个小点图标表示可以拖拽<br>
+                    • 拖拽时项目会变透明并放大<br>
+                    • 松手后项目会固定在新位置<br>
+                    • 页面滚动和拖拽操作互不干扰
+                </p>
+            </div>
+        </div>
+        
+        <!-- 事件日志 -->
+        <div class="status-card">
+            <h2 class="text-xl font-bold mb-4">📋 操作日志</h2>
+            <div id="eventLog" class="bg-gray-100 p-3 rounded-lg h-32 overflow-y-auto text-sm font-mono"></div>
+            <button onclick="clearLog()" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm">清空日志</button>
+        </div>
+    </div>
+
+    <script>
+        // 设备检测
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // 日志函数
+        function log(message) {
+            const logElement = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = '';
+        }
+        
+        // 显示设备信息
+        function showDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            deviceInfo.innerHTML = `
+                <div><strong>设备类型:</strong> <span class="${isMobile ? 'success' : 'warning'}">${isMobile ? '移动设备' : '桌面设备'}</span></div>
+                <div><strong>触摸支持:</strong> ${'ontouchstart' in window ? '<span class="success">是</span>' : '<span class="error">否</span>'}</div>
+                <div><strong>最大触摸点:</strong> ${navigator.maxTouchPoints || 0}</div>
+                <div><strong>屏幕尺寸:</strong> ${window.innerWidth} x ${window.innerHeight}</div>
+                <div><strong>用户代理:</strong> ${navigator.userAgent.substring(0, 50)}...</div>
+            `;
+        }
+        
+        // 计划项目数据
+        let planItems = [
+            { id: 1, time: '09:00 - 10:00', title: '晨间运动', desc: '慢跑30分钟，拉伸10分钟', category: 'health' },
+            { id: 2, time: '10:00 - 12:00', title: '工作会议', desc: '团队周会，项目进度讨论', category: 'work' },
+            { id: 3, time: '12:00 - 13:00', title: '午餐时间', desc: '健康饮食，适当休息', category: 'rest' },
+            { id: 4, time: '13:00 - 15:00', title: '项目开发', desc: '完成核心功能模块', category: 'work' },
+            { id: 5, time: '15:00 - 16:00', title: '学习新技术', desc: '阅读技术文档，实践练习', category: 'study' },
+            { id: 6, time: '16:00 - 17:00', title: '创意时间', desc: '绘画或音乐创作', category: 'hobby' }
+        ];
+        
+        let draggedIndex = null;
+        let touchDragState = {
+            isDragging: false,
+            startY: 0,
+            startX: 0,
+            currentY: 0,
+            currentX: 0
+        };
+        
+        // 渲染计划项目
+        function renderPlanItems() {
+            const container = document.getElementById('planContainer');
+            container.innerHTML = planItems.map((item, index) => `
+                <div 
+                    class="plan-item category-${item.category} ${draggedIndex === index ? 'dragging' : ''}"
+                    data-plan-item="${index}"
+                    draggable="${!isMobile}"
+                    style="touch-action: ${isMobile ? 'pan-y' : 'none'}"
+                >
+                    <div class="flex items-start">
+                        <div class="drag-indicator">
+                            <div class="drag-dot"></div>
+                            <div class="drag-dot"></div>
+                            <div class="drag-dot"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-mono font-bold text-lg text-gray-700">${item.time}</span>
+                                <span class="text-xs bg-gray-200 px-2 py-1 rounded uppercase font-bold">${item.category}</span>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-lg mb-1">${item.title}</h4>
+                            <p class="text-gray-600 text-sm">${item.desc}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 添加事件监听器
+            addEventListeners();
+        }
+        
+        // 添加事件监听器
+        function addEventListeners() {
+            const items = document.querySelectorAll('[data-plan-item]');
+            
+            items.forEach((item, index) => {
+                // 桌面端拖拽事件
+                if (!isMobile) {
+                    item.addEventListener('dragstart', (e) => handleDragStart(e, index));
+                    item.addEventListener('dragover', (e) => handleDragOver(e, index));
+                    item.addEventListener('dragend', handleDragEnd);
+                }
+                
+                // 移动端触摸事件
+                if (isMobile) {
+                    item.addEventListener('touchstart', (e) => handleTouchStart(e, index), { passive: false });
+                    item.addEventListener('touchmove', (e) => handleTouchMove(e, index), { passive: false });
+                    item.addEventListener('touchend', handleTouchEnd, { passive: false });
+                }
+                
+                // 通用事件
+                item.addEventListener('contextmenu', (e) => e.preventDefault());
+            });
+        }
+        
+        // 桌面端拖拽处理
+        function handleDragStart(e, index) {
+            log(`🖱️ 桌面端拖拽开始: ${planItems[index].title}`);
+            draggedIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            renderPlanItems();
+        }
+        
+        function handleDragOver(e, index) {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === index) return;
+            
+            log(`🔄 桌面端重新排序: ${planItems[draggedIndex].title} → 位置 ${index}`);
+            
+            // 重新排序
+            const draggedItem = planItems[draggedIndex];
+            planItems.splice(draggedIndex, 1);
+            planItems.splice(index, 0, draggedItem);
+            
+            draggedIndex = index;
+            renderPlanItems();
+        }
+        
+        function handleDragEnd() {
+            log(`✅ 桌面端拖拽完成`);
+            draggedIndex = null;
+            renderPlanItems();
+        }
+        
+        // 移动端触摸处理
+        function handleTouchStart(e, index) {
+            log(`📱 移动端触摸开始: ${planItems[index].title}`);
+            const touch = e.touches[0];
+            
+            draggedIndex = index;
+            touchDragState = {
+                isDragging: true,
+                startY: touch.clientY,
+                startX: touch.clientX,
+                currentY: touch.clientY,
+                currentX: touch.clientX
+            };
+            
+            renderPlanItems();
+        }
+        
+        function handleTouchMove(e, index) {
+            if (!touchDragState.isDragging) return;
+            
+            const touch = e.touches[0];
+            const currentY = touch.clientY;
+            const currentX = touch.clientX;
+            
+            const deltaY = Math.abs(currentY - touchDragState.startY);
+            const deltaX = Math.abs(currentX - touchDragState.startX);
+            
+            // 如果移动距离超过阈值，则认为是拖拽操作
+            if (deltaY > 10 || deltaX > 10) {
+                e.preventDefault(); // 阻止滚动
+                log(`🔄 移动端拖拽中: 移动距离 ${Math.round(Math.max(deltaY, deltaX))}px`);
+                
+                // 计算目标位置
+                const container = document.getElementById('planContainer');
+                const items = container.querySelectorAll('[data-plan-item]');
+                let targetIndex = draggedIndex;
+                
+                items.forEach((item, idx) => {
+                    const rect = item.getBoundingClientRect();
+                    const itemCenter = rect.top + rect.height / 2;
+                    
+                    if (currentY < itemCenter && idx < draggedIndex) {
+                        targetIndex = idx;
+                    } else if (currentY > itemCenter && idx > draggedIndex) {
+                        targetIndex = idx;
+                    }
+                });
+                
+                if (targetIndex !== draggedIndex) {
+                    log(`🔄 移动端重新排序: ${planItems[draggedIndex].title} → 位置 ${targetIndex}`);
+                    
+                    const draggedItem = planItems[draggedIndex];
+                    planItems.splice(draggedIndex, 1);
+                    planItems.splice(targetIndex, 0, draggedItem);
+                    
+                    draggedIndex = targetIndex;
+                    renderPlanItems();
+                }
+            }
+            
+            touchDragState.currentY = currentY;
+            touchDragState.currentX = currentX;
+        }
+        
+        function handleTouchEnd() {
+            if (!touchDragState.isDragging) return;
+            
+            const deltaY = Math.abs(touchDragState.currentY - touchDragState.startY);
+            const deltaX = Math.abs(touchDragState.currentX - touchDragState.startX);
+            
+            if (deltaY > 10 || deltaX > 10) {
+                log(`✅ 移动端拖拽完成: ${planItems[draggedIndex].title}`);
+            } else {
+                log(`📱 移动端轻触: 未触发拖拽（移动距离 ${Math.round(Math.max(deltaY, deltaX))}px < 10px）`);
+            }
+            
+            draggedIndex = null;
+            touchDragState = {
+                isDragging: false,
+                startY: 0,
+                startX: 0,
+                currentY: 0,
+                currentX: 0
+            };
+            
+            renderPlanItems();
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            showDeviceInfo();
+            renderPlanItems();
+            log('✨ 计划拖动功能测试页面初始化完成');
+            log(`📱 当前设备: ${isMobile ? '移动设备' : '桌面设备'}`);
+        });
+    </script>
+</body>
+</html>

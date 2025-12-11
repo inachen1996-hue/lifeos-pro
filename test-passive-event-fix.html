@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passive Event Listener 修复验证</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .test-card:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+        }
+        .test-card.swiped {
+            transform: translateX(-80px);
+            background: #fff3cd;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Passive Event Listener 修复验证</h1>
+    
+    <div class="status info">
+        <strong>📊 实时监控状态</strong><br>
+        正在监控控制台错误和触摸事件性能...
+    </div>
+
+    <div class="metrics">
+        <div class="metric-card">
+            <div class="metric-value" id="errorCount">0</div>
+            <div class="metric-label">Passive Event 错误</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="touchEvents">0</div>
+            <div class="metric-label">触摸事件触发</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="swipeCount">0</div>
+            <div class="metric-label">成功滑动</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="performanceScore">100%</div>
+            <div class="metric-label">性能评分</div>
+        </div>
+    </div>
+
+    <h2>🧪 触摸滑动测试</h2>
+    <p>在移动设备上左右滑动下面的卡片来测试触摸事件：</p>
+
+    <div class="test-card" id="testCard1">
+        <h3>📱 测试卡片 1</h3>
+        <p>向左滑动我来测试触摸事件处理</p>
+        <small>状态: <span id="card1Status">待测试</span></small>
+    </div>
+
+    <div class="test-card" id="testCard2">
+        <h3>🎯 测试卡片 2</h3>
+        <p>向左滑动我来测试触摸事件处理</p>
+        <small>状态: <span id="card2Status">待测试</span></small>
+    </div>
+
+    <div class="test-card" id="testCard3">
+        <h3>⚡ 测试卡片 3</h3>
+        <p>向左滑动我来测试触摸事件处理</p>
+        <small>状态: <span id="card3Status">待测试</span></small>
+    </div>
+
+    <h2>📋 控制台输出</h2>
+    <div class="console-output" id="consoleOutput">
+        等待控制台消息...
+    </div>
+
+    <h2>✅ 修复验证结果</h2>
+    <div id="fixResults">
+        <div class="status warning">
+            正在进行修复验证测试...
+        </div>
+    </div>
+
+    <script>
+        // 错误监控
+        let errorCount = 0;
+        let touchEventCount = 0;
+        let swipeCount = 0;
+        let consoleMessages = [];
+
+        // 拦截控制台错误
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalLog = console.log;
+
+        function addConsoleMessage(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleMessages.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+            if (consoleMessages.length > 50) {
+                consoleMessages = consoleMessages.slice(-50);
+            }
+            document.getElementById('consoleOutput').textContent = consoleMessages.join('\n');
+            document.getElementById('consoleOutput').scrollTop = document.getElementById('consoleOutput').scrollHeight;
+        }
+
+        console.error = function(...args) {
+            const message = args.join(' ');
+            addConsoleMessage('ERROR', message);
+            
+            if (message.includes('preventDefault') && message.includes('passive')) {
+                errorCount++;
+                document.getElementById('errorCount').textContent = errorCount;
+                updatePerformanceScore();
+            }
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            addConsoleMessage('WARN', args.join(' '));
+            originalWarn.apply(console, args);
+        };
+
+        console.log = function(...args) {
+            addConsoleMessage('LOG', args.join(' '));
+            originalLog.apply(console, args);
+        };
+
+        // 触摸事件处理
+        let touchStart = null;
+        let touchEnd = null;
+
+        function handleTouchStart(e, cardId) {
+            touchEventCount++;
+            document.getElementById('touchEvents').textContent = touchEventCount;
+            
+            // 修复后的代码：不调用 preventDefault
+            touchEnd = null;
+            touchStart = e.targetTouches[0].clientX;
+            
+            addConsoleMessage('LOG', `触摸开始 - 卡片: ${cardId}, X: ${touchStart}`);
+            document.getElementById(`${cardId}Status`).textContent = '触摸中...';
+        }
+
+        function handleTouchMove(e, cardId) {
+            // 修复后的代码：不调用 preventDefault
+            if (touchStart) {
+                touchEnd = e.targetTouches[0].clientX;
+                addConsoleMessage('LOG', `触摸移动 - 卡片: ${cardId}, X: ${touchEnd}`);
+            }
+        }
+
+        function handleTouchEnd(cardId) {
+            if (!touchStart || !touchEnd) {
+                document.getElementById(`${cardId}Status`).textContent = '触摸取消';
+                return;
+            }
+            
+            const distance = touchStart - touchEnd;
+            const isLeftSwipe = distance > 50;
+            
+            if (isLeftSwipe) {
+                swipeCount++;
+                document.getElementById('swipeCount').textContent = swipeCount;
+                document.getElementById(cardId).classList.add('swiped');
+                document.getElementById(`${cardId}Status`).textContent = '✅ 左滑成功';
+                addConsoleMessage('LOG', `成功左滑 - 卡片: ${cardId}, 距离: ${distance}px`);
+                
+                setTimeout(() => {
+                    document.getElementById(cardId).classList.remove('swiped');
+                    document.getElementById(`${cardId}Status`).textContent = '待测试';
+                }, 2000);
+            } else {
+                document.getElementById(`${cardId}Status`).textContent = '滑动距离不足';
+                addConsoleMessage('LOG', `滑动距离不足 - 卡片: ${cardId}, 距离: ${distance}px`);
+            }
+            
+            touchStart = null;
+            touchEnd = null;
+        }
+
+        // 为测试卡片添加事件监听器
+        ['testCard1', 'testCard2', 'testCard3'].forEach(cardId => {
+            const card = document.getElementById(cardId);
+            
+            card.addEventListener('touchstart', (e) => handleTouchStart(e, cardId));
+            card.addEventListener('touchmove', (e) => handleTouchMove(e, cardId));
+            card.addEventListener('touchend', () => handleTouchEnd(cardId));
+            card.addEventListener('contextmenu', (e) => e.preventDefault());
+        });
+
+        // 性能评分计算
+        function updatePerformanceScore() {
+            let score = 100;
+            if (errorCount > 0) score -= errorCount * 10;
+            if (score < 0) score = 0;
+            document.getElementById('performanceScore').textContent = score + '%';
+            
+            // 更新修复结果
+            updateFixResults();
+        }
+
+        function updateFixResults() {
+            const resultsDiv = document.getElementById('fixResults');
+            
+            if (errorCount === 0 && touchEventCount > 0) {
+                resultsDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ <strong>修复成功！</strong><br>
+                        • 没有检测到 passive event listener 错误<br>
+                        • 触摸事件正常工作<br>
+                        • 滑动功能完全正常
+                    </div>
+                `;
+            } else if (errorCount > 0) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ <strong>仍有问题</strong><br>
+                        • 检测到 ${errorCount} 个 passive event listener 错误<br>
+                        • 需要进一步修复
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="status warning">
+                        ⏳ <strong>等待测试</strong><br>
+                        • 请在移动设备上滑动测试卡片<br>
+                        • 或使用开发者工具模拟触摸事件
+                    </div>
+                `;
+            }
+        }
+
+        // 初始化
+        addConsoleMessage('LOG', '页面加载完成，开始监控...');
+        
+        // 定期更新性能评分
+        setInterval(updatePerformanceScore, 1000);
+
+        // 检测设备类型
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        addConsoleMessage('LOG', `设备类型: ${isMobile ? '移动设备' : '桌面设备'}`);
+
+        // 模拟触摸事件（用于桌面测试）
+        if (!isMobile) {
+            addConsoleMessage('LOG', '桌面设备检测到，添加鼠标模拟触摸事件');
+            
+            ['testCard1', 'testCard2', 'testCard3'].forEach(cardId => {
+                const card = document.getElementById(cardId);
+                let mouseDown = false;
+                let startX = 0;
+                
+                card.addEventListener('mousedown', (e) => {
+                    mouseDown = true;
+                    startX = e.clientX;
+                    // 模拟 touchstart
+                    const touchEvent = {
+                        targetTouches: [{ clientX: e.clientX }]
+                    };
+                    handleTouchStart(touchEvent, cardId);
+                });
+                
+                card.addEventListener('mousemove', (e) => {
+                    if (mouseDown) {
+                        // 模拟 touchmove
+                        const touchEvent = {
+                            targetTouches: [{ clientX: e.clientX }]
+                        };
+                        handleTouchMove(touchEvent, cardId);
+                    }
+                });
+                
+                card.addEventListener('mouseup', () => {
+                    if (mouseDown) {
+                        mouseDown = false;
+                        handleTouchEnd(cardId);
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

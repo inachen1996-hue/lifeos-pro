@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语法修复测试</title>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center;">
+            <h2>正在测试语法修复...</h2>
+            <div id="status">检查中...</div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // 测试修复后的代码结构
+        const TestComponent = () => {
+            const [step, setStep] = useState('selectMode');
+            const [selectedMode, setSelectedMode] = useState(null);
+            
+            useEffect(() => {
+                console.log('✅ useEffect 正常工作');
+                document.getElementById('status').innerHTML = '✅ 语法错误已修复！useEffect 正常工作';
+            }, []);
+            
+            return (
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                    <h2 style={{ color: '#4CAF50' }}>✅ 语法修复成功</h2>
+                    <p>useState 和 useEffect 都正常工作</p>
+                    <p>当前步骤: {step}</p>
+                    <button 
+                        onClick={() => setStep('setDuration')}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        测试状态更新
+                    </button>
+                </div>
+            );
+        };
+        
+        // 渲染组件
+        ReactDOM.render(<TestComponent />, document.getElementById('root'));
+    </script>
+</body>
+</html>

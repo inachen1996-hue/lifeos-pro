@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多数据源集成最终测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        .source-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            font-size: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border: 1px solid white;
+        }
+
+        .source-history { background: #3B82F6; }
+        .source-timer { background: #10B981; }
+        .source-plan { background: #F59E0B; }
+        .source-diary { background: #8B5CF6; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🏺 多数据源集成最终测试</h1>
+        
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <div id="jar-container"></div>
+        </div>
+
+        <!-- 测试控制面板 -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-6 border border-blue-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">🧪 测试控制面板</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 数据源模拟 -->
+                <div>
+                    <h3 class="font-bold text-gray-700 mb-3">📊 数据源模拟</h3>
+                    <div class="space-y-2">
+                        <button id="simulate-history" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+                            📝 模拟历史记录数据
+                        </button>
+                        <button id="simulate-timer" class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                            ⏱️ 模拟计时器数据
+                        </button>
+                        <button id="simulate-plan" class="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm">
+                            📋 模拟计划数据
+                        </button>
+                        <button id="simulate-diary" class="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm">
+                            📔 模拟日记数据
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 测试场景 -->
+                <div>
+                    <h3 class="font-bold text-gray-700 mb-3">🎯 测试场景</h3>
+                    <div class="space-y-2">
+                        <button id="test-empty" class="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm">
+                            🗑️ 测试空数据状态
+                        </button>
+                        <button id="test-mixed" class="w-full px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm">
+                            🎭 测试混合数据源
+                        </button>
+                        <button id="test-realtime" class="w-full px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 text-sm">
+                            ⚡ 测试实时更新
+                        </button>
+                        <button id="refresh-jar" class="w-full px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 text-sm">
+                            🔄 刷新 Achievement Jar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 状态显示 -->
+            <div class="mt-6 p-4 bg-white rounded-lg">
+                <h4 class="font-bold text-gray-700 mb-2">📈 当前状态</h4>
+                <div id="status-display" class="text-sm text-gray-600">
+                    等待测试操作...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 模拟数据生成器
+        const MockDataGenerator = {
+            history: () => {
+                const today = new Date().toISOString().split('T')[0];
+                return `${today}: [WORK] 完成项目开发 2h
+${today}: [STUDY] 学习新技术 1.5h
+${today}: [HEALTH] 健身锻炼 45min`;
+            },
+
+            timer: () => ({
+                completedSessions: [
+                    {
+                        startTime: new Date().toISOString(),
+                        category: 'work',
+                        duration: 1500,
+                        title: '番茄钟工作任务'
+                    },
+                    {
+                        startTime: new Date(Date.now() - 3600000).toISOString(),
+                        category: 'study',
+                        duration: 1800,
+                        title: '番茄钟学习任务'
+                    }
+                ]
+            }),
+
+            plan: () => {
+                localStorage.setItem('lifeos_pro_plan', JSON.stringify({
+                    items: [
+                        {
+                            completed: true,
+                            duration: 90,
+                            category: 'work',
+                            title: '完成计划任务A',
+                            date: new Date().toISOString()
+                        },
+                        {
+                            completed: true,
+                            duration: 60,
+                            category: 'study',
+                            title: '完成计划任务B',
+                            date: new Date().toISOString()
+                        }
+                    ]
+                }));
+            },
+
+            diary: () => {
+                const today = new Date().toISOString();
+                localStorage.setItem('lifeos_pro_diary_v1', JSON.stringify([
+                    {
+                        date: today,
+                        content: '今天工作了3小时，学习了1.5小时，感觉很充实。'
+                    },
+                    {
+                        date: today,
+                        content: '晚上运动了30分钟，看书1小时。'
+                    }
+                ]));
+            }
+        };
+
+        // 简化的 Achievement Jar 组件
+        const TestAchievementJar = ({ 
+            fullHistory = '', 
+            activeTimerSession = null,
+            onStatusUpdate = () => {}
+        }) => {
+            const [data, setData] = useState([]);
+            const [isLoading, setIsLoading] = useState(false);
+
+            // 颜色映射
+            const getActualColor = (category) => {
+                const colorMap = {
+                    work: '#3B82F6',
+                    study: '#10B981',
+                    health: '#F59E0B',
+                    life: '#8B5CF6'
+                };
+                return colorMap[category] || '#6B7280';
+            };
+
+            // 数据处理
+            useEffect(() => {
+                setIsLoading(true);
+                
+                setTimeout(() => {
+                    try {
+                        const allItems = [];
+
+                        // 1. 处理历史数据
+                        if (fullHistory) {
+                            const historyItems = fullHistory.split('\n').filter(l => l.trim()).map((line, idx) => {
+                                const dateMatch = line.match(/(\d{4}-\d{1,2}-\d{1,2})/);
+                                const durationMatch = line.match(/(\d+(\.\d+)?)\s*(h|m|min|hour)/i);
+                                const categoryMatch = line.match(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]/i);
+                                
+                                let duration = 0;
+                                if (durationMatch) {
+                                    const val = parseFloat(durationMatch[1]);
+                                    const unit = durationMatch[3].toLowerCase();
+                                    duration = unit.startsWith('m') ? val / 60 : val;
+                                }
+                                
+                                const description = line
+                                    .replace(/\d{4}-\d{1,2}-\d{1,2}:\s*/, '')
+                                    .replace(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]\s*/i, '')
+                                    .replace(/\d+(\.\d+)?\s*(h|m|min|hour)/i, '')
+                                    .trim();
+                                
+                                return {
+                                    id: `history_${idx}`,
+                                    category: categoryMatch ? categoryMatch[1].toLowerCase() : 'work',
+                                    duration: duration * 3600,
+                                    title: description,
+                                    source: 'history'
+                                };
+                            }).filter(item => item.duration > 0);
+                            
+                            allItems.push(...historyItems);
+                        }
+
+                        // 2. 处理计时器数据
+                        if (activeTimerSession && activeTimerSession.completedSessions) {
+                            const timerItems = activeTimerSession.completedSessions.map((session, idx) => ({
+                                id: `timer_${idx}`,
+                                category: session.category || 'work',
+                                duration: session.duration || 1500,
+                                title: session.title || '计时器任务',
+                                source: 'timer'
+                            }));
+                            
+                            allItems.push(...timerItems);
+                        }
+
+                        // 3. 处理计划数据
+                        try {
+                            const planData = localStorage.getItem('lifeos_pro_plan');
+                            if (planData) {
+                                const plan = JSON.parse(planData);
+                                if (plan && plan.items) {
+                                    const planItems = plan.items
+                                        .filter(item => item.completed)
+                                        .map((item, idx) => ({
+                                            id: `plan_${idx}`,
+                                            category: item.category || 'work',
+                                            duration: (item.duration || 60) * 60,
+                                            title: item.title || '计划任务',
+                                            source: 'plan'
+                                        }));
+                                    
+                                    allItems.push(...planItems);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('处理计划数据出错:', e);
+                        }
+
+                        // 4. 处理日记数据
+                        try {
+                            const diaryData = localStorage.getItem('lifeos_pro_diary_v1');
+                            if (diaryData) {
+                                const entries = JSON.parse(diaryData);
+                                if (Array.isArray(entries)) {
+                                    const diaryItems = [];
+                                    entries.forEach((entry, idx) => {
+                                        const timeMatches = entry.content.match(/(\d+(\.\d+)?)\s*(h|小时|hour|分钟|min)/gi);
+                                        if (timeMatches) {
+                                            timeMatches.forEach((match, matchIdx) => {
+                                                const durationMatch = match.match(/(\d+(\.\d+)?)\s*(h|小时|hour|分钟|min)/i);
+                                                if (durationMatch) {
+                                                    const val = parseFloat(durationMatch[1]);
+                                                    const unit = durationMatch[3].toLowerCase();
+                                                    const duration = (unit.includes('h') || unit.includes('小时') || unit.includes('hour')) 
+                                                        ? val * 3600 
+                                                        : val * 60;
+                                                    
+                                                    diaryItems.push({
+                                                        id: `diary_${idx}_${matchIdx}`,
+                                                        category: 'life',
+                                                        duration: duration,
+                                                        title: `日记: ${entry.content.substring(0, 15)}...`,
+                                                        source: 'diary'
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                    
+                                    allItems.push(...diaryItems);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('处理日记数据出错:', e);
+                        }
+
+                        setData(allItems);
+                        onStatusUpdate({
+                            total: allItems.length,
+                            sources: {
+                                history: allItems.filter(i => i.source === 'history').length,
+                                timer: allItems.filter(i => i.source === 'timer').length,
+                                plan: allItems.filter(i => i.source === 'plan').length,
+                                diary: allItems.filter(i => i.source === 'diary').length
+                            }
+                        });
+                        
+                        setIsLoading(false);
+                    } catch (error) {
+                        console.error('数据处理出错:', error);
+                        setIsLoading(false);
+                    }
+                }, 500);
+            }, [fullHistory, activeTimerSession]);
+
+            if (isLoading) {
+                return (
+                    <div className="text-center py-12">
+                        <div className="animate-spin w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">正在聚合多数据源...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">🏺 Achievement Jar</h2>
+                    
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {/* 粘土球 */}
+                        {data.map((item, index) => {
+                            const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                            const x = 50 + (index % 5) * 70 + Math.random() * 20;
+                            const y = 100 + Math.floor(index / 5) * 70 + Math.random() * 20;
+                            
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${x}px`,
+                                        top: `${y}px`,
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        backgroundColor: getActualColor(item.category)
+                                    }}
+                                    title={`${item.title} - ${(item.duration / 3600).toFixed(1)}h (${item.source})`}
+                                >
+                                    <div className={`source-badge source-${item.source}`}>
+                                        {item.source === 'history' ? 'H' : 
+                                         item.source === 'timer' ? 'T' : 
+                                         item.source === 'plan' ? 'P' : 'D'}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        
+                        {/* 玻璃反光 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{data.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(data.reduce((sum, item) => sum + item.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(data.map(item => item.source)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">数据源</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用
+        const TestApp = () => {
+            const [fullHistory, setFullHistory] = useState('');
+            const [activeTimerSession, setActiveTimerSession] = useState(null);
+            const [status, setStatus] = useState('等待测试操作...');
+
+            const updateStatus = (data) => {
+                const { total, sources } = data;
+                setStatus(`总计 ${total} 项 | 历史:${sources.history} 计时器:${sources.timer} 计划:${sources.plan} 日记:${sources.diary}`);
+            };
+
+            // 绑定按钮事件
+            useEffect(() => {
+                document.getElementById('simulate-history').onclick = () => {
+                    setFullHistory(MockDataGenerator.history());
+                    setStatus('已模拟历史记录数据');
+                };
+
+                document.getElementById('simulate-timer').onclick = () => {
+                    setActiveTimerSession(MockDataGenerator.timer());
+                    setStatus('已模拟计时器数据');
+                };
+
+                document.getElementById('simulate-plan').onclick = () => {
+                    MockDataGenerator.plan();
+                    setStatus('已模拟计划数据');
+                    // 触发重新渲染
+                    setFullHistory(prev => prev + ' ');
+                };
+
+                document.getElementById('simulate-diary').onclick = () => {
+                    MockDataGenerator.diary();
+                    setStatus('已模拟日记数据');
+                    // 触发重新渲染
+                    setFullHistory(prev => prev + ' ');
+                };
+
+                document.getElementById('test-empty').onclick = () => {
+                    setFullHistory('');
+                    setActiveTimerSession(null);
+                    localStorage.removeItem('lifeos_pro_plan');
+                    localStorage.removeItem('lifeos_pro_diary_v1');
+                    setStatus('已清空所有数据，测试空状态');
+                };
+
+                document.getElementById('test-mixed').onclick = () => {
+                    setFullHistory(MockDataGenerator.history());
+                    setActiveTimerSession(MockDataGenerator.timer());
+                    MockDataGenerator.plan();
+                    MockDataGenerator.diary();
+                    setStatus('已加载混合数据源');
+                };
+
+                document.getElementById('test-realtime').onclick = () => {
+                    const interval = setInterval(() => {
+                        const newSession = {
+                            completedSessions: [
+                                {
+                                    startTime: new Date().toISOString(),
+                                    category: 'work',
+                                    duration: 1500,
+                                    title: `实时任务 ${Date.now().toString().slice(-4)}`
+                                }
+                            ]
+                        };
+                        setActiveTimerSession(newSession);
+                    }, 2000);
+
+                    setTimeout(() => {
+                        clearInterval(interval);
+                        setStatus('实时更新测试完成');
+                    }, 10000);
+
+                    setStatus('开始实时更新测试...');
+                };
+
+                document.getElementById('refresh-jar').onclick = () => {
+                    setFullHistory(prev => prev + ' ');
+                    setStatus('已刷新 Achievement Jar');
+                };
+
+                // 更新状态显示
+                const statusElement = document.getElementById('status-display');
+                if (statusElement) {
+                    statusElement.textContent = status;
+                }
+            }, [status]);
+
+            return (
+                <TestAchievementJar 
+                    fullHistory={fullHistory}
+                    activeTimerSession={activeTimerSession}
+                    onStatusUpdate={updateStatus}
+                />
+            );
+        };
+
+        // 渲染应用
+        const container = document.getElementById('jar-container');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(TestApp));
+
+        console.log('🚀 多数据源集成测试页面已加载');
+    </script>
+</body>
+</html>

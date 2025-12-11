@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图标选择弹窗优化测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes zoom-in {
+            from { 
+                opacity: 0; 
+                transform: scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+        }
+        .animate-in {
+            animation-duration: 0.2s;
+            animation-timing-function: ease-out;
+            animation-fill-mode: both;
+        }
+        .fade-in {
+            animation-name: fade-in;
+        }
+        .zoom-in {
+            animation-name: zoom-in;
+        }
+        .glass-icon {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 4px 12px -2px rgba(162, 210, 255, 0.3), inset 0 1px 4px rgba(255, 255, 255, 0.8);
+        }
+        .glass-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px -2px rgba(162, 210, 255, 0.4), inset 0 1px 4px rgba(255, 255, 255, 0.9);
+        }
+        .glass-icon.selected {
+            background: linear-gradient(135deg, rgba(162, 210, 255, 0.3) 0%, rgba(162, 210, 255, 0.2) 100%);
+            border-color: #A2D2FF;
+            box-shadow: 0 0 0 3px rgba(162, 210, 255, 0.3), 0 6px 16px -2px rgba(162, 210, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { X, Sparkles, Timer, Palette } = lucide;
+
+        // 玻璃图标组件
+        function GlassIcon({ icon, size = 'medium', isSelected = false, onClick, className = '' }) {
+            const sizeClasses = {
+                small: 'w-8 h-8 text-lg',
+                medium: 'w-12 h-12 text-xl',
+                large: 'w-16 h-16 text-2xl'
+            };
+
+            return (
+                <div
+                    className={`
+                        ${sizeClasses[size]}
+                        glass-icon
+                        ${isSelected ? 'selected' : ''}
+                        rounded-2xl
+                        flex items-center justify-center
+                        cursor-pointer
+                        transition-all duration-200
+                        ${className}
+                    `}
+                    onClick={onClick}
+                >
+                    <span className="select-none">{icon}</span>
+                </div>
+            );
+        }
+
+        // 优化后的图标选择器组件
+        function IconSelector({ selectedIcon, onIconChange }) {
+            const [isOpen, setIsOpen] = useState(false);
+            
+            // 可用图标列表
+            const availableIcons = [
+                // Work & Productivity
+                '💻', '📊', '📈', '📉', '📋', '📝', '✍️', '🖊️', '📞', '📧', '💼', '🏢', '👥', '🤝', '💡', '🎯',
+                // Study & Learning
+                '📖', '📚', '📓', '📔', '📕', '📗', '📘', '📙', '🔍', '🧠', '🎓', '✏️', '📐', '📏', '🧮', '🔬',
+                // Health & Exercise
+                '👟', '🏃‍♂️', '🏃‍♀️', '🚴‍♂️', '🚴‍♀️', '🏊‍♂️', '🏊‍♀️', '🧘‍♂️', '🧘‍♀️', '💪', '🏋️‍♂️', '🏋️‍♀️', '⚽', '🏀', '🎾', '🏓',
+                // Food & Cooking
+                '🍽️', '👨‍🍳', '👩‍🍳', '🥘', '🍳', '🥗', '🍕', '🍔', '🍜', '🍱', '🥙', '🌮', '🍰', '☕', '🍵', '🥤',
+                // Entertainment
+                '🎮', '🎬', '🎵', '🎸', '🎹', '🎤', '📺', '📱', '🎲', '🃏', '🎪', '🎭', '📷', '🎳',
+                // Rest & Sleep
+                '😴', '🛏️', '💤', '🧘', '🕯️', '🛀', '🧖‍♀️', '🧖‍♂️', '🦋', '🌸', '🍃',
+                // Transportation
+                '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵',
+                '🚲', '🛴', '🛹', '🚁', '✈️', '🛫', '🛬', '🚀', '🛸', '⛵', '🚤', '🛥️', '🚢', '⚓', '🚂', '🚃',
+                // Objects & Tools
+                '⏰', '⏲️', '⏱️', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🔔'
+            ];
+
+            const handleIconSelect = (icon) => {
+                onIconChange(icon);
+                setIsOpen(false);
+            };
+
+            return (
+                <div className="relative">
+                    {/* Current Icon Display */}
+                    <div className="mb-3">
+                        <label className="text-sm font-black text-[#023E8A] mb-3 block drop-shadow-sm">
+                            图标
+                        </label>
+                        
+                        <div 
+                            className="flex items-center justify-center w-full p-4 rounded-[20px] bg-white/90 cursor-pointer transition-all duration-300 hover:bg-white/95"
+                            style={{
+                                boxShadow: '0 4px 12px -2px rgba(162, 210, 255, 0.2), inset 0 1px 4px rgba(255, 255, 255, 0.8)',
+                                border: '2px solid rgba(255, 255, 255, 0.9)'
+                            }}
+                            onClick={() => setIsOpen(true)}
+                        >
+                            <GlassIcon
+                                icon={selectedIcon}
+                                size="large"
+                                className="pointer-events-none"
+                            />
+                        </div>
+                        
+                        <div className="mt-2 text-xs text-gray-500 text-center">
+                            点击选择图标
+                        </div>
+                    </div>
+
+                    {/* Icon Selection Modal */}
+                    {isOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            {/* Backdrop */}
+                            <div 
+                                className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-in fade-in"
+                                onClick={() => setIsOpen(false)}
+                            />
+                            
+                            {/* Modal Content */}
+                            <div 
+                                className="relative bg-white/95 backdrop-blur-lg rounded-[2rem] shadow-2xl border border-white/90 overflow-hidden w-full max-w-2xl max-h-[80vh] animate-in zoom-in"
+                                style={{
+                                    boxShadow: '0 20px 50px -12px rgba(162, 210, 255, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.8)'
+                                }}
+                            >
+                                {/* Header */}
+                                <div className="p-6 border-b border-gray-100/50">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h3 className="font-black text-[#023E8A] text-2xl mb-1">选择图标</h3>
+                                            <p className="text-sm text-gray-600">为你的计时器选择一个合适的图标</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsOpen(false)}
+                                            className="p-3 rounded-full bg-gray-100/50 hover:bg-gray-200/50 transition-all hover:scale-110"
+                                        >
+                                            <X className="w-5 h-5 text-gray-600" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Icon Grid */}
+                                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                                    <div className="grid grid-cols-8 gap-4">
+                                        {availableIcons.map((icon, index) => (
+                                            <div key={`${icon}-${index}`} className="flex justify-center">
+                                                <GlassIcon
+                                                    icon={icon}
+                                                    size="large"
+                                                    isSelected={selectedIcon === icon}
+                                                    onClick={() => handleIconSelect(icon)}
+                                                    className="transition-all duration-200 hover:scale-110"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="p-6 border-t border-gray-100/50 bg-gray-50/30">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-sm text-gray-600">
+                                            共 {availableIcons.length} 个图标可选择
+                                        </div>
+                                        <button
+                                            onClick={() => setIsOpen(false)}
+                                            className="px-6 py-2 bg-gradient-to-r from-[#023E8A] to-[#0077B6] text-white rounded-xl font-bold hover:shadow-lg transition-all hover:scale-105"
+                                        >
+                                            完成选择
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function App() {
+            const [selectedIcon, setSelectedIcon] = useState('⏱️');
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white/90 backdrop-blur-lg rounded-[2rem] shadow-2xl p-8 mb-8">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <Palette className="w-8 h-8 text-blue-600" />
+                                <h1 className="text-3xl font-black text-[#023E8A]">图标选择弹窗优化</h1>
+                            </div>
+                            <p className="text-gray-600 text-lg">
+                                全新的大尺寸居中弹窗，提供更好的图标选择体验
+                            </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {/* 左侧：图标选择器 */}
+                            <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 p-6 rounded-2xl">
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <Timer className="w-5 h-5" />
+                                    计时器设置
+                                </h3>
+                                
+                                <IconSelector 
+                                    selectedIcon={selectedIcon}
+                                    onIconChange={setSelectedIcon}
+                                />
+                                
+                                <div className="mt-4 p-4 bg-white/60 rounded-xl">
+                                    <p className="text-sm text-gray-600 mb-2">当前选择的图标：</p>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-3xl">{selectedIcon}</span>
+                                        <span className="text-lg font-medium text-gray-700">
+                                            {selectedIcon === '⏱️' ? '秒表' : 
+                                             selectedIcon === '💻' ? '工作' :
+                                             selectedIcon === '📚' ? '学习' :
+                                             selectedIcon === '🏃‍♂️' ? '运动' : '自定义'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 右侧：优化说明 */}
+                            <div className="space-y-6">
+                                <div className="bg-green-50 p-6 rounded-2xl border border-green-200">
+                                    <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5" />
+                                        优化亮点
+                                    </h4>
+                                    <ul className="space-y-2 text-sm text-green-700">
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>弹窗尺寸大幅增加，最大宽度 2xl (672px)</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>完全居中显示，支持响应式布局</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>图标网格从 6 列增加到 8 列</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>图标尺寸从 medium 升级到 large</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>添加优雅的进入动画效果</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="text-green-500 mt-0.5">✓</span>
+                                            <span>增强的视觉层次和交互反馈</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                                    <h4 className="font-bold text-blue-800 mb-3">技术改进</h4>
+                                    <ul className="space-y-2 text-sm text-blue-700">
+                                        <li>• 从相对定位改为固定定位全屏弹窗</li>
+                                        <li>• 增加背景遮罩和模糊效果</li>
+                                        <li>• 优化滚动区域和最大高度限制</li>
+                                        <li>• 添加图标计数和完成按钮</li>
+                                        <li>• 改进关闭交互和键盘导航</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-200">
+                                    <h4 className="font-bold text-purple-800 mb-3">用户体验</h4>
+                                    <ul className="space-y-2 text-sm text-purple-700">
+                                        <li>• 更大的可视区域，一次显示更多图标</li>
+                                        <li>• 更清晰的图标细节和选择状态</li>
+                                        <li>• 更直观的操作流程和视觉反馈</li>
+                                        <li>• 支持移动端和桌面端的最佳体验</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 text-center">
+                            <button
+                                onClick={() => setSelectedIcon('🎯')}
+                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg transition-all hover:scale-105 mr-4"
+                            >
+                                测试选择 🎯
+                            </button>
+                            <button
+                                onClick={() => setSelectedIcon('💻')}
+                                className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl font-bold hover:shadow-lg transition-all hover:scale-105"
+                            >
+                                测试选择 💻
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="text-center text-gray-500 text-sm">
+                        <p>点击图标区域打开优化后的选择弹窗</p>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

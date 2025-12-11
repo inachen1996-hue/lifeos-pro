@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缓存问题诊断工具</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .step {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    .step h3 {
+      margin-top: 0;
+      color: #667eea;
+    }
+    .button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: transform 0.2s;
+    }
+    .button:hover {
+      transform: scale(1.05);
+    }
+    .button:active {
+      transform: scale(0.95);
+    }
+    .result {
+      background: #e8f5e9;
+      border: 2px solid #4caf50;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+    }
+    .result.error {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+    .result.warning {
+      background: #fff3e0;
+      border-color: #ff9800;
+    }
+    .code {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .status.good {
+      background: #4caf50;
+      color: white;
+    }
+    .status.bad {
+      background: #f44336;
+      color: white;
+    }
+    .status.unknown {
+      background: #ff9800;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 缓存问题诊断工具</h1>
+    <p class="subtitle">帮助你诊断和解决浏览器缓存导致的特殊球体功能不工作问题</p>
+
+    <div class="step">
+      <h3>步骤 1: 检查当前状态</h3>
+      <p>点击下面的按钮检查你的浏览器是否使用了缓存的旧代码</p>
+      <button class="button" onclick="checkStatus()">🔍 检查状态</button>
+      <div id="status-result" class="result"></div>
+    </div>
+
+    <div class="step">
+      <h3>步骤 2: 清除缓存</h3>
+      <p>根据你的浏览器选择合适的方法：</p>
+      
+      <h4>方法 A: 强制刷新（推荐）</h4>
+      <div class="code">
+Mac: Cmd + Shift + R
+Windows/Linux: Ctrl + Shift + R
+      </div>
+      
+      <h4>方法 B: 开发者工具清除</h4>
+      <ol>
+        <li>按 F12 打开开发者工具</li>
+        <li>右键点击刷新按钮</li>
+        <li>选择"清空缓存并硬性重新加载"</li>
+      </ol>
+      
+      <h4>方法 C: 清除站点数据</h4>
+      <ol>
+        <li>按 F12 打开开发者工具</li>
+        <li>切换到 "Application" 标签</li>
+        <li>点击左侧 "Storage" → "Clear site data"</li>
+        <li>点击 "Clear site data" 按钮</li>
+      </ol>
+      
+      <button class="button" onclick="clearCacheAndReload()">🗑️ 清除缓存并重新加载</button>
+    </div>
+
+    <div class="step">
+      <h3>步骤 3: 使用隐身模式测试</h3>
+      <p>隐身模式不会使用缓存，可以验证代码是否正确</p>
+      <div class="code">
+Mac: Cmd + Shift + N (Chrome) / Cmd + Shift + P (Firefox)
+Windows: Ctrl + Shift + N (Chrome) / Ctrl + Shift + P (Firefox)
+      </div>
+      <button class="button" onclick="openIncognito()">🕵️ 打开隐身窗口</button>
+    </div>
+
+    <div class="step">
+      <h3>步骤 4: 验证修复</h3>
+      <p>清除缓存后，访问主应用并检查控制台</p>
+      <button class="button" onclick="openMainApp()">🚀 打开主应用</button>
+      <button class="button" onclick="showExpectedLogs()">📋 查看预期日志</button>
+      <div id="expected-logs" class="result"></div>
+    </div>
+
+    <div class="step">
+      <h3>步骤 5: 手动测试</h3>
+      <p>在主应用的控制台中运行以下命令测试功能</p>
+      <div class="code" id="test-commands">
+// 1. 检查函数是否存在
+console.log('函数存在:', typeof window.dropSpecialBall);
+
+// 2. 检查函数版本（应该包含 [Integrated] 标记）
+console.log(window.dropSpecialBall.toString().substring(0, 300));
+
+// 3. 手动调用测试
+window.dropSpecialBall('cheer');  // 掉落彩虹糖
+window.dropSpecialBall('clap');   // 掉落金币
+window.dropSpecialBall('drum');   // 掉落星星
+      </div>
+      <button class="button" onclick="copyTestCommands()">📋 复制测试命令</button>
+    </div>
+
+    <div class="step">
+      <h3>🎯 成功标志</h3>
+      <p>当一切正常时，你应该看到：</p>
+      <ul>
+        <li>✅ 控制台显示: <code>✅ [Integrated] dropSpecialBall函数已暴露到全局</code></li>
+        <li>✅ 点击庆祝按钮后罐子里掉落彩色球体</li>
+        <li>✅ 球体从顶部掉落并弹跳</li>
+        <li>✅ 手机有震动反馈</li>
+        <li>✅ 5秒后球体自动消失</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function checkStatus() {
+      const result = document.getElementById('status-result');
+      result.style.display = 'block';
+      
+      // 检查是否在主应用页面
+      if (window.location.pathname.includes('diagnose-cache-issue.html')) {
+        result.className = 'result warning';
+        result.innerHTML = `
+          <strong>⚠️ 警告</strong><br>
+          你当前在诊断页面，需要在主应用页面（index.html）中检查。<br>
+          <button class="button" onclick="openMainApp()" style="margin-top: 10px;">打开主应用</button>
+        `;
+        return;
+      }
+      
+      // 检查 dropSpecialBall 函数
+      if (typeof window.dropSpecialBall === 'undefined') {
+        result.className = 'result error';
+        result.innerHTML = `
+          <strong>❌ 函数未找到</strong><br>
+          window.dropSpecialBall 函数不存在。<br>
+          可能原因：<br>
+          1. 未进入"今日进度"页面<br>
+          2. 组件未正确加载<br>
+          3. JavaScript 错误阻止了执行
+        `;
+        return;
+      }
+      
+      // 检查函数版本
+      const funcStr = window.dropSpecialBall.toString();
+      const hasIntegratedMarker = funcStr.includes('[Integrated]');
+      
+      if (hasIntegratedMarker) {
+        result.className = 'result';
+        result.innerHTML = `
+          <strong>✅ 状态正常</strong><br>
+          你的浏览器正在使用最新版本的代码！<br>
+          函数包含 <code>[Integrated]</code> 标记。<br>
+          <br>
+          如果功能仍然不工作，请检查：<br>
+          1. 是否在"今日进度"页面<br>
+          2. 控制台是否有其他错误<br>
+          3. 点击按钮后的日志输出
+        `;
+      } else {
+        result.className = 'result error';
+        result.innerHTML = `
+          <strong>❌ 使用了缓存的旧代码</strong><br>
+          函数不包含 <code>[Integrated]</code> 标记。<br>
+          <br>
+          <strong>解决方案：</strong><br>
+          1. 使用 Cmd+Shift+R (Mac) 或 Ctrl+Shift+R (Windows) 强制刷新<br>
+          2. 或点击下面的按钮清除缓存<br>
+          <button class="button" onclick="clearCacheAndReload()" style="margin-top: 10px;">清除缓存并重新加载</button>
+        `;
+      }
+    }
+    
+    function clearCacheAndReload() {
+      if (confirm('这将清除当前站点的所有缓存数据并重新加载页面。是否继续？')) {
+        // 清除缓存
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+        
+        // 重新加载页面（禁用缓存）
+        window.location.reload(true);
+      }
+    }
+    
+    function openIncognito() {
+      alert('请手动打开隐身窗口：\n\nChrome: Cmd+Shift+N (Mac) 或 Ctrl+Shift+N (Windows)\nFirefox: Cmd+Shift+P (Mac) 或 Ctrl+Shift+P (Windows)\n\n然后访问: ' + window.location.origin);
+    }
+    
+    function openMainApp() {
+      window.open('http://localhost:8000', '_blank');
+    }
+    
+    function showExpectedLogs() {
+      const result = document.getElementById('expected-logs');
+      result.style.display = 'block';
+      result.className = 'result';
+      result.innerHTML = `
+        <strong>📋 预期的控制台日志</strong><br>
+        <br>
+        <strong>1. 进入"今日进度"页面时：</strong>
+        <div class="code" style="margin-top: 10px;">
+✅ [Integrated] dropSpecialBall函数已暴露到全局
+        </div>
+        
+        <strong>2. 点击"🍬 喝彩"按钮时：</strong>
+        <div class="code" style="margin-top: 10px;">
+🍬 喝彩按钮被点击
+✅ 调用window.dropSpecialBall(cheer)
+🎯 [Integrated] dropSpecialBall被调用: cheer
+🎉 [Integrated] 创建特殊球体 - 彩虹糖: {...}
+📊 [Integrated] 当前特殊球体数量: 1
+📳 触觉反馈已触发
+        </div>
+        
+        <strong>⚠️ 注意 <code>[Integrated]</code> 标记！</strong><br>
+        如果你的日志中没有这个标记，说明使用了缓存的旧代码。
+      `;
+    }
+    
+    function copyTestCommands() {
+      const commands = document.getElementById('test-commands').textContent;
+      navigator.clipboard.writeText(commands).then(() => {
+        alert('✅ 测试命令已复制到剪贴板！\n\n请在主应用的控制台中粘贴并运行。');
+      }).catch(() => {
+        alert('❌ 复制失败，请手动复制代码块中的内容。');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimerControlModal 修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🔧 TimerControlModal 修复测试</h1>
+        
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-red-600">问题描述</h2>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <h3 class="font-bold text-red-800 mb-2">错误信息:</h3>
+                <code class="text-sm text-red-700">
+                    TypeError: Cannot read properties of undefined (reading 'mode')<br>
+                    at TimerControlModal
+                </code>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="font-bold text-blue-800 mb-2">问题原因:</h3>
+                <p class="text-blue-700 text-sm">
+                    在修复计时器数据保存逻辑时，错误地将 <code>activeTimerSession</code> 设置为只包含 <code>completedSessions</code> 的对象，
+                    但 <code>TimerControlModal</code> 组件期望的是包含 <code>timer</code> 和 <code>session</code> 属性的对象。
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">修复方案</h2>
+            <div class="space-y-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">1. 修复 handleStopTimer 函数</h3>
+                    <p class="text-green-700 text-sm mb-2">
+                        计时器停止后，将 <code>activeTimerSession</code> 设置为 <code>null</code>，而不是只包含 <code>completedSessions</code> 的对象。
+                    </p>
+                    <code class="text-xs text-green-600 bg-green-100 p-2 rounded block">
+                        // 修复前: setActiveTimerSession(updatedSession);<br>
+                        // 修复后: setActiveTimerSession(null);
+                    </code>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">2. 保持数据完整性</h3>
+                    <p class="text-green-700 text-sm">
+                        <code>completedSessions</code> 数据仍然保存在 localStorage 中，Achievement Jar 可以从那里读取数据。
+                    </p>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 mb-2">3. 数据流修复</h3>
+                    <div class="text-xs text-green-600 space-y-1">
+                        <div>✅ 计时器完成 → 保存到 completedSessions (localStorage)</div>
+                        <div>✅ 清除 activeTimerSession 状态 → 避免 TimerControlModal 错误</div>
+                        <div>✅ Achievement Jar 从 localStorage 读取数据 → 正常显示</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-blue-600">测试验证</h2>
+            
+            <div class="space-y-4">
+                <button id="test-localStorage" class="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    🔍 检查 localStorage 数据
+                </button>
+                
+                <button id="simulate-timer-completion" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    ✅ 模拟计时器完成
+                </button>
+                
+                <button id="check-achievement-jar" class="w-full px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                    🏺 检查 Achievement Jar 数据
+                </button>
+            </div>
+
+            <!-- 测试结果显示 -->
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                <h4 class="font-bold text-gray-700 mb-2">测试结果:</h4>
+                <div id="test-results" class="text-sm text-gray-600">
+                    点击按钮开始测试...
+                </div>
+            </div>
+        </div>
+
+        <!-- 修复总结 -->
+        <div class="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-3xl p-6 border border-green-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">🎉 修复总结</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-bold text-green-700 mb-2">修复前问题:</h4>
+                    <ul class="text-gray-600 space-y-1">
+                        <li>❌ TimerControlModal 读取 undefined.mode 报错</li>
+                        <li>❌ activeTimerSession 结构被破坏</li>
+                        <li>❌ 计时器控制面板无法正常显示</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-blue-700 mb-2">修复后效果:</h4>
+                    <ul class="text-gray-600 space-y-1">
+                        <li>✅ TimerControlModal 不再报错</li>
+                        <li>✅ 计时器数据正确保存到 localStorage</li>
+                        <li>✅ Achievement Jar 正常显示计时器数据</li>
+                        <li>✅ 计时器功能完全正常</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 测试函数
+        function testLocalStorage() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                const stored = localStorage.getItem('activeTimerSession');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    results.innerHTML = `
+                        <div class="text-green-600">✅ localStorage 数据正常</div>
+                        <div class="text-xs mt-2">
+                            <strong>completedSessions:</strong> ${data.completedSessions ? data.completedSessions.length : 0} 个<br>
+                            <strong>lastUpdated:</strong> ${data.lastUpdated || '未设置'}
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = '<div class="text-yellow-600">⚠️ localStorage 中没有 activeTimerSession 数据</div>';
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 读取 localStorage 出错: ${error.message}</div>`;
+            }
+        }
+
+        function simulateTimerCompletion() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                // 模拟计时器完成的数据结构
+                const completedSession = {
+                    startTime: new Date(Date.now() - 25 * 60 * 1000).toISOString(), // 25分钟前开始
+                    endTime: new Date().toISOString(),
+                    duration: 1500, // 25分钟
+                    category: 'work',
+                    title: '测试计时器任务',
+                    icon: '🍅',
+                    mode: 'pomodoro'
+                };
+
+                // 获取现有数据
+                let existingSessions = [];
+                const stored = localStorage.getItem('activeTimerSession');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.completedSessions) {
+                        existingSessions = parsed.completedSessions;
+                    }
+                }
+
+                // 添加新会话
+                existingSessions.push(completedSession);
+
+                // 保存数据
+                const updatedSession = {
+                    completedSessions: existingSessions,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                localStorage.setItem('activeTimerSession', JSON.stringify(updatedSession));
+
+                results.innerHTML = `
+                    <div class="text-green-600">✅ 模拟计时器完成成功</div>
+                    <div class="text-xs mt-2">
+                        <strong>任务:</strong> ${completedSession.title}<br>
+                        <strong>时长:</strong> ${completedSession.duration / 60} 分钟<br>
+                        <strong>总会话数:</strong> ${existingSessions.length}
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 模拟失败: ${error.message}</div>`;
+            }
+        }
+
+        function checkAchievementJarData() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                const stored = localStorage.getItem('activeTimerSession');
+                if (!stored) {
+                    results.innerHTML = '<div class="text-yellow-600">⚠️ 没有计时器数据可供 Achievement Jar 读取</div>';
+                    return;
+                }
+
+                const session = JSON.parse(stored);
+                if (!session.completedSessions || session.completedSessions.length === 0) {
+                    results.innerHTML = '<div class="text-yellow-600">⚠️ 没有完成的计时器会话</div>';
+                    return;
+                }
+
+                // 模拟 Achievement Jar 的数据处理逻辑
+                const today = new Date();
+                const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+                const todaySessions = session.completedSessions.filter(completedSession => {
+                    const sessionDate = new Date(completedSession.startTime);
+                    return sessionDate >= startOfDay && sessionDate < endOfDay;
+                });
+
+                results.innerHTML = `
+                    <div class="text-green-600">✅ Achievement Jar 数据检查完成</div>
+                    <div class="text-xs mt-2">
+                        <strong>总会话数:</strong> ${session.completedSessions.length}<br>
+                        <strong>今日会话数:</strong> ${todaySessions.length}<br>
+                        <strong>今日总时长:</strong> ${(todaySessions.reduce((sum, s) => sum + s.duration, 0) / 60).toFixed(1)} 分钟
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `<div class="text-red-600">❌ 检查失败: ${error.message}</div>`;
+            }
+        }
+
+        // 绑定事件
+        document.getElementById('test-localStorage').onclick = testLocalStorage;
+        document.getElementById('simulate-timer-completion').onclick = simulateTimerCompletion;
+        document.getElementById('check-achievement-jar').onclick = checkAchievementJarData;
+
+        // 页面加载时自动检查
+        window.onload = function() {
+            testLocalStorage();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>滚动修复验证</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* 确保页面可以滚动 */
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 模拟主应用的计时器页面结构 */
+        .timer-page-container {
+            display: flex;
+            gap: 12px;
+            margin-right: 16px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .category-sidebar {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            width: 82px;
+            gap: 16px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .category-list-scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+            min-height: 0;
+            padding-bottom: 80px;
+        }
+        
+        .timer-list-container {
+            flex: 1;
+            border-radius: 36px;
+            overflow-y: auto;
+            padding: 24px 18px 18px 18px;
+            background: white;
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12);
+        }
+        
+        ::-webkit-scrollbar { 
+            width: 0px; 
+            background: transparent; 
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen font-sans text-slate-800 pb-safe">
+        <main class="pt-6 px-5 max-w-md mx-auto">
+            <h1 class="text-2xl font-bold mb-6 text-center">滚动修复验证</h1>
+            
+            <!-- 模拟计时器页面 -->
+            <div class="timer-page-container">
+                <!-- 左侧分类列表 -->
+                <div class="category-sidebar">
+                    <div class="flex gap-2 flex-shrink-0">
+                        <div class="w-11 h-11 bg-blue-100 rounded-2xl flex items-center justify-center">
+                            <span class="text-xs">+</span>
+                        </div>
+                        <div class="w-11 h-11 bg-green-100 rounded-2xl flex items-center justify-center">
+                            <span class="text-xs">⚙️</span>
+                        </div>
+                    </div>
+                    
+                    <div class="category-list-scroll">
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#F5F5F5] to-[#E5E5E5] p-3 text-xs">
+                                待分类
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#FFB5D8] to-[#FFC9E0] p-3 text-xs">
+                                工作
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#B5F5D8] to-[#C9F5E0] p-3 text-xs">
+                                学习
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#D8B5F5] to-[#E0C9F5] p-3 text-xs">
+                                休息
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#F5D8B5] to-[#F5E0C9] p-3 text-xs">
+                                睡眠
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#B5D8F5] to-[#C9E0F5] p-3 text-xs">
+                                生活
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#F5B5D8] to-[#F5C9E0] p-3 text-xs">
+                                健康
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#D8F5B5] to-[#E0F5C9] p-3 text-xs">
+                                兴趣
+                            </button>
+                            <button class="category-button rounded-[20px] bg-gradient-to-br from-[#F5F5B5] to-[#F5F5C9] p-3 text-xs">
+                                娱乐
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧计时器列表 -->
+                <div class="timer-list-container">
+                    <div class="flex items-center mb-6 pb-4 border-b-2 border-white/60">
+                        <div class="rounded-[16px] bg-gradient-to-br from-[#FFB5D8] to-[#FFC9E0] shadow-lg w-12 h-12 flex items-center justify-center mr-3">
+                            <span class="text-white font-bold">💼</span>
+                        </div>
+                        <h2 class="text-xl font-black text-rose-900">工作</h2>
+                    </div>
+                    
+                    <!-- 计时器列表 -->
+                    <div class="space-y-4">
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <span>⏱️</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">项目开发</h3>
+                                        <p class="text-sm text-gray-500">正计时</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <span>⏰</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">会议准备</h3>
+                                        <p class="text-sm text-gray-500">倒计时 30分钟</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                        <span>🍅</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">专注工作</h3>
+                                        <p class="text-sm text-gray-500">番茄钟 25分钟</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 添加更多计时器来测试滚动 -->
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <span>📝</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">文档编写</h3>
+                                        <p class="text-sm text-gray-500">正计时</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <span>💻</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">代码审查</h3>
+                                        <p class="text-sm text-gray-500">倒计时 45分钟</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-card bg-white rounded-[24px] p-4 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                                        <span>🔧</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold">Bug修复</h3>
+                                        <p class="text-sm text-gray-500">正计时</p>
+                                    </div>
+                                </div>
+                                <button class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span>▶️</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 创建新计时器按钮 -->
+                    <button class="w-full mt-6 bg-gradient-to-br from-[#FFB5D8] to-[#FFC9E0] text-white rounded-[20px] py-4 font-bold shadow-lg">
+                        + 创建新计时器
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 添加额外内容测试页面滚动 -->
+            <div class="mt-8 space-y-4 pb-48">
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm">
+                    <h3 class="font-bold mb-3">测试内容 1</h3>
+                    <p>这是额外的测试内容，用来验证整个页面的滚动功能。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm">
+                    <h3 class="font-bold mb-3">测试内容 2</h3>
+                    <p>继续添加内容来测试滚动。页面应该可以平滑滚动。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm">
+                    <h3 class="font-bold mb-3">测试内容 3</h3>
+                    <p>更多测试内容。确保所有内容都可以通过滚动访问。</p>
+                </div>
+                
+                <div class="bg-green-100 p-6 rounded-[2rem] shadow-sm">
+                    <h3 class="font-bold mb-3 text-green-800">✅ 滚动测试完成</h3>
+                    <p class="text-green-700">如果你能看到这个绿色区域，说明滚动功能正常！</p>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 底部导航栏 -->
+        <nav class="fixed bottom-5 left-4 right-4 max-w-md mx-auto z-[100]" style="height: 72px;">
+            <div class="bg-white/95 backdrop-blur-xl rounded-[36px] h-full shadow-2xl flex justify-between items-center px-6 border border-white/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-xs">⏱️</span>
+                    </div>
+                    <span class="text-xs font-bold text-blue-600">计时器</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-xs">📖</span>
+                    </div>
+                    <span class="text-xs text-slate-300">日记</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span class="text-xs">📊</span>
+                    </div>
+                    <span class="text-xs text-slate-300">复盘</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <span class="text-xs">📋</span>
+                    </div>
+                    <span class="text-xs text-slate-300">计划</span>
+                </div>
+            </div>
+        </nav>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 滚动修复验证页面加载完成');
+            
+            // 检查滚动功能
+            const pageHeight = document.body.scrollHeight;
+            const windowHeight = window.innerHeight;
+            console.log('页面总高度:', pageHeight);
+            console.log('窗口高度:', windowHeight);
+            console.log('需要滚动:', pageHeight > windowHeight);
+            
+            // 测试滚动
+            setTimeout(() => {
+                console.log('🔄 测试滚动到底部');
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+                
+                setTimeout(() => {
+                    console.log('当前滚动位置:', window.scrollY);
+                    console.log('✅ 滚动测试完成');
+                }, 2000);
+            }, 1000);
+        });
+        
+        // 监听滚动事件
+        window.addEventListener('scroll', function() {
+            console.log('滚动位置:', window.scrollY);
+        });
+    </script>
+</body>
+</html>

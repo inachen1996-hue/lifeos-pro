@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玻璃罐子对比度优化测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f8ff 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* 浮动动画 */
+        @keyframes gentle-float {
+            0%, 100% { 
+                transform: translateY(0px); 
+            }
+            50% { 
+                transform: translateY(-8px); 
+            }
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .comparison-item {
+            text-align: center;
+        }
+
+        .comparison-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+        }
+
+        .old-style .comparison-title {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .new-style .comparison-title {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        @media (max-width: 768px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 模拟数据
+        const mockData = [
+            { id: 1, category: 'work', title: '工作任务', duration: 7200, color: '#3B82F6' },
+            { id: 2, category: 'study', title: '学习时间', duration: 5400, color: '#10B981' },
+            { id: 3, category: 'exercise', title: '运动健身', duration: 3600, color: '#EC4899' },
+            { id: 4, category: 'reading', title: '阅读时光', duration: 4800, color: '#8B5CF6' },
+            { id: 5, category: 'hobby', title: '兴趣爱好', duration: 2700, color: '#F59E0B' }
+        ];
+
+        const categoryMap = {
+            work: { name: '工作', color: '#3B82F6' },
+            study: { name: '学习', color: '#10B981' },
+            exercise: { name: '运动', color: '#EC4899' },
+            reading: { name: '阅读', color: '#8B5CF6' },
+            hobby: { name: '爱好', color: '#F59E0B' }
+        };
+
+        // 旧版本玻璃罐子（对比度低）
+        const OldGlassJar = ({ data, categoryMap }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color,
+                        size,
+                        x: 50 + (index % 5) * 50 + Math.random() * 20,
+                        y: 50 + Math.floor(index / 5) * 50 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <div className="relative mx-auto" style={{ width: '320px', height: '380px' }}>
+                        {/* 旧版瓶颈 - 对比度低 */}
+                        <div 
+                            className="absolute top-0 left-1/2 transform -translate-x-1/2"
+                            style={{
+                                width: '35%',
+                                height: '20%',
+                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(248, 250, 252, 0.4) 50%, rgba(241, 245, 249, 0.3) 100%)',
+                                borderRadius: '12px 12px 8px 8px',
+                                border: '2px solid rgba(255, 255, 255, 0.5)',
+                                backdropFilter: 'blur(16px) saturate(180%)',
+                                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                                boxShadow: `
+                                    0 8px 24px rgba(148, 163, 184, 0.1),
+                                    inset 0 2px 8px rgba(255, 255, 255, 0.7),
+                                    inset 0 -1px 4px rgba(148, 163, 184, 0.05)
+                                `,
+                                zIndex: 2
+                            }}
+                        />
+
+                        {/* 旧版主罐体 - 对比度低 */}
+                        <div 
+                            className="absolute"
+                            style={{
+                                top: '15%',
+                                left: '0',
+                                right: '0',
+                                bottom: '0',
+                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 252, 0.3) 50%, rgba(241, 245, 249, 0.2) 100%)',
+                                borderRadius: '50% 50% 40px 40px',
+                                border: '2px solid rgba(255, 255, 255, 0.4)',
+                                backdropFilter: 'blur(20px) saturate(200%)',
+                                WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+                                boxShadow: `
+                                    0 16px 48px rgba(148, 163, 184, 0.15),
+                                    0 8px 24px rgba(203, 213, 225, 0.1),
+                                    inset 0 4px 20px rgba(255, 255, 255, 0.6),
+                                    inset 0 -4px 20px rgba(148, 163, 184, 0.05)
+                                `,
+                                overflow: 'hidden'
+                            }}
+                        />
+
+                        {/* 粘土球容器 */}
+                        <div 
+                            className="absolute overflow-hidden"
+                            style={{
+                                top: '25%',
+                                left: '8px',
+                                right: '8px',
+                                bottom: '8px',
+                                borderRadius: '45% 45% 32px 32px'
+                            }}
+                        >
+                            {clayBalls.map((ball) => (
+                                <div
+                                    key={ball.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${Math.min(Math.max(ball.x - 50, 10), 250)}px`,
+                                        top: `${Math.min(Math.max(ball.y - 50, 10), 200)}px`,
+                                        width: `${ball.size}px`,
+                                        height: `${ball.size}px`,
+                                        background: `radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, ${ball.color} 50%, ${ball.color}CC 100%)`,
+                                        boxShadow: `
+                                            0 6px 20px rgba(0,0,0,0.15),
+                                            inset 0 3px 6px rgba(255,255,255,0.6),
+                                            inset 0 -2px 4px rgba(0,0,0,0.1)
+                                        `
+                                    }}
+                                    title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 新版本玻璃罐子（对比度优化）
+        const NewGlassJar = ({ data, categoryMap }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color,
+                        size,
+                        x: 50 + (index % 5) * 50 + Math.random() * 20,
+                        y: 50 + Math.floor(index / 5) * 50 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="rounded-2xl shadow-lg border border-slate-200 p-6" style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
+                }}>
+                    <div className="relative mx-auto" style={{ width: '320px', height: '380px' }}>
+                        {/* 新版瓶颈 - 对比度增强 */}
+                        <div 
+                            className="absolute top-0 left-1/2 transform -translate-x-1/2"
+                            style={{
+                                width: '35%',
+                                height: '20%',
+                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(240, 249, 255, 0.6) 50%, rgba(219, 234, 254, 0.45) 100%)',
+                                borderRadius: '12px 12px 8px 8px',
+                                border: '2px solid rgba(59, 130, 246, 0.2)',
+                                backdropFilter: 'blur(16px) saturate(180%)',
+                                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                                boxShadow: `
+                                    0 12px 32px rgba(59, 130, 246, 0.15),
+                                    0 4px 16px rgba(148, 163, 184, 0.1),
+                                    inset 0 2px 8px rgba(255, 255, 255, 0.8),
+                                    inset 0 -1px 4px rgba(59, 130, 246, 0.1)
+                                `,
+                                zIndex: 2
+                            }}
+                        />
+
+                        {/* 新版主罐体 - 对比度增强 */}
+                        <div 
+                            className="absolute"
+                            style={{
+                                top: '15%',
+                                left: '0',
+                                right: '0',
+                                bottom: '0',
+                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(240, 249, 255, 0.5) 30%, rgba(219, 234, 254, 0.35) 70%, rgba(191, 219, 254, 0.25) 100%)',
+                                borderRadius: '50% 50% 40px 40px',
+                                border: '3px solid rgba(59, 130, 246, 0.25)',
+                                backdropFilter: 'blur(24px) saturate(200%)',
+                                WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+                                boxShadow: `
+                                    0 20px 60px rgba(59, 130, 246, 0.2),
+                                    0 12px 32px rgba(148, 163, 184, 0.15),
+                                    0 4px 16px rgba(203, 213, 225, 0.1),
+                                    inset 0 4px 24px rgba(255, 255, 255, 0.7),
+                                    inset 0 -4px 24px rgba(59, 130, 246, 0.08)
+                                `,
+                                overflow: 'hidden'
+                            }}
+                        />
+
+                        {/* 增强的高光效果 */}
+                        <div className="absolute inset-0 pointer-events-none">
+                            {/* 瓶颈主要反光 - 增强 */}
+                            <div 
+                                className="absolute left-1/2 transform -translate-x-1/2 opacity-80"
+                                style={{
+                                    top: '2%',
+                                    width: '20%',
+                                    height: '15%',
+                                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.7) 50%, rgba(219, 234, 254, 0.3) 80%, transparent 100%)',
+                                    borderRadius: '50%',
+                                    filter: 'blur(6px)'
+                                }}
+                            />
+
+                            {/* 罐体左侧主要反光 - 增强 */}
+                            <div 
+                                className="absolute left-4 opacity-70"
+                                style={{
+                                    top: '25%',
+                                    width: '15%',
+                                    height: '45%',
+                                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.6) 40%, rgba(219, 234, 254, 0.3) 70%, transparent 100%)',
+                                    borderRadius: '50%',
+                                    filter: 'blur(12px)'
+                                }}
+                            />
+
+                            {/* 边缘光晕效果 */}
+                            <div 
+                                className="absolute inset-0 opacity-60"
+                                style={{
+                                    background: 'linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.1) 20%, transparent 40%, rgba(59, 130, 246, 0.05) 60%, transparent 80%)',
+                                    borderRadius: '50% 50% 40px 40px',
+                                    filter: 'blur(2px)'
+                                }}
+                            />
+                        </div>
+
+                        {/* 粘土球容器 */}
+                        <div 
+                            className="absolute overflow-hidden"
+                            style={{
+                                top: '25%',
+                                left: '8px',
+                                right: '8px',
+                                bottom: '8px',
+                                borderRadius: '45% 45% 32px 32px'
+                            }}
+                        >
+                            {clayBalls.map((ball) => (
+                                <div
+                                    key={ball.id}
+                                    className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                    style={{
+                                        left: `${Math.min(Math.max(ball.x - 50, 10), 250)}px`,
+                                        top: `${Math.min(Math.max(ball.y - 50, 10), 200)}px`,
+                                        width: `${ball.size}px`,
+                                        height: `${ball.size}px`,
+                                        background: `radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, ${ball.color} 50%, ${ball.color}CC 100%)`,
+                                        boxShadow: `
+                                            0 6px 20px rgba(0,0,0,0.15),
+                                            inset 0 3px 6px rgba(255,255,255,0.6),
+                                            inset 0 -2px 4px rgba(0,0,0,0.1)
+                                        `
+                                    }}
+                                    title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用组件
+        const App = () => {
+            return (
+                <div>
+                    <div className="text-center py-8">
+                        <h1 className="text-3xl font-bold mb-4 text-gray-800">
+                            玻璃罐子对比度优化测试
+                        </h1>
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                            解决瓶身和背景板颜色太相近的问题，通过调整颜色方案和视觉效果，增强对比度和层次感
+                        </p>
+                    </div>
+
+                    <div className="comparison-container">
+                        <div className="comparison-item old-style">
+                            <div className="comparison-title">
+                                ❌ 修改前：对比度不足
+                            </div>
+                            <OldGlassJar data={mockData} categoryMap={categoryMap} />
+                            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <h3 className="font-semibold text-red-800 mb-2">问题：</h3>
+                                <ul className="text-sm text-red-700 space-y-1">
+                                    <li>• 瓶身与白色背景对比度低</li>
+                                    <li>• 玻璃效果不够明显</li>
+                                    <li>• 边框和阴影过于微弱</li>
+                                    <li>• 整体缺乏立体感</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="comparison-item new-style">
+                            <div className="comparison-title">
+                                ✅ 修改后：对比度优化
+                            </div>
+                            <NewGlassJar data={mockData} categoryMap={categoryMap} />
+                            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h3 className="font-semibold text-green-800 mb-2">改进：</h3>
+                                <ul className="text-sm text-green-700 space-y-1">
+                                    <li>• 背景色调整为渐变灰色</li>
+                                    <li>• 增加蓝色调玻璃质感</li>
+                                    <li>• 加强边框和阴影效果</li>
+                                    <li>• 增强高光反射层次</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto p-8">
+                        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
+                            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                                优化详情
+                            </h2>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="font-semibold text-gray-700 mb-3">🎨 颜色方案调整</h3>
+                                    <ul className="text-sm text-gray-600 space-y-2">
+                                        <li>• <strong>背景</strong>：从纯白改为渐变灰色 (#f8fafc → #e2e8f0)</li>
+                                        <li>• <strong>玻璃</strong>：增加蓝色调 (rgba(219, 234, 254))</li>
+                                        <li>• <strong>边框</strong>：从白色改为蓝色调 (rgba(59, 130, 246, 0.25))</li>
+                                        <li>• <strong>阴影</strong>：增加蓝色调阴影增强立体感</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-700 mb-3">✨ 视觉效果增强</h3>
+                                    <ul className="text-sm text-gray-600 space-y-2">
+                                        <li>• <strong>高光</strong>：增强反光效果，提高透明度</li>
+                                        <li>• <strong>模糊</strong>：从 blur(20px) 升级到 blur(24px)</li>
+                                        <li>• <strong>边缘光晕</strong>：新增边缘光晕效果</li>
+                                        <li>• <strong>层次感</strong>：多重阴影营造深度</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

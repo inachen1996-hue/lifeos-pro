@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玻璃罐透明效果测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            padding: 20px;
+        }
+
+        /* 增强版玻璃效果 */
+        .glass-jar-enhanced {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 原版玻璃效果 */
+        .glass-jar-original {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.8) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+            border: 4px solid #bfdbfe;
+        }
+
+        /* 粘土球效果 */
+        .clay-ball {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball:hover {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        /* 反光效果 */
+        .glass-reflection {
+            background: linear-gradient(45deg, 
+                rgba(255,255,255,0.8) 0%, 
+                rgba(255,255,255,0.4) 50%, 
+                transparent 100%);
+            filter: blur(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+            🏺 玻璃罐透明效果对比测试
+        </h1>
+        
+        <!-- 效果对比 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- 增强版效果 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-xl font-bold mb-4 text-center text-green-600">✨ 增强版效果</h2>
+                <div class="glass-jar-enhanced relative mx-auto rounded-t-full rounded-b-lg"
+                     style="width: 300px; height: 200px;">
+                    
+                    <!-- 示例粘土球 -->
+                    <div class="clay-ball absolute rounded-full cursor-pointer"
+                         style="left: 50px; top: 50px; width: 30px; height: 30px; background-color: #ef4444;"></div>
+                    <div class="clay-ball absolute rounded-full cursor-pointer"
+                         style="left: 120px; top: 80px; width: 25px; height: 25px; background-color: #3b82f6;"></div>
+                    <div class="clay-ball absolute rounded-full cursor-pointer"
+                         style="left: 200px; top: 60px; width: 35px; height: 35px; background-color: #10b981;"></div>
+                    <div class="clay-ball absolute rounded-full cursor-pointer"
+                         style="left: 80px; top: 120px; width: 28px; height: 28px; background-color: #f59e0b;"></div>
+                    <div class="clay-ball absolute rounded-full cursor-pointer"
+                         style="left: 180px; top: 130px; width: 32px; height: 32px; background-color: #8b5cf6;"></div>
+                    
+                    <!-- 反光效果 -->
+                    <div class="glass-reflection absolute top-4 left-6 w-16 h-32 rounded-full opacity-40"
+                         style="transform: rotate(-15deg);"></div>
+                    <div class="absolute top-6 right-8 w-6 h-12 bg-gradient-to-b from-white to-transparent opacity-25 rounded-full"
+                         style="transform: rotate(25deg); filter: blur(0.5px);"></div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-600">
+                    <h3 class="font-bold mb-2">特色：</h3>
+                    <ul class="space-y-1">
+                        <li>• 多层渐变背景</li>
+                        <li>• 增强的模糊效果 (15px)</li>
+                        <li>• 饱和度增强 (180%)</li>
+                        <li>• 多重阴影效果</li>
+                        <li>• 更明显的反光</li>
+                        <li>• 3D 粘土球效果</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 原版效果 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-xl font-bold mb-4 text-center text-blue-600">📦 原版效果</h2>
+                <div class="glass-jar-original relative mx-auto rounded-t-full rounded-b-lg"
+                     style="width: 300px; height: 200px;">
+                    
+                    <!-- 示例粘土球 -->
+                    <div class="absolute rounded-full cursor-pointer"
+                         style="left: 50px; top: 50px; width: 30px; height: 30px; 
+                                background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%), #ef4444;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);"></div>
+                    <div class="absolute rounded-full cursor-pointer"
+                         style="left: 120px; top: 80px; width: 25px; height: 25px; 
+                                background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%), #3b82f6;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);"></div>
+                    <div class="absolute rounded-full cursor-pointer"
+                         style="left: 200px; top: 60px; width: 35px; height: 35px; 
+                                background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%), #10b981;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);"></div>
+                    <div class="absolute rounded-full cursor-pointer"
+                         style="left: 80px; top: 120px; width: 28px; height: 28px; 
+                                background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%), #f59e0b;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);"></div>
+                    <div class="absolute rounded-full cursor-pointer"
+                         style="left: 180px; top: 130px; width: 32px; height: 32px; 
+                                background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%), #8b5cf6;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);"></div>
+                    
+                    <!-- 反光效果 */
+                    <div class="absolute top-4 left-6 w-12 h-24 bg-gradient-to-r from-white to-transparent opacity-30 rounded-full"
+                         style="transform: rotate(-15deg);"></div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-600">
+                    <h3 class="font-bold mb-2">特色：</h3>
+                    <ul class="space-y-1">
+                        <li>• 简单渐变背景</li>
+                        <li>• 基础模糊效果 (10px)</li>
+                        <li>• 标准阴影</li>
+                        <li>• 蓝色边框</li>
+                        <li>• 基础反光</li>
+                        <li>• 内联样式粘土球</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 浏览器兼容性测试 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                🌐 浏览器兼容性检测
+            </h2>
+            <div id="compatibility-results" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 将通过 JavaScript 填充 -->
+            </div>
+        </div>
+
+        <!-- 效果说明 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                💡 透明效果技术说明
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">🔧 技术实现</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><strong>backdrop-filter:</strong> 背景模糊效果</li>
+                        <li><strong>-webkit-backdrop-filter:</strong> Safari 兼容性</li>
+                        <li><strong>saturate():</strong> 饱和度增强</li>
+                        <li><strong>多层渐变:</strong> 更真实的玻璃质感</li>
+                        <li><strong>多重阴影:</strong> 立体感和深度</li>
+                        <li><strong>inset 阴影:</strong> 内部光影效果</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">🎨 视觉效果</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><strong>透明度层次:</strong> 0.85-0.95 的渐变</li>
+                        <li><strong>颜色过渡:</strong> 白色到淡蓝色</li>
+                        <li><strong>反光模拟:</strong> 多个反光点</li>
+                        <li><strong>边框处理:</strong> 半透明白色边框</li>
+                        <li><strong>粘土球质感:</strong> 径向渐变 + 阴影</li>
+                        <li><strong>交互反馈:</strong> hover 时的缩放效果</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速访问 -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white text-center">
+            <h2 class="text-xl font-bold mb-4">🚀 测试主应用效果</h2>
+            <div class="flex gap-4 justify-center">
+                <a 
+                    href="http://localhost:8080/index.html" 
+                    target="_blank"
+                    class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                >
+                    📱 主应用
+                </a>
+                <button 
+                    onclick="window.location.reload()"
+                    class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                >
+                    🔄 刷新对比
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检测浏览器兼容性
+        function checkCompatibility() {
+            const results = document.getElementById('compatibility-results');
+            const tests = [
+                {
+                    name: 'backdrop-filter',
+                    test: () => CSS.supports('backdrop-filter', 'blur(10px)'),
+                    description: '背景模糊效果'
+                },
+                {
+                    name: '-webkit-backdrop-filter',
+                    test: () => CSS.supports('-webkit-backdrop-filter', 'blur(10px)'),
+                    description: 'Safari 兼容性'
+                },
+                {
+                    name: 'CSS.supports',
+                    test: () => typeof CSS !== 'undefined' && typeof CSS.supports === 'function',
+                    description: 'CSS 特性检测'
+                }
+            ];
+
+            results.innerHTML = tests.map(test => {
+                const supported = test.test();
+                return `
+                    <div class="p-4 rounded-xl border ${supported ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+                        <div class="font-bold ${supported ? 'text-green-800' : 'text-red-800'}">
+                            ${supported ? '✅' : '❌'} ${test.name}
+                        </div>
+                        <div class="text-sm ${supported ? 'text-green-600' : 'text-red-600'}">
+                            ${test.description}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 页面加载后检测兼容性
+        document.addEventListener('DOMContentLoaded', () => {
+            checkCompatibility();
+            
+            console.log('🏺 玻璃罐透明效果测试');
+            console.log('📱 主应用地址: http://localhost:8080/index.html');
+            console.log('🔧 已应用增强版玻璃效果');
+            console.log('✨ 对比原版和增强版效果');
+        });
+
+        // 添加粘土球点击效果
+        document.querySelectorAll('.clay-ball').forEach(ball => {
+            ball.addEventListener('click', () => {
+                ball.style.transform = 'scale(1.3) translateY(-4px)';
+                setTimeout(() => {
+                    ball.style.transform = '';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html>

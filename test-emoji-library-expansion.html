@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji图标库扩展测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-effect {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.8);
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+        .emoji-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .emoji-item:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .category-section {
+            margin-bottom: 32px;
+        }
+        .category-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { Palette, Smartphone, Search, Star } = lucide;
+
+        function EmojiLibraryTest() {
+            const [selectedEmoji, setSelectedEmoji] = useState('😊');
+            const [searchTerm, setSearchTerm] = useState('');
+
+            // 扩展后的emoji图标库 - 按分类组织
+            const emojiCategories = {
+                '😊 人物与表情': [
+                    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
+                    '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨',
+                    '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'
+                ],
+                '💼 工作与生产力': [
+                    '💻', '🖥️', '🖨️', '⌨️', '🖱️', '🖲️', '💽', '💾', '💿', '📀', '📱', '📞', '☎️', '📟', '📠', '📺',
+                    '📻', '🎙️', '🎚️', '🎛️', '📊', '📈', '📉', '📋', '📌', '📍', '📎', '🖇️', '📏', '📐', '✂️', '🗃️',
+                    '🗄️', '🗑️', '🔒', '🔓', '🔏', '🔐', '🔑', '🗝️', '🔨', '⛏️', '⚒️', '🛠️', '🗡️', '⚔️', '🔫', '🏹'
+                ],
+                '📚 学习与教育': [
+                    '📖', '📗', '📘', '📙', '📓', '📔', '📒', '📚', '📰', '🗞️', '📑', '🔖', '🏷️', '💰', '💴', '💵',
+                    '💶', '💷', '💸', '💳', '🧾', '💹', '✉️', '📧', '📨', '📩', '📤', '📥', '📦', '📫', '📪', '📬',
+                    '📭', '📮', '🗳️', '✏️', '✒️', '🖋️', '🖊️', '🖌️', '🖍️', '📝', '💼', '📁', '📂', '🗂️', '📅', '📆'
+                ],
+                '🏃‍♂️ 健康与运动': [
+                    '🏃‍♂️', '🏃‍♀️', '🚶‍♂️', '🚶‍♀️', '🧘‍♂️', '🧘‍♀️', '🏋️‍♂️', '🏋️‍♀️', '🤸‍♂️', '🤸‍♀️', '⛹️‍♂️', '⛹️‍♀️', '🤾‍♂️', '🤾‍♀️', '🏌️‍♂️', '🏌️‍♀️',
+                    '🏄‍♂️', '🏄‍♀️', '🚣‍♂️', '🚣‍♀️', '🏊‍♂️', '🏊‍♀️', '⛷️', '🏂', '🏇', '🚴‍♂️', '🚴‍♀️', '🤹‍♂️', '🤹‍♀️', '👟', '🥾', '🩰',
+                    '🥿', '👠', '👡', '👢', '👞', '👟', '🧤', '🧣', '🎩', '🧢', '👒', '🎓', '⛑️', '👑', '💍', '👝'
+                ],
+                '🍎 食物与饮品': [
+                    '🍎', '🍏', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥',
+                    '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠',
+                    '🥐', '🥖', '🍞', '🥨', '🥯', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🍖', '🌭',
+                    '🍔', '🍟', '🍕', '🥪', '🥙', '🧆', '🌮', '🌯', '🫔', '🥗', '🥘', '🫕', '🍝', '🍜', '🍲', '🍛'
+                ],
+                '🎮 娱乐与休闲': [
+                    '🎮', '🕹️', '🎰', '🎲', '🧩', '🃏', '🀄', '🎴', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶',
+                    '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎪', '🎫', '🎟️', '🎠', '🎡', '🎢', '🎳', '⚽', '🏀',
+                    '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃'
+                ],
+                '😴 休息与睡眠': [
+                    '😴', '💤', '🛏️', '🛋️', '🪑', '🚿', '🛁', '🧴', '🧽', '🧯', '🕯️', '💡', '🔦', '🏮', '🪔', '📱',
+                    '🌙', '🌛', '🌜', '🌚', '🌝', '🌞', '⭐', '🌟', '💫', '✨', '☄️', '🌠', '🌌', '☁️', '⛅', '⛈️',
+                    '🌤️', '🌦️', '🌧️', '⛆', '❄️', '☃️', '⛄', '🌨️', '💨', '💧', '💦', '🌊', '🌈', '🦋', '🌸', '🍃'
+                ],
+                '🚗 交通工具': [
+                    '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵',
+                    '🚲', '🛴', '🛹', '🛼', '🚁', '🛸', '✈️', '🛫', '🛬', '🪂', '💺', '🚀', '🛰️', '🚉', '🚊', '🚝',
+                    '🚞', '🚋', '🚃', '🚋', '🚂', '🚆', '🚄', '🚅', '🚈', '🚇', '🚟', '🚠', '🚡', '⛵', '🛶', '🚤'
+                ],
+                '⏰ 时间与工具': [
+                    '⏰', '⏲️', '⏱️', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕧',
+                    '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '⌚', '📱', '📲', '💻', '⌨️',
+                    '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '🗜️', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '📽️', '🎞️', '📞'
+                ],
+                '🌟 符号与标志': [
+                    '⭐', '🌟', '💫', '✨', '🔥', '💥', '💢', '💨', '💤', '💦', '💧', '🌊', '⚡', '🔔', '🔕', '🎵',
+                    '🎶', '💯', '💮', '💰', '💎', '🔮', '🧿', '📿', '🔯', '🕎', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️',
+                    '🔱', '🕊️', '🤲', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠'
+                ]
+            };
+
+            // 获取所有emoji的扁平数组
+            const allEmojis = Object.values(emojiCategories).flat();
+
+            // 过滤emoji
+            const filteredCategories = {};
+            Object.entries(emojiCategories).forEach(([category, emojis]) => {
+                const filtered = emojis.filter(emoji => 
+                    searchTerm === '' || emoji.includes(searchTerm)
+                );
+                if (filtered.length > 0) {
+                    filteredCategories[category] = filtered;
+                }
+            });
+
+            const handleEmojiSelect = (emoji) => {
+                setSelectedEmoji(emoji);
+                // 这里可以添加选择emoji的逻辑
+                console.log('选择了emoji:', emoji);
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto">
+                    <div className="glass-effect rounded-[2rem] shadow-2xl p-8 mb-8">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <Palette className="w-8 h-8 text-blue-600" />
+                                <h1 className="text-3xl font-black text-[#023E8A]">Emoji图标库扩展</h1>
+                                <Smartphone className="w-8 h-8 text-green-600" />
+                            </div>
+                            <p className="text-gray-600 text-lg">
+                                关联手机emoji库，提供丰富的图标选择
+                            </p>
+                        </div>
+
+                        {/* 搜索框 */}
+                        <div className="mb-8">
+                            <div className="relative max-w-md mx-auto">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="搜索emoji..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 统计信息 */}
+                        <div className="grid md:grid-cols-3 gap-4 mb-8">
+                            <div className="bg-blue-50 p-4 rounded-xl text-center">
+                                <div className="text-2xl font-bold text-blue-600">{allEmojis.length}</div>
+                                <div className="text-sm text-blue-700">总图标数量</div>
+                            </div>
+                            <div className="bg-green-50 p-4 rounded-xl text-center">
+                                <div className="text-2xl font-bold text-green-600">{Object.keys(emojiCategories).length}</div>
+                                <div className="text-sm text-green-700">分类数量</div>
+                            </div>
+                            <div className="bg-purple-50 p-4 rounded-xl text-center">
+                                <div className="text-2xl font-bold text-purple-600">{selectedEmoji}</div>
+                                <div className="text-sm text-purple-700">当前选择</div>
+                            </div>
+                        </div>
+
+                        {/* 当前选择显示 */}
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl mb-8 text-center">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">当前选择的图标</h3>
+                            <div className="text-6xl mb-3">{selectedEmoji}</div>
+                            <p className="text-gray-600">点击下方任意emoji来选择新图标</p>
+                        </div>
+
+                        {/* Emoji分类展示 */}
+                        <div className="space-y-8">
+                            {Object.entries(filteredCategories).map(([category, emojis]) => (
+                                <div key={category} className="category-section">
+                                    <div 
+                                        className="category-title text-gray-800"
+                                        style={{
+                                            background: `linear-gradient(135deg, 
+                                                ${category.includes('人物') ? '#fef3c7, #fde68a' :
+                                                  category.includes('工作') ? '#dbeafe, #bfdbfe' :
+                                                  category.includes('学习') ? '#d1fae5, #a7f3d0' :
+                                                  category.includes('健康') ? '#fce7f3, #fbcfe8' :
+                                                  category.includes('食物') ? '#fed7aa, #fdba74' :
+                                                  category.includes('娱乐') ? '#e0e7ff, #c7d2fe' :
+                                                  category.includes('休息') ? '#f3e8ff, #e9d5ff' :
+                                                  category.includes('交通') ? '#ecfdf5, #d1fae5' :
+                                                  category.includes('时间') ? '#fef2f2, #fecaca' :
+                                                  '#f1f5f9, #e2e8f0'})`
+                                        }}
+                                    >
+                                        {category} ({emojis.length})
+                                    </div>
+                                    <div className="emoji-grid">
+                                        {emojis.map((emoji, index) => (
+                                            <div
+                                                key={`${emoji}-${index}`}
+                                                className={`emoji-item ${selectedEmoji === emoji ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+                                                onClick={() => handleEmojiSelect(emoji)}
+                                                title={`选择 ${emoji}`}
+                                            >
+                                                {emoji}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 扩展说明 */}
+                        <div className="mt-12 grid md:grid-cols-2 gap-6">
+                            <div className="bg-green-50 p-6 rounded-2xl border border-green-200">
+                                <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                    <Star className="w-5 h-5" />
+                                    扩展亮点
+                                </h4>
+                                <ul className="space-y-2 text-sm text-green-700">
+                                    <li>• 从 {80} 个图标扩展到 {allEmojis.length} 个图标</li>
+                                    <li>• 按 {Object.keys(emojiCategories).length} 个主要分类组织</li>
+                                    <li>• 关联手机原生emoji库</li>
+                                    <li>• 支持搜索和筛选功能</li>
+                                    <li>• 响应式网格布局</li>
+                                    <li>• 优化的选择体验</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                                <h4 className="font-bold text-blue-800 mb-3">分类详情</h4>
+                                <div className="space-y-2 text-sm text-blue-700">
+                                    {Object.entries(emojiCategories).map(([category, emojis]) => (
+                                        <div key={category} className="flex justify-between">
+                                            <span>{category.split(' ')[1]}</span>
+                                            <span className="font-medium">{emojis.length} 个</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 使用说明 */}
+                        <div className="mt-8 p-6 bg-yellow-50 rounded-2xl border border-yellow-200">
+                            <h4 className="font-bold text-yellow-800 mb-3">使用说明</h4>
+                            <div className="grid md:grid-cols-2 gap-4 text-sm text-yellow-700">
+                                <div>
+                                    <p className="font-medium mb-2">桌面端：</p>
+                                    <ul className="space-y-1">
+                                        <li>• 鼠标点击选择emoji</li>
+                                        <li>• 悬停查看放大效果</li>
+                                        <li>• 使用搜索框快速查找</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p className="font-medium mb-2">移动端：</p>
+                                    <ul className="space-y-1">
+                                        <li>• 触摸选择emoji</li>
+                                        <li>• 滑动浏览不同分类</li>
+                                        <li>• 支持原生emoji键盘</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<EmojiLibraryTest />, document.getElementById('root'));
+    </script>
+</body>
+</html>

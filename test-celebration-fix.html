@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>庆祝功能修复验证</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .emoji {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🎉</span>庆祝功能修复验证</h1>
+        <p style="color: #6c757d; margin-bottom: 30px;">验证特殊球体掉落功能是否正常工作</p>
+
+        <div class="status info">
+            <strong>🔍 问题诊断</strong><br>
+            发现了两个独立的 <code>specialBalls</code> 状态：
+            <ul style="margin: 10px 0 0 20px;">
+                <li><code>ProgressTabContent</code> 组件中的状态（外层）</li>
+                <li><code>AchievementJarContainer</code> 组件中的状态（内层）</li>
+            </ul>
+            <code>dropSpecialBall</code> 函数修改的是外层状态，但渲染使用的是内层状态，导致球体不显示。
+        </div>
+
+        <div class="section">
+            <h2>🛠️ 修复方案</h2>
+            <p>将外层的 <code>specialBalls</code> 和 <code>setSpecialBalls</code> 作为 props 传递给 <code>AchievementJarContainer</code> 组件，让两个组件共享同一个状态。</p>
+            
+            <h3>修改 1: 传递 props</h3>
+            <div class="code">
+&lt;AchievementJarContainer 
+  data={achievementJarData}
+  categoryMap={categoryMap}
+  timeRange={progressScope}
+  <span style="color: #50fa7b;">specialBalls={specialBalls}</span>
+  <span style="color: #50fa7b;">setSpecialBalls={setSpecialBalls}</span>
+  onCelebrate={(type) => {
+    playSound(type);
+    generateDanmaku();
+  }}
+/&gt;
+            </div>
+
+            <h3>修改 2: 接收 props 并移除内部状态</h3>
+            <div class="code">
+const AchievementJarContainer = ({ 
+  data, 
+  categoryMap, 
+  timeRange, 
+  <span style="color: #50fa7b;">specialBalls,</span>
+  <span style="color: #50fa7b;">setSpecialBalls,</span>
+  onCelebrate 
+}) => {
+  const [clayBalls, setClayBalls] = useState([]);
+  <span style="color: #ff5555;">// 移除: const [specialBalls, setSpecialBalls] = useState([]);</span>
+  const jarRef = useRef(null);
+  // ...
+};
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✅ 验证步骤</h2>
+            <ol style="line-height: 2;">
+                <li>打开主应用 <code>index.html</code></li>
+                <li>进入 <span class="highlight">复盘</span> 页面</li>
+                <li>选择 <span class="highlight">今日进度</span> Tab</li>
+                <li>打开浏览器控制台（F12）</li>
+                <li>点击庆祝按钮（🍬 喝彩、🪙 鼓掌、⭐ 打鼓）</li>
+                <li>观察控制台日志和罐子中的特殊球体</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>📊 预期结果</h2>
+            <p><strong>控制台日志：</strong></p>
+            <div class="code">
+🍬 喝彩按钮被点击
+✅ 调用window.dropSpecialBall(cheer)
+🎯 [Integrated] dropSpecialBall被调用: cheer
+🎉 [Integrated] 创建特殊球体 - 彩虹糖: {...}
+📊 [Integrated] 当前特殊球体数量: 1
+📳 触觉反馈已触发
+            </div>
+
+            <p><strong>视觉效果：</strong></p>
+            <ul>
+                <li>✅ 罐子中出现彩色球体（🍬/🪙/⭐）</li>
+                <li>✅ 球体从顶部掉落并弹跳</li>
+                <li>✅ 球体有脉冲动画效果</li>
+                <li>✅ 点击球体可以移除</li>
+                <li>✅ 5秒后自动消失</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🎯 快速测试</h2>
+            <p>点击下方按钮打开主应用并自动跳转到复盘页面：</p>
+            <button class="button" onclick="openMainApp()">
+                🚀 打开主应用测试
+            </button>
+            <button class="button" onclick="showDebugCommands()">
+                🔧 显示调试命令
+            </button>
+        </div>
+
+        <div id="debug-commands" style="display: none;" class="section">
+            <h2>🔧 调试命令</h2>
+            <p>在主应用的控制台中运行以下命令：</p>
+            <div class="code" id="commands">
+// 1. 检查函数是否存在
+console.log('dropSpecialBall存在:', typeof window.dropSpecialBall === 'function');
+
+// 2. 手动触发掉落
+window.dropSpecialBall('cheer');  // 彩虹糖
+window.dropSpecialBall('clap');   // 金币
+window.dropSpecialBall('drum');   // 星星
+
+// 3. 检查特殊球体DOM元素
+console.log('特殊球体数量:', document.querySelectorAll('.special-ball').length);
+            </div>
+            <button class="button" onclick="copyCommands()">📋 复制命令</button>
+        </div>
+
+        <div class="status success" style="margin-top: 30px;">
+            <strong>✅ 修复完成</strong><br>
+            已将 <code>specialBalls</code> 状态从 <code>AchievementJarContainer</code> 组件中移除，改为通过 props 接收外层状态。
+            现在 <code>dropSpecialBall</code> 函数和渲染逻辑使用同一个状态，庆祝功能应该可以正常工作了！
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            // 打开主应用
+            const mainWindow = window.open('index.html', '_blank');
+            
+            // 等待页面加载后自动切换到复盘页面
+            setTimeout(() => {
+                alert('📝 请在新打开的页面中：\n\n1. 点击底部导航栏的"复盘"按钮\n2. 选择"今日进度" Tab\n3. 点击庆祝按钮测试\n4. 观察罐子中是否出现特殊球体');
+            }, 1000);
+        }
+
+        function showDebugCommands() {
+            const debugSection = document.getElementById('debug-commands');
+            debugSection.style.display = debugSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyCommands() {
+            const commands = document.getElementById('commands').textContent;
+            navigator.clipboard.writeText(commands).then(() => {
+                alert('✅ 调试命令已复制到剪贴板！\n\n请在主应用的控制台中粘贴运行。');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滚动修复 - 智能触摸事件</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .fix-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔧 滚动修复 - 智能触摸事件处理</h1>
+    
+    <div class="fix-section">
+        <h2>🎯 修复策略</h2>
+        <div class="status info">
+            <strong>核心思路：</strong><br>
+            • 使用 useRef 和 useEffect 手动管理事件监听器<br>
+            • 设置 { passive: false } 选项<br>
+            • 智能判断滑动方向，只在需要时阻止默认行为
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>📋 完整修复代码</h2>
+        <p>将以下代码应用到 index.html 的 TimerPage 组件中：</p>
+        
+        <div class="code-block">
+// 在 TimerPage 组件开头添加 useRef
+const timerCardsRef = useRef([]);
+
+// 修改触摸事件处理逻辑
+const [touchStart, setTouchStart] = useState(null);
+const [touchEnd, setTouchEnd] = useState(null);
+
+// 智能触摸事件处理函数
+const handleTouchStart = useCallback((e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now(),
+    timerId
+  });
+  setTouchEnd(null);
+}, []);
+
+const handleTouchMove = useCallback((e, timerId) => {
+  if (!touchStart || touchStart.timerId !== timerId) return;
+  
+  const touch = e.targetTouches[0];
+  const deltaX = Math.abs(touch.clientX - touchStart.x);
+  const deltaY = Math.abs(touch.clientY - touchStart.y);
+  
+  // 判断是否为水平滑动
+  const isHorizontalSwipe = deltaX > deltaY && deltaX > 10;
+  
+  // 只在水平滑动时阻止默认行为
+  if (isHorizontalSwipe && e.cancelable) {
+    e.preventDefault();
+  }
+  
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+}, [touchStart]);
+
+const handleTouchEnd = useCallback((timerId) => {
+  if (!touchStart || !touchEnd || touchStart.timerId !== timerId) return;
+  
+  const distance = touchStart.x - touchEnd.x;
+  const verticalDistance = Math.abs(touchStart.y - touchEnd.y);
+  const isLeftSwipe = distance > 50 && verticalDistance < 100;
+  
+  if (isLeftSwipe) {
+    setSwipedTimerId(timerId);
+  }
+  
+  setTouchStart(null);
+  setTouchEnd(null);
+}, [touchStart, touchEnd]);
+
+// 使用 useEffect 手动添加事件监听器
+useEffect(() => {
+  const cards = timerCardsRef.current;
+  
+  const addTouchListeners = (card, timerId) => {
+    if (!card) return;
+    
+    const touchStartHandler = (e) => handleTouchStart(e, timerId);
+    const touchMoveHandler = (e) => handleTouchMove(e, timerId);
+    const touchEndHandler = () => handleTouchEnd(timerId);
+    
+    // 添加事件监听器，设置 passive: false
+    card.addEventListener('touchstart', touchStartHandler, { passive: false });
+    card.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    card.addEventListener('touchend', touchEndHandler);
+    
+    // 返回清理函数
+    return () => {
+      card.removeEventListener('touchstart', touchStartHandler);
+      card.removeEventListener('touchmove', touchMoveHandler);
+      card.removeEventListener('touchend', touchEndHandler);
+    };
+  };
+  
+  // 为所有计时器卡片添加事件监听器
+  const cleanupFunctions = [];
+  timers.forEach((timer, index) => {
+    const card = cards[index];
+    if (card) {
+      const cleanup = addTouchListeners(card, timer.id);
+      if (cleanup) cleanupFunctions.push(cleanup);
+    }
+  });
+  
+  // 清理函数
+  return () => {
+    cleanupFunctions.forEach(cleanup => cleanup());
+  };
+}, [timers, handleTouchStart, handleTouchMove, handleTouchEnd]);
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔄 JSX 修改</h2>
+        <p>在计时器卡片的 JSX 中：</p>
+        
+        <div class="code-block">
+// 移除原有的 onTouchStart, onTouchMove, onTouchEnd
+// 添加 ref 引用
+&lt;div
+  ref={el => timerCardsRef.current[index] = el}
+  className="timer-card macaron-card bg-white p-6 rounded-2xl border-2 shadow-airy-soft transition-all relative"
+  style={{
+    borderColor: isRunning ? categoryColor : '#E5E7EB',
+    WebkitTapHighlightColor: 'transparent'
+  }}
+  onClick={() => isSwiped && setSwipedTimerId(null)}
+  onContextMenu={(e) => e.preventDefault()}
+&gt;
+  {/* 卡片内容 */}
+&lt;/div&gt;
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🎯 计划页面修复</h2>
+        <p>对于计划页面的拖拽功能，使用类似的方法：</p>
+        
+        <div class="code-block">
+// 在计划页面组件中添加
+const planItemsRef = useRef([]);
+
+// 修改触摸拖拽处理
+const handlePlanTouchStart = useCallback((e, index) => {
+  if (!isMobile) return;
+  const touch = e.touches[0];
+  
+  setDraggedIndex(index);
+  setTouchDragState({
+    isDragging: true,
+    startY: touch.clientY,
+    startX: touch.clientX,
+    currentY: touch.clientY,
+    currentX: touch.clientX
+  });
+}, [isMobile]);
+
+const handlePlanTouchMove = useCallback((e, index) => {
+  if (!isMobile || !touchDragState.isDragging) return;
+  
+  const touch = e.touches[0];
+  const currentY = touch.clientY;
+  const currentX = touch.clientX;
+  
+  const deltaY = Math.abs(currentY - touchDragState.startY);
+  const deltaX = Math.abs(currentX - touchDragState.startX);
+  
+  // 判断是否为垂直拖拽
+  const isVerticalDrag = deltaY > deltaX && deltaY > 10;
+  
+  // 只在垂直拖拽时阻止默认行为
+  if (isVerticalDrag && e.cancelable) {
+    e.preventDefault();
+  }
+  
+  setTouchDragState(prev => ({
+    ...prev,
+    currentY,
+    currentX
+  }));
+}, [isMobile, touchDragState]);
+
+// 使用 useEffect 添加计划项目的事件监听器
+useEffect(() => {
+  if (!isMobile) return;
+  
+  const items = planItemsRef.current;
+  const cleanupFunctions = [];
+  
+  planItems.forEach((item, index) => {
+    const element = items[index];
+    if (!element) return;
+    
+    const touchStartHandler = (e) => handlePlanTouchStart(e, index);
+    const touchMoveHandler = (e) => handlePlanTouchMove(e, index);
+    
+    element.addEventListener('touchstart', touchStartHandler, { passive: false });
+    element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    
+    cleanupFunctions.push(() => {
+      element.removeEventListener('touchstart', touchStartHandler);
+      element.removeEventListener('touchmove', touchMoveHandler);
+    });
+  });
+  
+  return () => {
+    cleanupFunctions.forEach(cleanup => cleanup());
+  };
+}, [planItems, isMobile, handlePlanTouchStart, handlePlanTouchMove]);
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>✅ 修复效果</h2>
+        <div class="status success">
+            <strong>应用此修复后：</strong><br>
+            • ✅ 页面可以正常上下滚动<br>
+            • ✅ 水平滑动功能正常工作<br>
+            • ✅ 垂直拖拽重排序功能正常<br>
+            • ✅ 没有 passive event listener 错误<br>
+            • ✅ 性能优化，智能判断滑动方向
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔧 应用修复</h2>
+        <button onclick="copyFixCode()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px;">
+            📋 复制修复代码
+        </button>
+        <button onclick="showSteps()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            📝 查看应用步骤
+        </button>
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        function copyFixCode() {
+            const code = `
+// 1. 在 TimerPage 组件开头添加
+const timerCardsRef = useRef([]);
+
+// 2. 修改触摸事件处理
+const handleTouchStart = useCallback((e, timerId) => {
+  const touch = e.targetTouches[0];
+  setTouchStart({
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now(),
+    timerId
+  });
+  setTouchEnd(null);
+}, []);
+
+const handleTouchMove = useCallback((e, timerId) => {
+  if (!touchStart || touchStart.timerId !== timerId) return;
+  
+  const touch = e.targetTouches[0];
+  const deltaX = Math.abs(touch.clientX - touchStart.x);
+  const deltaY = Math.abs(touch.clientY - touchStart.y);
+  
+  const isHorizontalSwipe = deltaX > deltaY && deltaX > 10;
+  
+  if (isHorizontalSwipe && e.cancelable) {
+    e.preventDefault();
+  }
+  
+  setTouchEnd({
+    x: touch.clientX,
+    y: touch.clientY
+  });
+}, [touchStart]);
+
+// 3. 添加 useEffect 管理事件监听器
+useEffect(() => {
+  const cards = timerCardsRef.current;
+  const cleanupFunctions = [];
+  
+  timers.forEach((timer, index) => {
+    const card = cards[index];
+    if (card) {
+      const touchStartHandler = (e) => handleTouchStart(e, timer.id);
+      const touchMoveHandler = (e) => handleTouchMove(e, timer.id);
+      
+      card.addEventListener('touchstart', touchStartHandler, { passive: false });
+      card.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      
+      cleanupFunctions.push(() => {
+        card.removeEventListener('touchstart', touchStartHandler);
+        card.removeEventListener('touchmove', touchMoveHandler);
+      });
+    }
+  });
+  
+  return () => {
+    cleanupFunctions.forEach(cleanup => cleanup());
+  };
+}, [timers, handleTouchStart, handleTouchMove]);
+            `;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                document.getElementById('result').innerHTML = `
+                    <div class="status success">
+                        ✅ 修复代码已复制到剪贴板！<br>
+                        现在可以应用到 index.html 文件中
+                    </div>
+                `;
+            });
+        }
+
+        function showSteps() {
+            document.getElementById('result').innerHTML = `
+                <div class="status info">
+                    <strong>📝 应用步骤：</strong><br>
+                    1. 在 TimerPage 组件开头添加 useRef<br>
+                    2. 替换现有的触摸事件处理函数<br>
+                    3. 添加 useEffect 来管理事件监听器<br>
+                    4. 在计时器卡片 JSX 中添加 ref<br>
+                    5. 移除原有的 onTouchStart/Move/End 属性<br>
+                    6. 对计划页面应用类似修复<br>
+                    7. 测试滚动和滑动功能
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

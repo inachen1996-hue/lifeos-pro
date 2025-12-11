@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 数据调试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        .debug-panel {
+            background: rgba(0,0,0,0.8);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🔍 Achievement Jar 数据调试</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Achievement Jar 显示 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-blue-600">Achievement Jar</h2>
+                <div id="jar-root"></div>
+                
+                <!-- 手动刷新按钮 -->
+                <div class="mt-4 text-center">
+                    <button 
+                        id="refresh-btn"
+                        class="px-6 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-all"
+                    >
+                        🔄 手动刷新数据
+                    </button>
+                    <button 
+                        id="add-data-btn"
+                        class="px-6 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all ml-2"
+                    >
+                        ➕ 添加测试数据
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 调试信息面板 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">调试信息</h2>
+                <div id="debug-panel" class="debug-panel p-4 rounded-lg"></div>
+                
+                <!-- 数据状态 -->
+                <div class="mt-4">
+                    <h3 class="font-bold text-gray-700 mb-2">当前数据状态：</h3>
+                    <div id="data-status" class="bg-gray-100 p-3 rounded text-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模拟数据管理 -->
+        <div class="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-3xl p-6 border border-purple-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📊 模拟数据管理</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button id="clear-data" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    🗑️ 清空数据
+                </button>
+                <button id="load-sample" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                    📝 加载示例数据
+                </button>
+                <button id="simulate-timer" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                    ⏱️ 模拟计时器数据
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 调试日志组件
+        const DebugLogger = () => {
+            const [logs, setLogs] = useState([]);
+            const logRef = useRef(null);
+
+            const addLog = (message, type = 'info') => {
+                const timestamp = new Date().toLocaleTimeString();
+                const newLog = { timestamp, message, type };
+                setLogs(prev => [...prev.slice(-50), newLog]); // 保留最近50条日志
+                
+                // 自动滚动到底部
+                setTimeout(() => {
+                    if (logRef.current) {
+                        logRef.current.scrollTop = logRef.current.scrollHeight;
+                    }
+                }, 100);
+            };
+
+            // 暴露给全局使用
+            window.debugLog = addLog;
+
+            return (
+                <div ref={logRef} className="debug-panel p-4 rounded-lg">
+                    {logs.map((log, index) => (
+                        <div key={index} className={`mb-1 ${log.type === 'error' ? 'text-red-400' : log.type === 'warn' ? 'text-yellow-400' : 'text-green-400'}`}>
+                            <span className="text-gray-400">[{log.timestamp}]</span> {log.message}
+                        </div>
+                    ))}
+                    {logs.length === 0 && (
+                        <div className="text-gray-500">等待调试信息...</div>
+                    )}
+                </div>
+            );
+        };
+
+        // Achievement Jar 容器组件（带调试）
+        const DebugAchievementJarContainer = ({ data, categoryMap, timeRange, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+            const [renderCount, setRenderCount] = useState(0);
+
+            // 颜色映射函数
+            const getActualColor = (colorClass) => {
+                const colorMap = {
+                    'bg-airy-blue': '#3B82F6',
+                    'bg-airy-green': '#10B981', 
+                    'bg-airy-pink': '#EC4899',
+                    'bg-airy-purple': '#8B5CF6',
+                    'bg-airy-orange': '#F59E0B',
+                    'bg-airy-red': '#EF4444',
+                    'bg-airy-yellow': '#EAB308',
+                    'bg-airy-teal': '#14B8A6',
+                    'bg-macaron-blue': '#60A5FA',
+                    'bg-macaron-green': '#34D399',
+                    'bg-macaron-pink': '#F472B6',
+                    'bg-macaron-purple': '#A78BFA',
+                    'bg-macaron-orange': '#FBBF24',
+                    'bg-macaron-rose': '#FB7185',
+                    '#gray-500': '#6B7280'
+                };
+                
+                if (colorClass && colorClass.startsWith('#')) {
+                    return colorClass;
+                }
+                
+                return colorMap[colorClass] || '#6B7280';
+            };
+
+            // 生成粘土球数据
+            useEffect(() => {
+                setRenderCount(prev => prev + 1);
+                
+                window.debugLog(`🔄 useEffect 触发 (第${renderCount + 1}次)`, 'info');
+                window.debugLog(`📊 输入数据: ${JSON.stringify(data)}`, 'info');
+                window.debugLog(`🎨 分类映射: ${JSON.stringify(categoryMap)}`, 'info');
+                
+                if (!data || data.length === 0) {
+                    window.debugLog('⚠️ 数据为空，清空粘土球', 'warn');
+                    setClayBalls([]);
+                    return;
+                }
+
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const actualColor = getActualColor(category.color);
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    window.debugLog(`🎯 处理项目 ${index}: ${item.title}`, 'info');
+                    window.debugLog(`  - 分类: ${item.category}`, 'info');
+                    window.debugLog(`  - 原始颜色: ${category.color}`, 'info');
+                    window.debugLog(`  - 实际颜色: ${actualColor}`, 'info');
+                    window.debugLog(`  - 大小: ${size}px`, 'info');
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: actualColor,
+                        size,
+                        x: 50 + (index % 5) * 80 + Math.random() * 20,
+                        y: 100 + Math.floor(index / 5) * 80 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                window.debugLog(`✅ 生成了 ${balls.length} 个粘土球`, 'info');
+                setClayBalls(balls);
+                
+                // 更新数据状态显示
+                const statusElement = document.getElementById('data-status');
+                if (statusElement) {
+                    statusElement.innerHTML = `
+                        <div><strong>数据项数量:</strong> ${data.length}</div>
+                        <div><strong>粘土球数量:</strong> ${balls.length}</div>
+                        <div><strong>渲染次数:</strong> ${renderCount + 1}</div>
+                        <div><strong>最后更新:</strong> ${new Date().toLocaleTimeString()}</div>
+                    `;
+                }
+            }, [data, categoryMap, renderCount]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {/* 粘土球 */}
+                        {clayBalls.map((ball) => (
+                            <div
+                                key={ball.id}
+                                className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                style={{
+                                    left: `${ball.x}px`,
+                                    top: `${ball.y}px`,
+                                    width: `${ball.size}px`,
+                                    height: `${ball.size}px`,
+                                    backgroundColor: ball.color
+                                }}
+                                onClick={() => {
+                                    window.debugLog(`🎉 点击粘土球: ${ball.title}`, 'info');
+                                    onCelebrate('clap');
+                                }}
+                                title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`}
+                            />
+                        ))}
+                        
+                        {/* 玻璃反光效果 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.category)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">分类数</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用组件
+        const DebugApp = () => {
+            const [data, setData] = useState([]);
+            const [categoryMap, setCategoryMap] = useState({
+                work: { name: '工作', color: 'bg-airy-blue' },
+                study: { name: '学习', color: 'bg-airy-green' },
+                health: { name: '健康', color: 'bg-airy-orange' },
+                hobby: { name: '兴趣', color: 'bg-airy-purple' }
+            });
+
+            const playSound = (type) => {
+                window.debugLog(`🎵 播放音效: ${type}`, 'info');
+            };
+
+            const generateDanmaku = () => {
+                window.debugLog('🎊 生成弹幕', 'info');
+            };
+
+            // 手动刷新数据
+            const refreshData = () => {
+                window.debugLog('🔄 手动刷新数据', 'info');
+                setData([...data]); // 强制重新渲染
+            };
+
+            // 添加测试数据
+            const addTestData = () => {
+                const newItem = {
+                    id: Date.now().toString(),
+                    category: ['work', 'study', 'health', 'hobby'][Math.floor(Math.random() * 4)],
+                    duration: Math.floor(Math.random() * 7200) + 1800, // 30分钟到2小时
+                    title: `测试任务 ${Date.now().toString().slice(-4)}`
+                };
+                
+                window.debugLog(`➕ 添加测试数据: ${JSON.stringify(newItem)}`, 'info');
+                setData(prev => [...prev, newItem]);
+            };
+
+            // 清空数据
+            const clearData = () => {
+                window.debugLog('🗑️ 清空所有数据', 'warn');
+                setData([]);
+            };
+
+            // 加载示例数据
+            const loadSampleData = () => {
+                const sampleData = [
+                    { id: '1', category: 'work', duration: 7200, title: '完成项目文档' },
+                    { id: '2', category: 'study', duration: 3600, title: '学习React开发' },
+                    { id: '3', category: 'health', duration: 1800, title: '晨跑锻炼' },
+                    { id: '4', category: 'hobby', duration: 2700, title: '绘画练习' }
+                ];
+                
+                window.debugLog('📝 加载示例数据', 'info');
+                setData(sampleData);
+            };
+
+            // 模拟计时器数据
+            const simulateTimerData = () => {
+                // 模拟从localStorage读取数据
+                const mockHistory = `2024-12-11: [WORK] 完成代码审查 2h
+2024-12-11: [STUDY] 学习新技术 1.5h
+2024-12-11: [HEALTH] 健身锻炼 45min`;
+                
+                window.debugLog('⏱️ 模拟计时器数据解析', 'info');
+                
+                // 解析数据（模拟主应用的逻辑）
+                const items = mockHistory.split('\n').filter(l => l.trim()).map((line, idx) => {
+                    const dateMatch = line.match(/(\d{4}-\d{1,2}-\d{1,2})/);
+                    const durationMatch = line.match(/(\d+(\.\d+)?)\s*(h|m|min|hour)/i);
+                    const categoryMatch = line.match(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]/i);
+                    
+                    let duration = 0;
+                    if (durationMatch) {
+                        const val = parseFloat(durationMatch[1]);
+                        const unit = durationMatch[3].toLowerCase();
+                        duration = unit.startsWith('m') ? val / 60 : val;
+                    }
+                    
+                    const description = line
+                        .replace(/\d{4}-\d{1,2}-\d{1,2}:\s*/, '')
+                        .replace(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]\s*/i, '')
+                        .replace(/\d+(\.\d+)?\s*(h|m|min|hour)/i, '')
+                        .trim();
+                    
+                    return {
+                        id: idx.toString(),
+                        timestamp: dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString(),
+                        category: categoryMatch ? categoryMatch[1].toLowerCase() : 'work',
+                        duration: duration * 3600, // 转换为秒
+                        title: description,
+                        metadata: { originalFormat: true, source: 'lifeos' }
+                    };
+                }).filter(item => item.duration > 0);
+                
+                window.debugLog(`📊 解析出 ${items.length} 个数据项`, 'info');
+                setData(items);
+            };
+
+            // 绑定按钮事件
+            useEffect(() => {
+                document.getElementById('refresh-btn').onclick = refreshData;
+                document.getElementById('add-data-btn').onclick = addTestData;
+                document.getElementById('clear-data').onclick = clearData;
+                document.getElementById('load-sample').onclick = loadSampleData;
+                document.getElementById('simulate-timer').onclick = simulateTimerData;
+            }, []);
+
+            return (
+                <DebugAchievementJarContainer 
+                    data={data}
+                    categoryMap={categoryMap}
+                    timeRange="today"
+                    onCelebrate={(type) => {
+                        playSound(type);
+                        generateDanmaku();
+                    }}
+                />
+            );
+        };
+
+        // 渲染应用
+        const jarContainer = document.getElementById('jar-root');
+        const jarRoot = ReactDOM.createRoot(jarContainer);
+        jarRoot.render(React.createElement(DebugApp));
+
+        const debugContainer = document.getElementById('debug-panel');
+        const debugRoot = ReactDOM.createRoot(debugContainer);
+        debugRoot.render(React.createElement(DebugLogger));
+
+        // 初始化日志
+        setTimeout(() => {
+            window.debugLog('🚀 调试页面已加载', 'info');
+            window.debugLog('💡 使用按钮测试不同的数据状态', 'info');
+        }, 500);
+    </script>
+</body>
+</html>

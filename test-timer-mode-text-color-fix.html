@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器模式选择文字颜色修复测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-effect {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { Timer, Clock, Tomato, Palette, CheckCircle } = lucide;
+
+        // 根据模式获取文字颜色
+        const getTextColorForMode = (mode) => {
+            if (mode === 'stopwatch') return 'text-blue-900';
+            if (mode === 'countdown') return 'text-amber-800';
+            if (mode === 'pomodoro') return 'text-rose-900';
+            return 'text-blue-900';
+        };
+
+        // 扁平图标组件
+        function FlatTimerIcon({ type, size = 20 }) {
+            const iconMap = {
+                stopwatch: '⏱️',
+                countdown: '⏰',
+                pomodoro: '🍅'
+            };
+            
+            return (
+                <span style={{ fontSize: `${size}px` }}>
+                    {iconMap[type] || '⏱️'}
+                </span>
+            );
+        }
+
+        function TimerModeSelector() {
+            const [mode, setMode] = useState('stopwatch');
+
+            const modes = [
+                { 
+                    value: 'stopwatch', 
+                    label: '秒表', 
+                    icon: <FlatTimerIcon type="stopwatch" size={20} />, 
+                    color: 'from-[#A2D2FF] to-[#BDE0FE]', 
+                    shadow: 'rgba(162, 210, 255, 0.5)' 
+                },
+                { 
+                    value: 'countdown', 
+                    label: '倒计时', 
+                    icon: <FlatTimerIcon type="countdown" size={20} />, 
+                    color: 'from-[#FFF4B5] to-[#FFF8D0]', 
+                    shadow: 'rgba(255, 244, 181, 0.5)' 
+                },
+                { 
+                    value: 'pomodoro', 
+                    label: '番茄钟', 
+                    icon: <FlatTimerIcon type="pomodoro" size={20} />, 
+                    color: 'from-[#FFB5D8] to-[#FFC9E0]', 
+                    shadow: 'rgba(255, 181, 216, 0.5)' 
+                }
+            ];
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="glass-effect rounded-[2rem] shadow-2xl p-8 mb-8">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <Palette className="w-8 h-8 text-blue-600" />
+                                <h1 className="text-3xl font-black text-[#023E8A]">计时器模式选择文字颜色修复</h1>
+                            </div>
+                            <p className="text-gray-600 text-lg">
+                                修复选中状态下文字颜色过浅的问题
+                            </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {/* 左侧：修复后的模式选择器 */}
+                            <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 p-6 rounded-2xl">
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <CheckCircle className="w-5 h-5 text-green-600" />
+                                    修复后（文字清晰）
+                                </h3>
+                                
+                                <div className="mb-6">
+                                    <label className="text-sm font-black text-[#023E8A] mb-3 block drop-shadow-sm">模式</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {modes.map(m => (
+                                            <button
+                                                key={m.value}
+                                                onClick={() => setMode(m.value)}
+                                                className={`p-4 rounded-[20px] font-black text-sm transition-all duration-300 relative overflow-hidden ${
+                                                    mode === m.value 
+                                                        ? `bg-gradient-to-br ${m.color} ${getTextColorForMode(m.value)} scale-105` 
+                                                        : 'bg-white/80 text-slate-400 hover:scale-105'
+                                                }`}
+                                                style={mode === m.value ? {
+                                                    boxShadow: `0 8px 24px -4px ${m.shadow}, inset 0 2px 8px rgba(255, 255, 255, 0.6)`,
+                                                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                                                    border: '2px solid rgba(255, 255, 255, 0.9)'
+                                                } : {
+                                                    boxShadow: '0 4px 12px -2px rgba(162, 210, 255, 0.15), inset 0 1px 4px rgba(255, 255, 255, 0.8)',
+                                                    border: '2px solid rgba(255, 255, 255, 0.5)'
+                                                }}
+                                            >
+                                                <div className="text-3xl mb-2 drop-shadow-sm relative z-10">{m.icon}</div>
+                                                <div className="relative z-10">{m.label}</div>
+                                                {/* 果冻光泽 */}
+                                                {mode === m.value && (
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent rounded-[20px]"></div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-white/60 rounded-xl">
+                                    <p className="text-sm text-gray-600 mb-2">当前选择：</p>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">
+                                            {modes.find(m => m.value === mode)?.icon}
+                                        </span>
+                                        <span className="text-lg font-bold text-gray-700">
+                                            {modes.find(m => m.value === mode)?.label}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 右侧：修复前的对比 */}
+                            <div className="bg-gradient-to-br from-red-50/50 to-orange-50/50 p-6 rounded-2xl">
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <Timer className="w-5 h-5 text-red-600" />
+                                    修复前（文字模糊）
+                                </h3>
+                                
+                                <div className="mb-6">
+                                    <label className="text-sm font-black text-[#023E8A] mb-3 block drop-shadow-sm">模式</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {modes.map(m => (
+                                            <button
+                                                key={`old-${m.value}`}
+                                                className={`p-4 rounded-[20px] font-black text-sm transition-all duration-300 relative overflow-hidden ${
+                                                    mode === m.value 
+                                                        ? `bg-gradient-to-br ${m.color} text-white scale-105` 
+                                                        : 'bg-white/80 text-slate-400 hover:scale-105'
+                                                }`}
+                                                style={mode === m.value ? {
+                                                    boxShadow: `0 8px 24px -4px ${m.shadow}, inset 0 2px 8px rgba(255, 255, 255, 0.6)`,
+                                                    textShadow: '0 1px 2px rgba(255, 255, 255, 0.8)', // 原来的白色阴影
+                                                    border: '2px solid rgba(255, 255, 255, 0.9)'
+                                                } : {
+                                                    boxShadow: '0 4px 12px -2px rgba(162, 210, 255, 0.15), inset 0 1px 4px rgba(255, 255, 255, 0.8)',
+                                                    border: '2px solid rgba(255, 255, 255, 0.5)'
+                                                }}
+                                            >
+                                                <div className="text-3xl mb-2 drop-shadow-sm relative z-10">{m.icon}</div>
+                                                <div className="relative z-10">{m.label}</div>
+                                                {/* 果冻光泽 */}
+                                                {mode === m.value && (
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent rounded-[20px]"></div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-white/60 rounded-xl">
+                                    <p className="text-sm text-red-600 mb-2">问题：</p>
+                                    <ul className="text-sm text-red-700 space-y-1">
+                                        <li>• 白色文字 + 白色阴影 = 文字模糊</li>
+                                        <li>• 对比度不足，可读性差</li>
+                                        <li>• 用户体验不佳</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 grid md:grid-cols-3 gap-6">
+                            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                                <h4 className="font-bold text-blue-800 mb-3">秒表模式</h4>
+                                <ul className="text-sm text-blue-700 space-y-1">
+                                    <li>• 文字颜色：text-blue-900</li>
+                                    <li>• 背景：蓝色渐变</li>
+                                    <li>• 阴影：深色增强对比</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200">
+                                <h4 className="font-bold text-amber-800 mb-3">倒计时模式</h4>
+                                <ul className="text-sm text-amber-700 space-y-1">
+                                    <li>• 文字颜色：text-amber-800</li>
+                                    <li>• 背景：黄色渐变</li>
+                                    <li>• 阴影：深色增强对比</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-rose-50 p-6 rounded-2xl border border-rose-200">
+                                <h4 className="font-bold text-rose-800 mb-3">番茄钟模式</h4>
+                                <ul className="text-sm text-rose-700 space-y-1">
+                                    <li>• 文字颜色：text-rose-900</li>
+                                    <li>• 背景：粉色渐变</li>
+                                    <li>• 阴影：深色增强对比</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 p-6 bg-green-50 rounded-2xl border border-green-200">
+                            <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                <CheckCircle className="w-5 h-5" />
+                                修复总结
+                            </h4>
+                            <div className="grid md:grid-cols-2 gap-4 text-sm text-green-700">
+                                <div>
+                                    <p className="font-medium mb-2">修复内容：</p>
+                                    <ul className="space-y-1">
+                                        <li>• 将 text-white 改为模式特定的深色</li>
+                                        <li>• 将白色阴影改为深色阴影</li>
+                                        <li>• 增强文字与背景的对比度</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p className="font-medium mb-2">效果提升：</p>
+                                    <ul className="space-y-1">
+                                        <li>• 文字清晰可读</li>
+                                        <li>• 视觉层次分明</li>
+                                        <li>• 用户体验优化</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<TimerModeSelector />, document.getElementById('root'));
+    </script>
+</body>
+</html>

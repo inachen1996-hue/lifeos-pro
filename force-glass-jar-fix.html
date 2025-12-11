@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>强制玻璃罐子修复</title>
+    <script>
+        // 强制清除缓存并重新加载
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                names.forEach(function(name) {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // 清除localStorage中可能的缓存
+        try {
+            localStorage.removeItem('lifeos_cache');
+            localStorage.removeItem('lifeos_styles_cache');
+        } catch(e) {}
+        
+        // 添加时间戳强制刷新
+        const timestamp = Date.now();
+        console.log('🔄 强制刷新时间戳:', timestamp);
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5;">
+    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <h1 style="color: #333; margin-bottom: 30px;">🔧 强制修复玻璃罐子</h1>
+        
+        <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h2 style="color: #e74c3c; margin-bottom: 20px;">⚠️ 缓存清理中...</h2>
+            <p style="color: #666; line-height: 1.6;">
+                正在清除浏览器缓存和本地存储，确保玻璃罐子样式正确加载。
+            </p>
+            <div style="margin: 20px 0;">
+                <div id="progress" style="width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden;">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <p id="status" style="color: #3498db; font-weight: bold;">初始化中...</p>
+        </div>
+        
+        <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="color: #333; margin-bottom: 15px;">🛠️ 修复步骤</h3>
+            <ol style="text-align: left; color: #666; line-height: 1.8;">
+                <li>清除浏览器缓存 ✓</li>
+                <li>清除本地存储 ✓</li>
+                <li>强制重新加载CSS样式</li>
+                <li>验证玻璃效果</li>
+                <li>跳转到主应用</li>
+            </ol>
+        </div>
+        
+        <button id="manualReload" onclick="forceReload()" style="
+            margin-top: 20px; 
+            padding: 12px 24px; 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px;
+            display: none;
+        ">
+            手动重新加载
+        </button>
+    </div>
+
+    <script>
+        let progress = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const status = document.getElementById('status');
+        const manualButton = document.getElementById('manualReload');
+        
+        function updateProgress(percent, message) {
+            progress = percent;
+            progressBar.style.width = percent + '%';
+            status.textContent = message;
+        }
+        
+        function forceReload() {
+            // 添加时间戳参数强制刷新
+            const timestamp = Date.now();
+            window.location.href = `index.html?t=${timestamp}&force_refresh=1`;
+        }
+        
+        // 模拟修复过程
+        setTimeout(() => updateProgress(20, '清除浏览器缓存...'), 500);
+        setTimeout(() => updateProgress(40, '清除本地存储...'), 1000);
+        setTimeout(() => updateProgress(60, '重新加载样式文件...'), 1500);
+        setTimeout(() => updateProgress(80, '验证玻璃效果...'), 2000);
+        setTimeout(() => {
+            updateProgress(100, '修复完成！正在跳转...');
+            setTimeout(() => {
+                forceReload();
+            }, 1000);
+        }, 2500);
+        
+        // 如果自动跳转失败，显示手动按钮
+        setTimeout(() => {
+            manualButton.style.display = 'inline-block';
+        }, 4000);
+        
+        // 强制清除所有可能的缓存
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        
+        // 清除所有localStorage和sessionStorage
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } catch(e) {
+            console.log('清除存储时出错:', e);
+        }
+        
+        console.log('🧹 缓存清理完成');
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passive Event Listener 修复测试</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Passive Event Listener 修复测试</h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-bold mb-4">测试说明</h2>
+      <p class="text-gray-600 mb-2">1. 打开浏览器控制台</p>
+      <p class="text-gray-600 mb-2">2. 在下方的拖拽区域尝试拖动卡片</p>
+      <p class="text-gray-600 mb-2">3. 检查控制台是否还有 "Unable to preventDefault" 错误</p>
+      <p class="text-green-600 font-bold mt-4">✓ 如果没有错误，说明修复成功</p>
+    </div>
+
+    <div id="drag-container" class="space-y-4 bg-gray-50 p-6 rounded-lg">
+      <div class="bg-white p-6 rounded-xl shadow-md cursor-move border-l-4 border-blue-500" data-item="0">
+        <div class="font-bold text-lg mb-2">卡片 1</div>
+        <p class="text-gray-600">尝试拖动这个卡片</p>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-md cursor-move border-l-4 border-green-500" data-item="1">
+        <div class="font-bold text-lg mb-2">卡片 2</div>
+        <p class="text-gray-600">尝试拖动这个卡片</p>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-md cursor-move border-l-4 border-purple-500" data-item="2">
+        <div class="font-bold text-lg mb-2">卡片 3</div>
+        <p class="text-gray-600">尝试拖动这个卡片</p>
+      </div>
+    </div>
+
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <h3 class="font-bold text-blue-900 mb-2">修复方案</h3>
+      <ul class="text-sm text-blue-800 space-y-1">
+        <li>✓ 使用 useEffect 添加原生事件监听器</li>
+        <li>✓ 设置 { passive: false } 选项</li>
+        <li>✓ 只在拖拽时调用 preventDefault()</li>
+        <li>✓ 正确清理事件监听器</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('drag-container');
+    let isDragging = false;
+    let startY = 0;
+    let startX = 0;
+    let draggedElement = null;
+
+    // 使用原生事件监听器，设置 passive: false
+    container.addEventListener('touchstart', (e) => {
+      const target = e.target.closest('[data-item]');
+      if (!target) return;
+      
+      isDragging = true;
+      draggedElement = target;
+      const touch = e.touches[0];
+      startY = touch.clientY;
+      startX = touch.clientX;
+      
+      target.style.opacity = '0.5';
+      console.log('✓ Touch start - 开始拖拽');
+    }, { passive: true }); // touchstart 可以是 passive
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      
+      const touch = e.touches[0];
+      const deltaY = Math.abs(touch.clientY - startY);
+      const deltaX = Math.abs(touch.clientX - startX);
+      
+      // 如果是拖拽操作（移动距离超过阈值），阻止滚动
+      if (deltaY > 10 || deltaX > 10) {
+        e.preventDefault(); // 这里不会报错，因为设置了 passive: false
+        console.log('✓ Touch move - 阻止滚动，允许拖拽');
+      }
+    }, { passive: false }); // 关键：设置 passive: false
+
+    container.addEventListener('touchend', (e) => {
+      if (draggedElement) {
+        draggedElement.style.opacity = '1';
+        console.log('✓ Touch end - 结束拖拽');
+      }
+      isDragging = false;
+      draggedElement = null;
+    }, { passive: true }); // touchend 可以是 passive
+
+    console.log('✓ 事件监听器已设置，passive: false 用于 touchmove');
+  </script>
+</body>
+</html>

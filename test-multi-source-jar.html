@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多数据源 Achievement Jar 测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        .data-source-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .source-history { background: #3B82F6; }
+        .source-timer { background: #10B981; }
+        .source-plan { background: #F59E0B; }
+        .source-diary { background: #8B5CF6; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">🏺 多数据源 Achievement Jar</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Achievement Jar 显示 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-blue-600">Achievement Jar</h2>
+                <div id="jar-root"></div>
+            </div>
+            
+            <!-- 数据源管理 -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-green-600">数据源管理</h2>
+                
+                <!-- 数据源按钮 -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="add-history" class="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2">
+                        📝 添加历史记录
+                    </button>
+                    <button id="add-timer" class="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2">
+                        ⏱️ 添加计时器数据
+                    </button>
+                    <button id="add-plan" class="px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2">
+                        📋 添加计划数据
+                    </button>
+                    <button id="add-diary" class="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center gap-2">
+                        📔 添加日记数据
+                    </button>
+                </div>
+
+                <!-- 数据统计 -->
+                <div id="data-stats" class="bg-gray-100 p-4 rounded-lg mb-4"></div>
+                
+                <!-- 清空按钮 -->
+                <button id="clear-all" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    🗑️ 清空所有数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 数据源说明 -->
+        <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-6 border border-blue-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📊 数据源说明</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <span><strong>历史记录:</strong> 手动输入的日程数据</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                    <span><strong>计时器:</strong> 番茄钟完成的任务</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                    <span><strong>计划:</strong> 已完成的计划项目</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-purple-500 rounded-full"></div>
+                    <span><strong>日记:</strong> 日记中提取的时间记录</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 模拟数据生成器
+        const DataGenerator = {
+            history: () => ({
+                id: `history_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                category: ['work', 'study', 'health'][Math.floor(Math.random() * 3)],
+                duration: Math.floor(Math.random() * 7200) + 1800, // 30分钟到2小时
+                title: `历史记录任务 ${Math.floor(Math.random() * 100)}`,
+                metadata: { source: 'history', type: 'manual_log' }
+            }),
+            
+            timer: () => ({
+                id: `timer_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                category: ['work', 'study'][Math.floor(Math.random() * 2)],
+                duration: [1500, 1800, 2700][Math.floor(Math.random() * 3)], // 25/30/45分钟
+                title: `番茄钟任务 ${Math.floor(Math.random() * 100)}`,
+                metadata: { source: 'timer', type: 'pomodoro_session' }
+            }),
+            
+            plan: () => ({
+                id: `plan_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                category: ['work', 'study', 'health', 'hobby'][Math.floor(Math.random() * 4)],
+                duration: Math.floor(Math.random() * 5400) + 900, // 15分钟到1.5小时
+                title: `计划任务 ${Math.floor(Math.random() * 100)}`,
+                metadata: { source: 'plan', type: 'planned_task' }
+            }),
+            
+            diary: () => ({
+                id: `diary_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                category: 'life',
+                duration: Math.floor(Math.random() * 3600) + 600, // 10分钟到1小时
+                title: `日记记录 ${Math.floor(Math.random() * 100)}`,
+                metadata: { source: 'diary', type: 'diary_entry' }
+            })
+        };
+
+        // Achievement Jar 容器组件（支持多数据源）
+        const MultiSourceAchievementJar = ({ data, categoryMap, onCelebrate }) => {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 颜色映射函数
+            const getActualColor = (colorClass) => {
+                const colorMap = {
+                    'bg-airy-blue': '#3B82F6',
+                    'bg-airy-green': '#10B981', 
+                    'bg-airy-pink': '#EC4899',
+                    'bg-airy-purple': '#8B5CF6',
+                    'bg-airy-orange': '#F59E0B',
+                    'bg-airy-red': '#EF4444',
+                    'bg-airy-yellow': '#EAB308',
+                    'bg-airy-teal': '#14B8A6'
+                };
+                
+                if (colorClass && colorClass.startsWith('#')) {
+                    return colorClass;
+                }
+                
+                return colorMap[colorClass] || '#6B7280';
+            };
+
+            // 生成粘土球数据
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#6B7280' };
+                    const actualColor = getActualColor(category.color);
+                    const size = Math.max(20, Math.min(60, (item.duration / 3600) * 30));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: actualColor,
+                        size,
+                        x: 50 + (index % 5) * 80 + Math.random() * 20,
+                        y: 100 + Math.floor(index / 5) * 80 + Math.random() * 20,
+                        title: item.title,
+                        duration: item.duration,
+                        source: item.metadata.source
+                    };
+                });
+                
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return (
+                <div className="achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                    <div 
+                        className="glass-jar-container relative mx-auto rounded-t-full rounded-b-lg"
+                        style={{ width: '400px', height: '300px' }}
+                    >
+                        {/* 粘土球 */}
+                        {clayBalls.map((ball) => (
+                            <div
+                                key={ball.id}
+                                className="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                                style={{
+                                    left: `${ball.x}px`,
+                                    top: `${ball.y}px`,
+                                    width: `${ball.size}px`,
+                                    height: `${ball.size}px`,
+                                    backgroundColor: ball.color
+                                }}
+                                onClick={() => onCelebrate('clap')}
+                                title={`${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时 (来源: ${ball.source})`}
+                            >
+                                {/* 数据源标识 */}
+                                <div className={`data-source-badge source-${ball.source}`}>
+                                    {ball.source === 'history' ? 'H' : 
+                                     ball.source === 'timer' ? 'T' : 
+                                     ball.source === 'plan' ? 'P' : 'D'}
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {/* 玻璃反光效果 */}
+                        <div 
+                            className="absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full"
+                            style={{ 
+                                transform: 'rotate(-15deg)',
+                                background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                                filter: 'blur(1px)'
+                            }}
+                        />
+                    </div>
+
+                    {/* 统计信息 */}
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{clayBalls.length}</div>
+                            <div className="text-sm text-gray-500">完成事项</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h
+                            </div>
+                            <div className="text-sm text-gray-500">总时长</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {new Set(clayBalls.map(ball => ball.source)).size}
+                            </div>
+                            <div className="text-sm text-gray-500">数据源</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用组件
+        const MultiSourceApp = () => {
+            const [data, setData] = useState([]);
+            
+            const categoryMap = {
+                work: { name: '工作', color: 'bg-airy-blue' },
+                study: { name: '学习', color: 'bg-airy-green' },
+                health: { name: '健康', color: 'bg-airy-orange' },
+                hobby: { name: '兴趣', color: 'bg-airy-purple' },
+                life: { name: '生活', color: 'bg-airy-pink' }
+            };
+
+            // 更新数据统计
+            const updateStats = (currentData) => {
+                const stats = currentData.reduce((acc, item) => {
+                    const source = item.metadata.source;
+                    if (!acc[source]) acc[source] = { count: 0, duration: 0 };
+                    acc[source].count++;
+                    acc[source].duration += item.duration;
+                    return acc;
+                }, {});
+
+                const statsElement = document.getElementById('data-stats');
+                if (statsElement) {
+                    statsElement.innerHTML = `
+                        <h4 class="font-bold mb-2">数据统计:</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            ${Object.entries(stats).map(([source, stat]) => `
+                                <div class="flex justify-between">
+                                    <span class="flex items-center gap-1">
+                                        <div class="w-3 h-3 rounded-full source-${source}"></div>
+                                        ${source}:
+                                    </span>
+                                    <span>${stat.count}项 ${(stat.duration/3600).toFixed(1)}h</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-300">
+                            <div class="flex justify-between font-bold">
+                                <span>总计:</span>
+                                <span>${currentData.length}项 ${(currentData.reduce((sum, item) => sum + item.duration, 0)/3600).toFixed(1)}h</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            };
+
+            // 添加数据的函数
+            const addData = (type) => {
+                const newItem = DataGenerator[type]();
+                const newData = [...data, newItem];
+                setData(newData);
+                updateStats(newData);
+                console.log(`添加${type}数据:`, newItem);
+            };
+
+            // 清空所有数据
+            const clearAll = () => {
+                setData([]);
+                updateStats([]);
+                console.log('清空所有数据');
+            };
+
+            // 绑定按钮事件
+            useEffect(() => {
+                document.getElementById('add-history').onclick = () => addData('history');
+                document.getElementById('add-timer').onclick = () => addData('timer');
+                document.getElementById('add-plan').onclick = () => addData('plan');
+                document.getElementById('add-diary').onclick = () => addData('diary');
+                document.getElementById('clear-all').onclick = clearAll;
+                
+                // 初始化统计
+                updateStats(data);
+            }, [data]);
+
+            return (
+                <MultiSourceAchievementJar 
+                    data={data}
+                    categoryMap={categoryMap}
+                    onCelebrate={(type) => {
+                        console.log(`🎉 庆祝: ${type}`);
+                    }}
+                />
+            );
+        };
+
+        // 渲染应用
+        const container = document.getElementById('jar-root');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(MultiSourceApp));
+
+        // 初始化
+        console.log('🚀 多数据源 Achievement Jar 测试页面已加载');
+        console.log('💡 点击按钮添加不同来源的数据，观察玻璃罐中的变化');
+    </script>
+</body>
+</html>

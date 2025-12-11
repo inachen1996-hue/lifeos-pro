@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紧急玻璃罐子修复</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* 强制玻璃罐子样式 - 最高优先级 */
+        .glass-jar-container {
+            /* 玻璃罐主体 */
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(240,248,255,0.08) 30%, 
+                rgba(230,245,255,0.1) 70%, 
+                rgba(220,240,255,0.15) 100%) !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            
+            /* 玻璃质感阴影 */
+            box-shadow: 
+                /* 外部阴影 - 模拟罐子在表面的投影 */
+                0 20px 40px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.06),
+                /* 内部高光 - 模拟玻璃的反光 */
+                inset 0 2px 4px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.03),
+                /* 边缘光晕 */
+                0 0 0 1px rgba(255,255,255,0.2) !important;
+            
+            /* 玻璃边框 */
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            
+            /* 罐子形状 - 圆润的储物罐 */
+            border-radius: 20px 20px 25px 25px !important;
+        }
+        
+        /* 玻璃罐盖子 */
+        .glass-jar-lid {
+            background: linear-gradient(135deg, 
+                #D2B48C 0%,     /* 浅棕色 */
+                #CD853F 20%,    /* 秘鲁色 */
+                #A0522D 50%,    /* 赭石色 */
+                #8B4513 80%,    /* 马鞍棕 */
+                #654321 100%) !important;  /* 深棕色 */
+            
+            /* 木质纹理效果 */
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                inset 0 -1px 2px rgba(0,0,0,0.2) !important;
+            
+            border: 2px solid #8B4513 !important;
+            border-radius: 50% !important;
+            position: relative !important;
+            
+            /* 木质纹理 */
+            background-image: 
+                radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 1px, transparent 1px),
+                radial-gradient(circle at 70% 60%, rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, transparent 48%, rgba(0,0,0,0.05) 50%, transparent 52%) !important;
+        }
+        
+        /* 盖子上的金属环 */
+        .glass-jar-lid::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 85% !important;
+            height: 85% !important;
+            border: 1px solid #696969 !important;
+            border-radius: 50% !important;
+            background: linear-gradient(135deg, 
+                rgba(192,192,192,0.8) 0%, 
+                rgba(169,169,169,0.6) 50%, 
+                rgba(128,128,128,0.8) 100%) !important;
+            box-shadow: 
+                inset 0 1px 2px rgba(255,255,255,0.5),
+                inset 0 -1px 1px rgba(0,0,0,0.3) !important;
+        }
+        
+        /* 玻璃罐底部厚度效果 */
+        .glass-jar-container::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 10% !important;
+            right: 10% !important;
+            height: 15px !important;
+            background: linear-gradient(180deg, 
+                rgba(255,255,255,0.1) 0%, 
+                rgba(200,220,240,0.2) 100%) !important;
+            border-radius: 0 0 15px 15px !important;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3) !important;
+        }
+        
+        /* 玻璃反光效果 */
+        .glass-jar-reflection {
+            position: absolute !important;
+            top: 15% !important;
+            left: 15% !important;
+            width: 25% !important;
+            height: 40% !important;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.4) 0%, 
+                rgba(255,255,255,0.1) 50%, 
+                transparent 100%) !important;
+            border-radius: 50px 20px 30px 10px !important;
+            transform: rotate(-10deg) !important;
+            pointer-events: none !important;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%) !important;
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px) !important;
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1) !important;
+        }
+
+        /* 强制覆盖任何可能的灰色椭圆样式 */
+        .achievement-jar-container * {
+            background: none !important;
+        }
+        
+        .achievement-jar-container .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(240,248,255,0.08) 30%, 
+                rgba(230,245,255,0.1) 70%, 
+                rgba(220,240,255,0.15) 100%) !important;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">🚨 紧急玻璃罐子修复</h1>
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-center">🏺 Achievement Jar</h2>
+            
+            <!-- 强制使用正确的玻璃罐子结构 -->
+            <div class="achievement-jar-container">
+                <div class="relative mx-auto" style="width: 400px; height: 380px;">
+                    <!-- 木质盖子 -->
+                    <div 
+                        class="glass-jar-lid mx-auto mb-2"
+                        style="width: 320px; height: 40px;"
+                    ></div>
+                    
+                    <!-- 玻璃罐主体 -->
+                    <div 
+                        class="glass-jar-container relative mx-auto"
+                        style="width: 400px; height: 300px;"
+                    >
+                        <!-- 玻璃反光效果 -->
+                        <div class="glass-jar-reflection"></div>
+                        
+                        <!-- 额外的小反光点 -->
+                        <div 
+                            class="absolute top-12 right-16 w-8 h-16 bg-gradient-to-b from-white to-transparent opacity-30 rounded-full"
+                            style="transform: rotate(20deg);"
+                        ></div>
+                        
+                        <!-- 底部反光 -->
+                        <div 
+                            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-4 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 rounded-full"
+                            style="filter: blur(2px);"
+                        ></div>
+                        
+                        <!-- 示例粘土球 -->
+                        <div
+                            class="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style="left: 80px; top: 60px; width: 30px; height: 30px; background-color: #3B82F6;"
+                            title="工作 - 2.5小时"
+                        ></div>
+                        <div
+                            class="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style="left: 150px; top: 90px; width: 25px; height: 25px; background-color: #10B981;"
+                            title="学习 - 1.8小时"
+                        ></div>
+                        <div
+                            class="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style="left: 120px; top: 130px; width: 35px; height: 35px; background-color: #EC4899;"
+                            title="运动 - 3.2小时"
+                        ></div>
+                        <div
+                            class="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style="left: 200px; top: 70px; width: 28px; height: 28px; background-color: #8B5CF6;"
+                            title="阅读 - 2.1小时"
+                        ></div>
+                        <div
+                            class="clay-ball-enhanced absolute rounded-full cursor-pointer"
+                            style="left: 180px; top: 150px; width: 32px; height: 32px; background-color: #F59E0B;"
+                            title="娱乐 - 2.8小时"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-6">
+            <h3 class="text-lg font-bold text-red-800 mb-3">🔧 紧急修复说明</h3>
+            <ul class="text-red-700 space-y-2">
+                <li>• 使用 <code>!important</code> 强制覆盖所有样式</li>
+                <li>• 确保玻璃效果CSS正确应用</li>
+                <li>• 修复木质盖子和反光效果</li>
+                <li>• 增强粘土球立体感</li>
+            </ul>
+            <div class="mt-4 p-4 bg-white rounded-lg">
+                <p class="text-sm text-gray-600">
+                    <strong>如果这个页面显示正确：</strong> 说明CSS样式没问题，需要检查主应用中的样式冲突。<br>
+                    <strong>如果这个页面也有问题：</strong> 说明浏览器缓存或CSS加载有问题。
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <button 
+                onclick="window.location.href='index.html'"
+                class="px-6 py-3 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors mr-4"
+            >
+                返回主应用
+            </button>
+            <button 
+                onclick="location.reload()"
+                class="px-6 py-3 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-colors"
+            >
+                刷新页面
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 强制检查样式是否正确应用
+        window.addEventListener('load', function() {
+            const jarContainer = document.querySelector('.glass-jar-container');
+            if (jarContainer) {
+                const styles = window.getComputedStyle(jarContainer);
+                console.log('🔍 玻璃罐子样式检查:');
+                console.log('Background:', styles.background);
+                console.log('Border-radius:', styles.borderRadius);
+                console.log('Box-shadow:', styles.boxShadow);
+                console.log('Backdrop-filter:', styles.backdropFilter);
+                
+                if (styles.background.includes('linear-gradient')) {
+                    console.log('✅ 玻璃效果样式正确应用');
+                } else {
+                    console.log('❌ 玻璃效果样式未正确应用');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

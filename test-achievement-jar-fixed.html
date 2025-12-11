@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 修复版演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+
+        /* Achievement Jar 玻璃效果 */
+        .glass-jar-container {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(240,248,255,0.85) 30%, 
+                rgba(230,245,255,0.9) 70%, 
+                rgba(220,240,255,0.95) 100%) !important;
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                inset 0 3px 6px rgba(255,255,255,0.9),
+                inset 0 -2px 4px rgba(0,0,0,0.05),
+                0 0 0 1px rgba(255,255,255,0.3) !important;
+            border: 2px solid rgba(255,255,255,0.4) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 增强粘土球效果 */
+        .clay-ball-enhanced {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.7) 0%, transparent 50%);
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.2), 
+                inset 0 3px 6px rgba(255,255,255,0.7),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clay-ball-enhanced:hover {
+            transform: scale(1.15) translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.25), 
+                inset 0 3px 6px rgba(255,255,255,0.8),
+                inset 0 -1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 弹幕效果 */
+        .danmaku {
+            position: fixed;
+            right: -300px;
+            z-index: 1000;
+            pointer-events: none;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: danmaku-move linear;
+        }
+
+        @keyframes danmaku-move {
+            from { right: -300px; }
+            to { right: 100vw; }
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // 正确的 React 解构
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // 模拟数据
+        const mockAchievementData = [
+            {
+                id: '1',
+                category: 'work',
+                duration: 7200, // 2小时
+                title: '完成项目文档'
+            },
+            {
+                id: '2',
+                category: 'study',
+                duration: 3600, // 1小时
+                title: '学习React开发'
+            },
+            {
+                id: '3',
+                category: 'health',
+                duration: 1800, // 30分钟
+                title: '晨跑锻炼'
+            },
+            {
+                id: '4',
+                category: 'hobby',
+                duration: 2700, // 45分钟
+                title: '阅读技术书籍'
+            },
+            {
+                id: '5',
+                category: 'life',
+                duration: 1200, // 20分钟
+                title: '整理房间'
+            },
+            {
+                id: '6',
+                category: 'entertainment',
+                duration: 3000, // 50分钟
+                title: '看电影放松'
+            }
+        ];
+
+        const categoryMap = {
+            work: { name: '工作', color: '#3b82f6' },
+            study: { name: '学习', color: '#10b981' },
+            rest: { name: '休息', color: '#8b5cf6' },
+            sleep: { name: '睡眠', color: '#6366f1' },
+            life: { name: '生活', color: '#f59e0b' },
+            entertainment: { name: '娱乐', color: '#ef4444' },
+            health: { name: '健康', color: '#06b6d4' },
+            hobby: { name: '爱好', color: '#ec4899' }
+        };
+
+        // Achievement Jar 容器组件
+        function AchievementJarContainer({ data, categoryMap, onCelebrate }) {
+            const [clayBalls, setClayBalls] = useState([]);
+
+            // 生成粘土球数据
+            useEffect(() => {
+                const balls = data.map((item, index) => {
+                    const category = categoryMap[item.category] || { name: '其他', color: '#gray-500' };
+                    const size = Math.max(25, Math.min(65, (item.duration / 3600) * 35));
+                    
+                    return {
+                        id: item.id,
+                        category: item.category,
+                        color: category.color,
+                        size,
+                        x: 60 + (index % 4) * 85 + Math.random() * 15,
+                        y: 80 + Math.floor(index / 4) * 70 + Math.random() * 15,
+                        title: item.title,
+                        duration: item.duration
+                    };
+                });
+                
+                setClayBalls(balls);
+            }, [data, categoryMap]);
+
+            return React.createElement('div', {
+                className: "achievement-jar-container bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6"
+            }, [
+                // 3D 玻璃罐子效果
+                React.createElement('div', {
+                    key: 'jar',
+                    className: "glass-jar-container relative mx-auto rounded-t-full rounded-b-lg",
+                    style: {
+                        width: '420px',
+                        height: '320px',
+                        margin: '0 auto'
+                    }
+                }, [
+                    // 粘土球
+                    ...clayBalls.map((ball) => 
+                        React.createElement('div', {
+                            key: ball.id,
+                            className: "clay-ball-enhanced absolute rounded-full cursor-pointer",
+                            style: {
+                                left: `${ball.x}px`,
+                                top: `${ball.y}px`,
+                                width: `${ball.size}px`,
+                                height: `${ball.size}px`,
+                                backgroundColor: ball.color
+                            },
+                            onClick: () => onCelebrate('clap'),
+                            title: `${ball.title} - ${(ball.duration / 3600).toFixed(1)}小时`
+                        })
+                    ),
+                    // 玻璃反光效果
+                    React.createElement('div', {
+                        key: 'reflection1',
+                        className: "absolute top-4 left-8 w-20 h-40 bg-gradient-to-r from-white via-white to-transparent opacity-40 rounded-full",
+                        style: { 
+                            transform: 'rotate(-15deg)',
+                            background: 'linear-gradient(45deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                            filter: 'blur(1px)'
+                        }
+                    }),
+                    React.createElement('div', {
+                        key: 'reflection2',
+                        className: "absolute top-8 right-12 w-8 h-16 bg-gradient-to-b from-white to-transparent opacity-25 rounded-full",
+                        style: { 
+                            transform: 'rotate(25deg)',
+                            filter: 'blur(0.5px)'
+                        }
+                    })
+                ]),
+                // 统计信息
+                React.createElement('div', {
+                    key: 'stats',
+                    className: "mt-6 grid grid-cols-3 gap-4"
+                }, [
+                    React.createElement('div', {
+                        key: 'count',
+                        className: "text-center"
+                    }, [
+                        React.createElement('div', {
+                            key: 'count-value',
+                            className: "text-2xl font-bold text-blue-600"
+                        }, clayBalls.length),
+                        React.createElement('div', {
+                            key: 'count-label',
+                            className: "text-sm text-gray-500"
+                        }, '完成事项')
+                    ]),
+                    React.createElement('div', {
+                        key: 'time',
+                        className: "text-center"
+                    }, [
+                        React.createElement('div', {
+                            key: 'time-value',
+                            className: "text-2xl font-bold text-green-600"
+                        }, `${(clayBalls.reduce((sum, ball) => sum + ball.duration, 0) / 3600).toFixed(1)}h`),
+                        React.createElement('div', {
+                            key: 'time-label',
+                            className: "text-sm text-gray-500"
+                        }, '总时长')
+                    ]),
+                    React.createElement('div', {
+                        key: 'categories',
+                        className: "text-center"
+                    }, [
+                        React.createElement('div', {
+                            key: 'categories-value',
+                            className: "text-2xl font-bold text-purple-600"
+                        }, new Set(clayBalls.map(ball => ball.category)).size),
+                        React.createElement('div', {
+                            key: 'categories-label',
+                            className: "text-sm text-gray-500"
+                        }, '分类数')
+                    ])
+                ])
+            ]);
+        }
+
+        // 主应用组件
+        function AchievementJarDemo() {
+            const [danmakus, setDanmakus] = useState([]);
+
+            // 播放音效（模拟）
+            const playSound = (type) => {
+                console.log(`🎵 播放音效: ${type}`);
+            };
+
+            // 生成弹幕
+            const generateDanmaku = () => {
+                const DANMAKU_MESSAGES = [
+                    "太棒了！继续保持！ 💪",
+                    "你真的很努力！ ✨", 
+                    "每一分努力都值得！ 🌟",
+                    "进步就是最好的奖励！ 🎯",
+                    "坚持就是胜利！ 🏆"
+                ];
+
+                const shuffled = [...DANMAKU_MESSAGES].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, 3);
+                
+                const newDanmakus = selected.map((text, index) => ({
+                    id: Date.now() + index,
+                    text,
+                    top: 15 + index * 20 + Math.random() * 10,
+                    duration: 4 + Math.random() * 1.5,
+                    delay: 0
+                }));
+                
+                setDanmakus(prev => [...prev, ...newDanmakus]);
+                
+                setTimeout(() => {
+                    setDanmakus(prev => prev.filter(d => !newDanmakus.find(nd => nd.id === d.id)));
+                }, 6000);
+            };
+
+            const onCelebrate = (type) => {
+                playSound(type);
+                generateDanmaku();
+            };
+
+            return React.createElement('div', {
+                className: "max-w-4xl mx-auto"
+            }, [
+                React.createElement('h1', {
+                    key: 'title',
+                    className: "text-3xl font-bold text-center mb-8 text-gray-800"
+                }, '🏺 Achievement Jar 完整效果演示'),
+                
+                // Achievement Jar 主界面
+                React.createElement('div', {
+                    key: 'main',
+                    className: "achievement-jar-integrated-progress"
+                }, [
+                    // 顶部标题
+                    React.createElement('div', {
+                        key: 'header',
+                        className: "text-center mb-6"
+                    }, [
+                        React.createElement('h2', {
+                            key: 'jar-title',
+                            className: "text-2xl font-bold text-gray-800 flex items-center justify-center gap-2"
+                        }, '🏺 Achievement Jar'),
+                        React.createElement('p', {
+                            key: 'jar-subtitle',
+                            className: "text-sm text-gray-500 mt-2"
+                        }, '你的成就收藏罐')
+                    ]),
+
+                    // Achievement Jar 容器
+                    React.createElement(AchievementJarContainer, {
+                        key: 'container',
+                        data: mockAchievementData,
+                        categoryMap: categoryMap,
+                        onCelebrate: onCelebrate
+                    }),
+
+                    // 庆祝按钮
+                    React.createElement('div', {
+                        key: 'celebration',
+                        className: "bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-6"
+                    }, [
+                        React.createElement('h3', {
+                            key: 'celebration-title',
+                            className: "font-bold text-lg mb-4 flex items-center justify-center gap-2"
+                        }, '🎉 庆祝成就'),
+                        React.createElement('div', {
+                            key: 'celebration-buttons',
+                            className: "flex gap-3 justify-center"
+                        }, [
+                            React.createElement('button', {
+                                key: 'cheer',
+                                onClick: () => onCelebrate('cheer'),
+                                className: "px-6 py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                            }, '🎉 喝彩'),
+                            React.createElement('button', {
+                                key: 'clap',
+                                onClick: () => onCelebrate('clap'),
+                                className: "px-6 py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                            }, '👏 鼓掌'),
+                            React.createElement('button', {
+                                key: 'drum',
+                                onClick: () => onCelebrate('drum'),
+                                className: "px-6 py-3 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+                            }, '🥁 打鼓')
+                        ])
+                    ])
+                ]),
+
+                // 弹幕容器
+                React.createElement('div', {
+                    key: 'danmaku-container',
+                    className: "fixed inset-0 pointer-events-none z-50"
+                }, danmakus.map((danmaku) => 
+                    React.createElement('div', {
+                        key: danmaku.id,
+                        className: "danmaku absolute text-lg font-bold",
+                        style: {
+                            top: `${danmaku.top}%`,
+                            animationDuration: `${danmaku.duration}s`,
+                            animationDelay: `${danmaku.delay}s`,
+                            background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            textShadow: 'none'
+                        }
+                    }, danmaku.text)
+                )),
+
+                // 说明信息
+                React.createElement('div', {
+                    key: 'info',
+                    className: "bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-8"
+                }, [
+                    React.createElement('h2', {
+                        key: 'info-title',
+                        className: "text-xl font-bold mb-4 flex items-center gap-2"
+                    }, '💡 这就是完整的 Achievement Jar 效果'),
+                    React.createElement('div', {
+                        key: 'info-content',
+                        className: "p-4 bg-blue-50 rounded-xl border border-blue-200"
+                    }, [
+                        React.createElement('h4', {
+                            key: 'info-subtitle',
+                            className: "font-bold text-blue-800 mb-2"
+                        }, '📝 为什么主应用显示空状态？'),
+                        React.createElement('p', {
+                            key: 'info-text',
+                            className: "text-sm text-blue-600"
+                        }, '主应用中显示"暂无数据"是因为还没有计时记录。开始使用计时器功能，完成一些任务后，Achievement Jar 就会显示像这里一样的完整效果，包括透明玻璃罐和彩色粘土球。')
+                    ])
+                ]),
+
+                // 快速访问
+                React.createElement('div', {
+                    key: 'quick-access',
+                    className: "bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white text-center mt-8"
+                }, [
+                    React.createElement('h2', {
+                        key: 'access-title',
+                        className: "text-xl font-bold mb-4"
+                    }, '🚀 体验完整功能'),
+                    React.createElement('div', {
+                        key: 'access-buttons',
+                        className: "flex gap-4 justify-center"
+                    }, [
+                        React.createElement('a', {
+                            key: 'main-app',
+                            href: "http://localhost:8080/index.html",
+                            target: "_blank",
+                            className: "px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                        }, '📱 主应用'),
+                        React.createElement('button', {
+                            key: 'test-celebration',
+                            onClick: () => onCelebrate('cheer'),
+                            className: "px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-bold transition-all hover:scale-105"
+                        }, '🎉 测试庆祝')
+                    ])
+                ])
+            ]);
+        }
+
+        // 渲染应用
+        try {
+            const root = createRoot(document.getElementById('root'));
+            root.render(React.createElement(AchievementJarDemo));
+            console.log('🏺 Achievement Jar 演示页面加载成功');
+        } catch (error) {
+            console.error('❌ 渲染失败:', error);
+            document.getElementById('root').innerHTML = `
+                <div class="text-center py-12">
+                    <div class="text-6xl mb-4">⚠️</div>
+                    <h3 class="text-xl font-semibold text-red-600 mb-2">加载失败</h3>
+                    <p class="text-gray-500 mb-4">页面渲染遇到问题: ${error.message}</p>
+                    <button onclick="window.location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        重新加载
+                    </button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

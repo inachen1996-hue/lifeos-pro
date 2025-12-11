@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缓存验证测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      color: #667eea;
+      margin: 0 0 10px 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 14px;
+      margin: 10px 5px;
+    }
+    .status.good {
+      background: #4caf50;
+      color: white;
+    }
+    .status.bad {
+      background: #f44336;
+      color: white;
+    }
+    .status.unknown {
+      background: #ff9800;
+      color: white;
+    }
+    .button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.3s;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .button:active {
+      transform: translateY(0);
+    }
+    .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 20px;
+      border-radius: 10px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      margin: 15px 0;
+      line-height: 1.6;
+    }
+    .log-line {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid transparent;
+    }
+    .log-line.good {
+      border-left-color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+    }
+    .log-line.bad {
+      border-left-color: #f44336;
+      background: rgba(244, 67, 54, 0.1);
+    }
+    .instruction {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    .warning {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    .success {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    #test-results {
+      margin-top: 20px;
+    }
+    .test-item {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 缓存验证测试工具</h1>
+    <p style="color: #666; margin-bottom: 20px;">
+      这个页面会帮助你验证浏览器是否使用了缓存的旧代码
+    </p>
+
+    <div class="warning">
+      <strong>⚠️ 重要提示</strong><br>
+      这个测试页面本身不包含特殊球体功能。<br>
+      它会打开主应用并检查那里的代码版本。
+    </div>
+
+    <button class="button" onclick="runFullTest()">🚀 开始完整测试</button>
+    <button class="button" onclick="openMainApp()">📱 打开主应用</button>
+    <button class="button" onclick="showClearCacheInstructions()">🗑️ 清除缓存指南</button>
+
+    <div id="test-results"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 测试步骤</h2>
+    
+    <div class="instruction">
+      <strong>步骤 1: 打开主应用</strong><br>
+      点击上面的"打开主应用"按钮，或访问：<br>
+      <code>http://localhost:8000</code>
+    </div>
+
+    <div class="instruction">
+      <strong>步骤 2: 进入今日进度</strong><br>
+      在主应用中：<br>
+      1. 点击底部导航的"复盘"<br>
+      2. 选择"今日进度" Tab<br>
+      3. 打开控制台（F12）
+    </div>
+
+    <div class="instruction">
+      <strong>步骤 3: 检查日志</strong><br>
+      在控制台中查找这条日志：
+      <div class="code-block">
+<div class="log-line good">✅ [Integrated] dropSpecialBall函数已暴露到全局</div>
+      </div>
+      
+      <strong>如果看到的是：</strong>
+      <div class="code-block">
+<div class="log-line bad">✅ dropSpecialBall函数已暴露到全局</div>
+      </div>
+      
+      <strong style="color: #f44336;">说明使用了缓存的旧代码！需要清除缓存。</strong>
+    </div>
+
+    <div class="instruction">
+      <strong>步骤 4: 测试功能</strong><br>
+      点击任意庆祝按钮（🍬 喝彩 / 🪙 鼓掌 / ⭐ 打鼓）<br>
+      <br>
+      <strong>预期效果：</strong><br>
+      • 罐子顶部掉落彩色球体<br>
+      • 球体受重力影响下落<br>
+      • 球体触底后弹跳<br>
+      • 手机震动（如果支持）<br>
+      • 5秒后球体消失
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔧 清除缓存方法</h2>
+    
+    <h3>方法 1: 强制刷新（最快）</h3>
+    <div class="code-block">
+Mac:     Cmd + Shift + R
+Windows: Ctrl + Shift + R
+Linux:   Ctrl + Shift + R
+    </div>
+
+    <h3>方法 2: 清空缓存并硬性重新加载（推荐）</h3>
+    <ol>
+      <li>在主应用页面按 F12 打开开发者工具</li>
+      <li><strong>右键点击</strong>刷新按钮</li>
+      <li>选择"清空缓存并硬性重新加载"</li>
+    </ol>
+
+    <h3>方法 3: 清除站点数据（彻底）</h3>
+    <ol>
+      <li>按 F12 打开开发者工具</li>
+      <li>切换到 "Application" 标签</li>
+      <li>点击 "Storage" → "Clear site data"</li>
+      <li>点击 "Clear site data" 按钮</li>
+      <li>重新加载页面</li>
+    </ol>
+
+    <h3>方法 4: 使用隐身模式（验证）</h3>
+    <div class="code-block">
+Chrome:  Cmd + Shift + N (Mac) / Ctrl + Shift + N (Windows)
+Firefox: Cmd + Shift + P (Mac) / Ctrl + Shift + P (Windows)
+Safari:  Cmd + Shift + N (Mac)
+    </div>
+    <p>在隐身窗口中访问 <code>http://localhost:8000</code> 测试</p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 成功标志</h2>
+    
+    <div class="success">
+      <strong>✅ 当一切正常时，你应该看到：</strong><br><br>
+      
+      <strong>1. 控制台日志（注意 [Integrated] 标记）：</strong>
+      <div class="code-block">
+✅ [Integrated] dropSpecialBall函数已暴露到全局
+      </div>
+
+      <strong>2. 点击按钮后的日志：</strong>
+      <div class="code-block">
+🍬 喝彩按钮被点击
+✅ 调用window.dropSpecialBall(cheer)
+🎯 [Integrated] dropSpecialBall被调用: cheer
+🎉 [Integrated] 创建特殊球体 - 彩虹糖: {...}
+📊 [Integrated] 当前特殊球体数量: 1
+📳 触觉反馈已触发
+      </div>
+
+      <strong>3. 视觉效果：</strong><br>
+      • 彩色球体从罐子顶部掉落<br>
+      • 球体有弹跳动画<br>
+      • 5秒后自动消失
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🧪 手动测试命令</h2>
+    <p>在主应用的控制台中运行以下命令：</p>
+    
+    <div class="code-block" id="manual-test-commands">
+// 1. 检查函数是否存在
+console.log('函数存在:', typeof window.dropSpecialBall);
+
+// 2. 检查函数版本（应该包含 [Integrated]）
+const funcStr = window.dropSpecialBall.toString();
+console.log('包含[Integrated]标记:', funcStr.includes('[Integrated]'));
+console.log('函数代码片段:', funcStr.substring(0, 300));
+
+// 3. 手动调用测试
+window.dropSpecialBall('cheer');  // 掉落彩虹糖
+window.dropSpecialBall('clap');   // 掉落金币
+window.dropSpecialBall('drum');   // 掉落星星
+
+// 4. 检查特殊球体 DOM 元素
+setTimeout(() => {
+  const balls = document.querySelectorAll('.special-ball');
+  console.log('特殊球体数量:', balls.length);
+  balls.forEach((ball, i) => {
+    console.log(`球体 ${i+1}:`, {
+      位置: ball.style.left + ', ' + ball.style.top,
+      大小: ball.style.width + ' x ' + ball.style.height,
+      emoji: ball.textContent
+    });
+  });
+}, 1000);
+    </div>
+    
+    <button class="button" onclick="copyManualTestCommands()">📋 复制测试命令</button>
+  </div>
+
+  <script>
+    function runFullTest() {
+      const results = document.getElementById('test-results');
+      results.innerHTML = '<h3>🔍 测试结果</h3>';
+      
+      // 测试 1: 检查服务器
+      addTestResult('检查服务器', '正在检查...', 'unknown');
+      
+      fetch('http://localhost:8000')
+        .then(response => {
+          if (response.ok) {
+            updateTestResult(0, '检查服务器', '✅ 服务器运行正常', 'good');
+            
+            // 测试 2: 检查 index.html
+            addTestResult('检查主页面', '正在检查...', 'unknown');
+            return fetch('http://localhost:8000/index.html');
+          } else {
+            throw new Error('服务器响应异常');
+          }
+        })
+        .then(response => response.text())
+        .then(html => {
+          const hasIntegratedCode = html.includes('[Integrated] dropSpecialBall');
+          
+          if (hasIntegratedCode) {
+            updateTestResult(1, '检查主页面', '✅ index.html 包含最新代码', 'good');
+            
+            addTestResult('下一步', '请打开主应用并进入"今日进度"页面测试', 'unknown');
+            
+            const openButton = document.createElement('button');
+            openButton.className = 'button';
+            openButton.textContent = '🚀 打开主应用';
+            openButton.onclick = openMainApp;
+            results.appendChild(openButton);
+          } else {
+            updateTestResult(1, '检查主页面', '❌ index.html 不包含最新代码', 'bad');
+            addTestResult('建议', '请确认 index.html 文件已正确更新', 'bad');
+          }
+        })
+        .catch(error => {
+          updateTestResult(0, '检查服务器', '❌ 服务器未运行或无法访问', 'bad');
+          addTestResult('解决方案', '请运行: python3 -m http.server 8000', 'bad');
+        });
+    }
+    
+    function addTestResult(title, message, status) {
+      const results = document.getElementById('test-results');
+      const item = document.createElement('div');
+      item.className = 'test-item';
+      item.innerHTML = `
+        <strong>${title}:</strong> 
+        <span class="status ${status}">${message}</span>
+      `;
+      results.appendChild(item);
+    }
+    
+    function updateTestResult(index, title, message, status) {
+      const results = document.getElementById('test-results');
+      const items = results.querySelectorAll('.test-item');
+      if (items[index]) {
+        items[index].innerHTML = `
+          <strong>${title}:</strong> 
+          <span class="status ${status}">${message}</span>
+        `;
+      }
+    }
+    
+    function openMainApp() {
+      const url = 'http://localhost:8000';
+      window.open(url, '_blank');
+      
+      setTimeout(() => {
+        alert('📋 接下来请：\n\n1. 在新打开的页面中点击"复盘"\n2. 选择"今日进度" Tab\n3. 按 F12 打开控制台\n4. 查找日志: ✅ [Integrated] dropSpecialBall函数已暴露到全局\n\n如果没有看到 [Integrated] 标记，请清除缓存！');
+      }, 500);
+    }
+    
+    function showClearCacheInstructions() {
+      alert('🗑️ 清除缓存方法：\n\n' +
+            '方法 1（最快）：\n' +
+            'Mac: Cmd + Shift + R\n' +
+            'Windows: Ctrl + Shift + R\n\n' +
+            '方法 2（推荐）：\n' +
+            '1. 按 F12 打开开发者工具\n' +
+            '2. 右键点击刷新按钮\n' +
+            '3. 选择"清空缓存并硬性重新加载"\n\n' +
+            '方法 3（彻底）：\n' +
+            '1. 按 F12 → Application 标签\n' +
+            '2. Storage → Clear site data\n' +
+            '3. 点击 Clear site data 按钮');
+    }
+    
+    function copyManualTestCommands() {
+      const commands = document.getElementById('manual-test-commands').textContent;
+      navigator.clipboard.writeText(commands).then(() => {
+        alert('✅ 测试命令已复制！\n\n请在主应用的控制台中粘贴并运行。');
+      }).catch(() => {
+        alert('❌ 复制失败，请手动复制代码块中的内容。');
+      });
+    }
+    
+    // 页面加载时显示提示
+    window.addEventListener('load', () => {
+      console.log('🔍 缓存验证测试工具已加载');
+      console.log('📋 点击"开始完整测试"按钮开始检查');
+    });
+  </script>
+</body>
+</html>
