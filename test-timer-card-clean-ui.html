@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器卡片简洁UI测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        .macaron-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .macaron-card:hover {
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.18), 
+                        0 4px 12px -2px rgba(162, 210, 255, 0.12),
+                        inset 0 2px 8px rgba(255, 255, 255, 0.9);
+        }
+        
+        .timer-running {
+            animation: macaron-pulse 2s ease-in-out infinite;
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%) !important;
+            border: 3px solid #A2D2FF !important;
+        }
+        
+        @keyframes macaron-pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 8px 32px -4px rgba(162, 210, 255, 0.4), 
+                            0 4px 16px -2px rgba(162, 210, 255, 0.3),
+                            inset 0 2px 8px rgba(255, 255, 255, 0.6);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 12px 40px -4px rgba(162, 210, 255, 0.5), 
+                            0 6px 20px -2px rgba(162, 210, 255, 0.4),
+                            inset 0 2px 12px rgba(255, 255, 255, 0.8);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🎨 计时器卡片简洁UI测试</h1>
+            <p class="text-blue-100 text-sm">验证移除模式文案后的卡片效果</p>
+        </div>
+        
+        <!-- 修改说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ UI简化内容：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• 移除了"正计时"文案和图标</li>
+                <li>• 移除了"倒计时25min"文案和图标</li>
+                <li>• 移除了"番茄钟"文案和图标</li>
+                <li>• 保留了运行中状态的显示</li>
+                <li>• 卡片界面更加简洁清爽</li>
+            </ul>
+        </div>
+        
+        <!-- 测试区域 -->
+        <div id="test-area" class="p-4 space-y-4">
+            <h3 class="font-bold text-gray-800 mb-3">📱 简化后的计时器卡片：</h3>
+            
+            <!-- 停止状态的计时器卡片 -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-gray-600">停止状态（简洁版）：</h4>
+                
+                <!-- 正计时器 -->
+                <div class="macaron-card rounded-3xl p-4 timer-card">
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 flex items-center justify-center">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="stopwatchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#E3F2FD" />
+                                        <stop offset="100%" stopColor="#2196F3" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="13" r="8" fill="url(#stopwatchGrad)" stroke="#1976D2" strokeWidth="1"/>
+                                <rect x="11" y="3" width="2" height="3" rx="1" fill="#1976D2"/>
+                                <circle cx="12" cy="13" r="6" fill="none" stroke="white" strokeWidth="0.5" opacity="0.6"/>
+                                <line x1="12" y1="13" x2="12" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                                <line x1="12" y1="13" x2="15" y2="13" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                                <circle cx="12" cy="13" r="1.5" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-black text-[#023E8A] drop-shadow-sm leading-tight" style="fontSize: 16px">工作计时器</div>
+                            {/* 这里原来有模式文案，现在已移除 */}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button class="flex-1 py-3 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 rounded-2xl font-bold hover:shadow-lg transition-all">
+                            开始
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 倒计时器 -->
+                <div class="macaron-card rounded-3xl p-4 timer-card">
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 flex items-center justify-center">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="countdownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#FFF8E1" />
+                                        <stop offset="100%" stopColor="#FF9800" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="9" fill="url(#countdownGrad)" stroke="#F57C00" strokeWidth="1"/>
+                                <circle cx="12" cy="12" r="7" fill="none" stroke="white" strokeWidth="0.5" opacity="0.6"/>
+                                <rect x="11.5" y="4" width="1" height="2" rx="0.5" fill="white"/>
+                                <rect x="18" y="11.5" width="2" height="1" rx="0.5" fill="white"/>
+                                <rect x="11.5" y="18" width="1" height="2" rx="0.5" fill="white"/>
+                                <rect x="4" y="11.5" width="2" height="1" rx="0.5" fill="white"/>
+                                <line x1="12" y1="12" x2="12" y2="7" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                                <line x1="12" y1="12" x2="16" y2="12" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                                <circle cx="12" cy="12" r="1.5" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-black text-[#023E8A] drop-shadow-sm leading-tight" style="fontSize: 16px">专注时间</div>
+                            {/* 这里原来有"倒计时25min"文案，现在已移除 */}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button class="flex-1 py-3 bg-gradient-to-br from-yellow-100 to-amber-200 text-amber-700 rounded-2xl font-bold hover:shadow-lg transition-all">
+                            开始
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 番茄钟 -->
+                <div class="macaron-card rounded-3xl p-4 timer-card">
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 flex items-center justify-center">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="tomatoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#FFEBEE" />
+                                        <stop offset="100%" stopColor="#E91E63" />
+                                    </linearGradient>
+                                    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#C8E6C9" />
+                                        <stop offset="100%" stopColor="#4CAF50" />
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="12" cy="14" rx="7" ry="8" fill="url(#tomatoGrad)" stroke="#C2185B" strokeWidth="0.5"/>
+                                <path d="M8 8 Q12 6 16 8" fill="none" stroke="#C2185B" strokeWidth="1" strokeLinecap="round"/>
+                                <ellipse cx="10" cy="6" rx="2" ry="3" fill="url(#leafGrad)" stroke="#388E3C" strokeWidth="0.5" transform="rotate(-20 10 6)"/>
+                                <ellipse cx="14" cy="5" rx="1.5" ry="2.5" fill="url(#leafGrad)" stroke="#388E3C" strokeWidth="0.5" transform="rotate(15 14 5)"/>
+                                <ellipse cx="10" cy="11" rx="1.5" ry="2" fill="rgba(255,255,255,0.4)"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-black text-[#023E8A] drop-shadow-sm leading-tight" style="fontSize: 16px">深度工作</div>
+                            {/* 这里原来有"番茄钟25/5分钟"文案，现在已移除 */}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button class="flex-1 py-3 bg-gradient-to-br from-pink-100 to-pink-200 text-pink-700 rounded-2xl font-bold hover:shadow-lg transition-all">
+                            开始
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 运行状态的计时器卡片 -->
+            <div class="space-y-3 mt-6">
+                <h4 class="text-sm font-bold text-gray-600">运行状态（保留显示）：</h4>
+                
+                <div class="timer-running rounded-3xl p-4 timer-card">
+                    <div class="flex items-center gap-4 flex-1 relative z-10">
+                        <div class="w-12 h-12 flex items-center justify-center">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="13" r="8" fill="url(#stopwatchGrad)" stroke="#1976D2" strokeWidth="1"/>
+                                <rect x="11" y="3" width="2" height="3" rx="1" fill="#1976D2"/>
+                                <circle cx="12" cy="13" r="6" fill="none" stroke="white" strokeWidth="0.5" opacity="0.6"/>
+                                <line x1="12" y1="13" x2="12" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                                <line x1="12" y1="13" x2="15" y2="13" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                                <circle cx="12" cy="13" r="1.5" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-black text-[#023E8A] drop-shadow-sm leading-tight" style="fontSize: 16px">工作计时器</div>
+                            <div class="text-slate-400 font-medium mt-1" style="fontSize: 13px">
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-blue-700 font-black text-sm drop-shadow-sm flex items-center gap-1">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="13" r="8" fill="#2196F3"/>
+                                            <circle cx="12" cy="13" r="1.5" fill="white"/>
+                                        </svg>
+                                        运行中
+                                    </span>
+                                    <span class="font-mono text-blue-900 font-black text-base">00:15:32</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对比说明 -->
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">📊 UI简化对比：</h3>
+                <div class="text-sm text-blue-700 space-y-2">
+                    <div><strong>简化前：</strong> 显示"正计时"、"倒计时25min"、"番茄钟25/5分钟"等文案</div>
+                    <div><strong>简化后：</strong> 只显示计时器名称，界面更简洁</div>
+                    <div><strong>保留：</strong> 运行中状态仍显示"运行中"和时间</div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">✨ 简化优势：</h3>
+                <ul class="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                    <li>界面更加简洁清爽</li>
+                    <li>减少视觉干扰，突出计时器名称</li>
+                    <li>图标已经表达了模式信息</li>
+                    <li>运行状态信息仍然完整</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器卡片简洁UI测试已加载');
+            console.log('🎨 主要修改：移除模式文案和图标，保持界面简洁');
+        });
+    </script>
+</body>
+</html>

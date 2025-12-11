@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化 API 界面测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-cyan-50 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white p-8 rounded-3xl shadow-xl">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">🎨 简化 API 界面预览</h1>
+            
+            <!-- 模拟 API 设置弹窗 -->
+            <div class="bg-white w-full max-w-md mx-auto p-8 rounded-[2.5rem] shadow-2xl border-2 border-gray-100">
+                <h3 class="font-bold text-xl mb-6">AI 服务设置</h3>
+                
+                {/* 服务状态显示 */}
+                <div class="mb-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-2xl border border-blue-200">
+                        <h4 class="font-bold text-blue-800 mb-3">🤖 可用服务</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-blue-700">DeepSeek</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✅ 服务器配置</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-blue-700">Google Gemini</span>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✅ 服务器配置</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-blue-700">当前服务</span>
+                                <span id="currentService" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">DeepSeek</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* OpenAI 输入框（条件显示） */}
+                <div id="openaiInput" class="mb-6 hidden">
+                    <label class="text-sm font-bold text-slate-600 mb-2 block">OpenAI API Key（可选）</label>
+                    <input 
+                        type="password" 
+                        class="w-full bg-slate-50 p-5 rounded-2xl text-base outline-none focus:ring-2 focus:ring-purple-300" 
+                        placeholder="输入 OpenAI Key (sk-...)"
+                    />
+                    <p class="text-xs text-slate-400 mt-2">以 sk- 开头，如不填写将使用默认服务</p>
+                </div>
+
+                {/* 服务切换按钮 */}
+                <div class="mb-6">
+                    <label class="text-sm font-bold text-slate-600 mb-2 block">切换 AI 服务</label>
+                    <div class="flex gap-2">
+                        <button 
+                            id="btnDeepSeek"
+                            class="flex-1 py-3 rounded-xl font-bold transition-all bg-blue-500 text-white"
+                        >
+                            DeepSeek
+                        </button>
+                        <button 
+                            id="btnGemini"
+                            class="flex-1 py-3 rounded-xl font-bold transition-all bg-slate-100 text-slate-500"
+                        >
+                            Gemini
+                        </button>
+                        <button 
+                            id="btnOpenAI"
+                            class="flex-1 py-3 rounded-xl font-bold transition-all bg-slate-100 text-slate-500"
+                        >
+                            OpenAI
+                        </button>
+                    </div>
+                </div>
+
+                {/* 一键连接按钮 */}
+                <button 
+                    id="btnOneClick"
+                    class="w-full py-4 bg-gradient-to-r from-emerald-400 to-cyan-400 text-white rounded-2xl font-bold mb-3 hover:from-emerald-500 hover:to-cyan-500 transition-all shadow-lg"
+                >
+                    🚀 一键连接服务器 API
+                </button>
+
+                {/* 测试按钮 */}
+                <button 
+                    id="btnTest"
+                    class="w-full py-3 bg-blue-100 text-blue-700 rounded-2xl font-bold mb-4 hover:bg-blue-200 transition-all"
+                >
+                    🧪 测试当前服务
+                </button>
+
+                {/* 操作按钮 */}
+                <div class="flex gap-3">
+                    <button 
+                        id="btnClear"
+                        class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold text-slate-500 hidden"
+                    >
+                        清除 Key
+                    </button>
+                    <button 
+                        id="btnSave"
+                        class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold"
+                    >
+                        保存配置
+                    </button>
+                </div>
+                <button class="w-full mt-6 text-sm text-slate-400 font-bold">关闭</button>
+            </div>
+
+            <!-- 功能说明 -->}
+            <div class="mt-8 grid gap-6">
+                <div class="bg-green-50 p-6 rounded-2xl border border-green-200">
+                    <h3 class="font-bold text-lg text-green-800 mb-3">✨ 界面简化特性</h3>
+                    <ul class="text-sm text-green-700 space-y-2">
+                        <li>• 隐藏了 DeepSeek 和 Gemini 的 API 密钥输入框</li>
+                        <li>• 显示服务器端配置状态，用户无需手动输入</li>
+                        <li>• 只有 OpenAI 服务需要用户自定义密钥（可选）</li>
+                        <li>• 简化了操作流程，提升用户体验</li>
+                    </ul>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                    <h3 class="font-bold text-lg text-blue-800 mb-3">🔄 交互逻辑</h3>
+                    <ul class="text-sm text-blue-700 space-y-2">
+                        <li>• <strong>DeepSeek/Gemini</strong>: 直接使用服务器配置，无需输入</li>
+                        <li>• <strong>OpenAI</strong>: 可选择输入自定义密钥或使用默认服务</li>
+                        <li>• <strong>一键连接</strong>: 自动配置并测试服务器端 API</li>
+                        <li>• <strong>测试功能</strong>: 智能检测当前服务并进行相应测试</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentProvider = 'deepseek';
+
+        // 服务切换逻辑
+        function switchService(provider) {
+            currentProvider = provider;
+            
+            // 更新按钮状态
+            document.querySelectorAll('[id^="btn"]').forEach(btn => {
+                if (btn.id.includes('DeepSeek') || btn.id.includes('Gemini') || btn.id.includes('OpenAI')) {
+                    btn.className = 'flex-1 py-3 rounded-xl font-bold transition-all bg-slate-100 text-slate-500';
+                }
+            });
+            
+            // 高亮当前选中的服务
+            const colors = {
+                deepseek: 'bg-blue-500 text-white',
+                gemini: 'bg-green-500 text-white',
+                openai: 'bg-purple-500 text-white'
+            };
+            
+            const btnId = provider === 'deepseek' ? 'btnDeepSeek' : 
+                         provider === 'gemini' ? 'btnGemini' : 'btnOpenAI';
+            
+            document.getElementById(btnId).className = `flex-1 py-3 rounded-xl font-bold transition-all ${colors[provider]}`;
+            
+            // 更新当前服务显示
+            const serviceNames = {
+                deepseek: 'DeepSeek',
+                gemini: 'Gemini',
+                openai: 'OpenAI'
+            };
+            document.getElementById('currentService').textContent = serviceNames[provider];
+            
+            // 显示/隐藏 OpenAI 输入框
+            const openaiInput = document.getElementById('openaiInput');
+            const btnClear = document.getElementById('btnClear');
+            const btnSave = document.getElementById('btnSave');
+            
+            if (provider === 'openai') {
+                openaiInput.classList.remove('hidden');
+                btnClear.classList.remove('hidden');
+                btnSave.className = 'flex-[2] py-4 bg-slate-800 text-white rounded-2xl font-bold';
+            } else {
+                openaiInput.classList.add('hidden');
+                btnClear.classList.add('hidden');
+                btnSave.className = 'w-full py-4 bg-slate-800 text-white rounded-2xl font-bold';
+            }
+        }
+
+        // 绑定事件
+        document.getElementById('btnDeepSeek').addEventListener('click', () => switchService('deepseek'));
+        document.getElementById('btnGemini').addEventListener('click', () => switchService('gemini'));
+        document.getElementById('btnOpenAI').addEventListener('click', () => switchService('openai'));
+
+        // 一键连接
+        document.getElementById('btnOneClick').addEventListener('click', () => {
+            alert('🚀 一键连接功能演示\n\n将自动配置服务器端 API 并测试连接');
+        });
+
+        // 测试连接
+        document.getElementById('btnTest').addEventListener('click', () => {
+            const serviceNames = {
+                deepseek: 'DeepSeek',
+                gemini: 'Gemini', 
+                openai: 'OpenAI'
+            };
+            
+            if (currentProvider === 'openai') {
+                alert(`🧪 测试 ${serviceNames[currentProvider]} 连接\n\n将验证用户输入的 API 密钥`);
+            } else {
+                alert(`🧪 测试 ${serviceNames[currentProvider]} 连接\n\n将使用服务器端配置进行测试`);
+            }
+        });
+
+        // 保存配置
+        document.getElementById('btnSave').addEventListener('click', () => {
+            alert('💾 配置已保存\n\n当前设置已保存到本地存储');
+        });
+
+        // 清除密钥
+        document.getElementById('btnClear').addEventListener('click', () => {
+            document.querySelector('#openaiInput input').value = '';
+            alert('🗑️ 已清除 OpenAI API Key');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复盘页面修复</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [activePage, setActivePage] = useState('review');
+            const [reviewTab, setReviewTab] = useState('progress');
+            const [progressScope, setProgressScope] = useState('today');
+            const [fullHistory, setFullHistory] = useState('');
+            const [danmakus, setDanmakus] = useState([]);
+            const [customSounds, setCustomSounds] = useState({});
+
+            // 模拟数据
+            const CATEGORIES = [
+                { id: 'work', label: '工作', color: '#3B82F6' },
+                { id: 'study', label: '学习', color: '#10B981' },
+                { id: 'rest', label: '休息', color: '#F59E0B' },
+            ];
+
+            // 安全的函数调用包装器
+            const safeCall = (fn, ...args) => {
+                try {
+                    if (typeof fn === 'function') {
+                        return fn(...args);
+                    }
+                } catch (error) {
+                    console.error('Function call error:', error);
+                }
+            };
+
+            // 模拟的工具函数
+            const getDateRangesForScope = (scope) => {
+                const today = new Date();
+                return {
+                    currentStart: today,
+                    currentEnd: today
+                };
+            };
+
+            const getLogsInDateRange = (fullHistory, start, end) => {
+                return fullHistory || '';
+            };
+
+            // 修复后的 AchievementJarIntegratedProgress 组件
+            const AchievementJarIntegratedProgress = ({ 
+                fullHistory = '', 
+                progressScope = 'today', 
+                onScopeChange = () => {}, 
+                categoryMap = {}, 
+                customSounds = {}, 
+                danmakus = [], 
+                setDanmakus = () => {}, 
+                playSound = () => {},
+                onToggleMode = null // 允许为 null
+            }) => {
+                const [isLoading, setIsLoading] = useState(true);
+                const [error, setError] = useState(null);
+                const [achievementJarData, setAchievementJarData] = useState([]);
+
+                // 数据转换和处理
+                useEffect(() => {
+                  try {
+                    const { currentStart, currentEnd } = getDateRangesForScope(progressScope);
+                    const logsInRange = getLogsInDateRange(fullHistory, currentStart, currentEnd);
+                    
+                    // 转换数据格式
+                    const items = logsInRange.split('\n').filter(l => l.trim()).map((line, idx) => {
+                      const dateMatch = line.match(/(\d{4}-\d{1,2}-\d{1,2})/);
+                      const durationMatch = line.match(/(\d+(\.\d+)?)\s*(h|m|min|hour)/i);
+                      const categoryMatch = line.match(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]/i);
+                      
+                      let duration = 0;
+                      if (durationMatch) {
+                        const val = parseFloat(durationMatch[1]);
+                        const unit = durationMatch[3].toLowerCase();
+                        duration = unit.startsWith('m') ? val / 60 : val;
+                      }
+                      
+                      const description = line
+                        .replace(/\d{4}-\d{1,2}-\d{1,2}:\s*/, '')
+                        .replace(/\[(WORK|STUDY|REST|SLEEP|LIFE|ENTERTAINMENT|HEALTH|HOBBY)\]\s*/i, '')
+                        .replace(/\d+(\.\d+)?\s*(h|m|min|hour)/i, '')
+                        .trim();
+                      
+                      return {
+                        id: idx.toString(),
+                        timestamp: dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString(),
+                        category: categoryMatch ? categoryMatch[1].toLowerCase() : 'work',
+                        duration: duration * 3600, // 转换为秒
+                        title: description,
+                        metadata: { originalFormat: true, source: 'lifeos' }
+                      };
+                    }).filter(item => item.duration > 0);
+
+                    setAchievementJarData(items);
+                    setIsLoading(false);
+                  } catch (err) {
+                    console.error('Achievement Jar data processing error:', err);
+                    setError(err);
+                    setIsLoading(false);
+                  }
+                }, [fullHistory, progressScope]);
+
+                // 错误处理 - 安全的降级处理
+                if (error) {
+                  console.warn('Achievement Jar failed, falling back to original interface');
+                  // 安全调用 onToggleMode
+                  safeCall(onToggleMode);
+                  
+                  // 如果没有 onToggleMode 函数，显示错误信息
+                  if (!onToggleMode) {
+                    return (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h3 className="text-red-800 font-bold">Achievement Jar 加载失败</h3>
+                        <p className="text-red-600 text-sm mt-1">{error.message}</p>
+                        <button 
+                          onClick={() => setError(null)}
+                          className="mt-2 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                        >
+                          重试
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                }
+
+                // 加载状态
+                if (isLoading) {
+                  return (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="text-slate-600">正在加载 Achievement Jar...</div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // 空状态处理
+                if (achievementJarData.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">🏺</div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">暂无数据</h3>
+                      <p className="text-gray-500 mb-6">
+                        {progressScope === 'today' ? '今天' : progressScope === 'weekly' ? '本周' : '本月'}还没有任何计时记录
+                      </p>
+                      <div className="flex gap-3 justify-center">
+                        {onToggleMode && (
+                          <button
+                            onClick={onToggleMode}
+                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            返回原界面
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Achievement Jar 主界面
+                return (
+                  <div className="achievement-jar-integrated-progress">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        🏺 Achievement Jar
+                      </h2>
+                      {onToggleMode && (
+                        <button
+                          onClick={onToggleMode}
+                          className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          切换到原界面
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-6 shadow-sm">
+                      <p className="text-gray-600">Achievement Jar 界面正常工作</p>
+                      <p className="text-sm text-gray-500 mt-2">数据项数: {achievementJarData.length}</p>
+                    </div>
+                  </div>
+                );
+            };
+
+            const renderReviewPage = () => {
+                const [enableAchievementJar, setEnableAchievementJar] = useState(true);
+
+                const toggleAchievementJar = (enabled) => {
+                  setEnableAchievementJar(enabled);
+                };
+
+                return (
+                    <div className="space-y-6 p-4">
+                        {/* Tab 切换 */}
+                        <div className="bg-white p-1.5 rounded-2xl shadow-sm flex gap-1 border border-slate-100">
+                            <button 
+                                onClick={() => setReviewTab('progress')} 
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${
+                                    reviewTab === 'progress' 
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200' 
+                                        : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                            >
+                                当前进度
+                            </button>
+                            <button 
+                                onClick={() => setReviewTab('review')} 
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${
+                                    reviewTab === 'review' 
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200' 
+                                        : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                            >
+                                复盘
+                            </button>
+                            <button 
+                                onClick={() => setReviewTab('habit')} 
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${
+                                    reviewTab === 'habit' 
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200' 
+                                        : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                            >
+                                习惯打卡
+                            </button>
+                        </div>
+
+                        {/* 当前进度 Tab */}
+                        {reviewTab === 'progress' && (() => {
+                            if (enableAchievementJar) {
+                                return (
+                                    <AchievementJarIntegratedProgress 
+                                        fullHistory={fullHistory}
+                                        progressScope={progressScope}
+                                        onScopeChange={setProgressScope}
+                                        categoryMap={CATEGORIES.reduce((map, cat) => {
+                                            map[cat.id] = { name: cat.label, color: cat.color };
+                                            return map;
+                                        }, {})}
+                                        customSounds={customSounds}
+                                        danmakus={danmakus}
+                                        setDanmakus={setDanmakus}
+                                        playSound={() => console.log('播放音效')}
+                                        onToggleMode={() => toggleAchievementJar(false)}
+                                    />
+                                );
+                            }
+
+                            // 原界面
+                            return (
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h3 className="text-blue-800 font-bold">原始进度界面</h3>
+                                    <p className="text-blue-600">当前范围: {progressScope}</p>
+                                    <button 
+                                        onClick={() => toggleAchievementJar(true)}
+                                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        切换到 Achievement Jar
+                                    </button>
+                                </div>
+                            );
+                        })()}
+
+                        {/* 复盘 Tab */}
+                        {reviewTab === 'review' && (
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h3 className="text-green-800 font-bold">复盘页面</h3>
+                                <p className="text-green-600">复盘功能正常</p>
+                            </div>
+                        )}
+
+                        {/* 习惯打卡 Tab */}
+                        {reviewTab === 'habit' && (
+                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h3 className="text-yellow-800 font-bold">习惯打卡</h3>
+                                <p className="text-yellow-600">习惯打卡功能正常</p>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <div className="container mx-auto py-8">
+                        <h1 className="text-2xl font-bold mb-6">复盘页面修复版</h1>
+                        {renderReviewPage()}
+                    </div>
+                </div>
+            );
+        };
+
+        // 渲染应用
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

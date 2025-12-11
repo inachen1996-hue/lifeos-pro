@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类颜色调试测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+            <div style="text-align: center;">
+                <div style="width: 60px; height: 60px; border: 4px solid #E2C2FF; border-top-color: #5D576B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p style="color: #5D576B; font-weight: bold;">加载中...</p>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        // 模拟默认分类数据
+        const DEFAULT_CATEGORIES = [
+          { id: 'work', name: '工作', isDefault: true, color: 'bg-macaron-blue', icon: 'Briefcase' },
+          { id: 'study', name: '学习', isDefault: true, color: 'bg-macaron-green', icon: 'BookOpen' },
+          { id: 'rest', name: '休息', isDefault: true, color: 'bg-macaron-pink', icon: 'Coffee' },
+          { id: 'sleep', name: '睡眠', isDefault: true, color: 'bg-macaron-purple', icon: 'Moon' },
+          { id: 'life', name: '生活', isDefault: true, color: 'bg-macaron-orange', icon: 'Home' },
+          { id: 'entertainment', name: '娱乐', isDefault: true, color: 'bg-macaron-yellow', icon: 'Gamepad2' },
+          { id: 'health', name: '健康', isDefault: true, color: 'bg-emerald-200', icon: 'Heart' },
+          { id: 'hobby', name: '兴趣', isDefault: true, color: 'bg-macaron-rose', icon: 'Palette' }
+        ];
+
+        // GlassIcon 组件（调试版本）
+        const GlassIcon = ({ icon, categoryId, size = 'medium', categories = [] }) => {
+          console.log('🔍 GlassIcon Debug:', { 
+            icon, 
+            categoryId, 
+            categoriesLength: categories.length,
+            categories: categories.map(c => ({ id: c.id, name: c.name, color: c.color }))
+          });
+
+          const getCategoryGlowColor = (catId) => {
+            console.log('🎨 Getting glow color for:', catId);
+            const category = categories.find(cat => cat.id === catId);
+            console.log('📋 Found category:', category);
+            
+            if (!category) {
+              console.log('❌ No category found, using default blue');
+              return 'rgba(189, 224, 254, 0.4)';
+            }
+            
+            const colorMap = {
+              'bg-macaron-blue': 'rgba(189, 224, 254, 0.4)',
+              'bg-macaron-green': 'rgba(217, 239, 232, 0.4)',
+              'bg-macaron-pink': 'rgba(245, 194, 214, 0.4)',
+              'bg-macaron-purple': 'rgba(200, 162, 224, 0.4)',
+              'bg-macaron-orange': 'rgba(255, 233, 214, 0.4)',
+              'bg-macaron-yellow': 'rgba(255, 248, 225, 0.4)',
+              'bg-emerald-200': 'rgba(167, 243, 208, 0.4)',
+              'bg-macaron-rose': 'rgba(255, 229, 229, 0.4)'
+            };
+            
+            const glowColor = colorMap[category.color] || 'rgba(189, 224, 254, 0.4)';
+            console.log('🌈 Mapped color:', category.color, '→', glowColor);
+            return glowColor;
+          };
+
+          const sizeConfig = {
+            small: { container: 'w-8 h-8', text: 'text-sm', shadow: '0 2px 8px -1px' },
+            medium: { container: 'w-12 h-12', text: 'text-lg', shadow: '0 4px 12px -2px' },
+            large: { container: 'w-16 h-16', text: 'text-2xl', shadow: '0 6px 16px -3px' }
+          };
+
+          const config = sizeConfig[size];
+          const glowColor = getCategoryGlowColor(categoryId);
+
+          const containerStyle = {
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.9)',
+            boxShadow: `${config.shadow} ${glowColor}, inset 0 1px 4px rgba(255, 255, 255, 0.8)`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          };
+
+          return (
+            <div
+              className={`
+                ${config.container}
+                rounded-full
+                flex items-center justify-center
+                relative
+                overflow-hidden
+              `}
+              style={containerStyle}
+            >
+              <span 
+                className={`${config.text} relative z-10 drop-shadow-sm`}
+                style={{ 
+                  filter: 'drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8))',
+                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                {icon}
+              </span>
+              
+              <div 
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none"
+                style={{ opacity: 0.6 }}
+              />
+            </div>
+          );
+        };
+
+        // 测试应用
+        const TestApp = () => {
+          const [selectedCategory, setSelectedCategory] = useState('work');
+
+          return (
+            <div className="min-h-screen p-8">
+              <div className="max-w-2xl mx-auto">
+                <h1 className="text-3xl font-black text-[#023E8A] mb-8 text-center">
+                  🔍 分类颜色调试测试
+                </h1>
+
+                {/* 分类选择器 */}
+                <div className="bg-white/90 p-6 rounded-[24px] shadow-lg mb-8"
+                     style={{
+                       boxShadow: '0 8px 24px -4px rgba(162, 210, 255, 0.2), inset 0 2px 8px rgba(255, 255, 255, 0.8)',
+                       border: '2px solid rgba(255, 255, 255, 0.9)'
+                     }}>
+                  
+                  <h2 className="text-lg font-black text-[#023E8A] mb-4">选择分类测试光效</h2>
+                  
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    {DEFAULT_CATEGORIES.map(category => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`p-3 rounded-xl text-sm font-bold transition-all ${
+                          selectedCategory === category.id 
+                            ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 当前选中分类信息 */}
+                  <div className="p-4 bg-gray-50 rounded-lg mb-4">
+                    <h3 className="font-bold mb-2">当前选中分类信息：</h3>
+                    {(() => {
+                      const category = DEFAULT_CATEGORIES.find(c => c.id === selectedCategory);
+                      return (
+                        <div className="text-sm space-y-1">
+                          <div><strong>ID:</strong> {category?.id}</div>
+                          <div><strong>名称:</strong> {category?.name}</div>
+                          <div><strong>颜色:</strong> {category?.color}</div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* 图标展示 */}
+                  <div className="flex justify-center">
+                    <GlassIcon
+                      icon="💻"
+                      categoryId={selectedCategory}
+                      size="large"
+                      categories={DEFAULT_CATEGORIES}
+                    />
+                  </div>
+                </div>
+
+                {/* 所有分类的图标展示 */}
+                <div className="bg-white/90 p-6 rounded-[24px] shadow-lg"
+                     style={{
+                       boxShadow: '0 8px 24px -4px rgba(162, 210, 255, 0.2), inset 0 2px 8px rgba(255, 255, 255, 0.8)',
+                       border: '2px solid rgba(255, 255, 255, 0.9)'
+                     }}>
+                  
+                  <h2 className="text-lg font-black text-[#023E8A] mb-4">所有分类光效对比</h2>
+                  
+                  <div className="grid grid-cols-4 gap-6">
+                    {DEFAULT_CATEGORIES.map(category => (
+                      <div key={category.id} className="text-center">
+                        <div className="mb-2">
+                          <GlassIcon
+                            icon="💻"
+                            categoryId={category.id}
+                            size="medium"
+                            categories={DEFAULT_CATEGORIES}
+                          />
+                        </div>
+                        <div className="text-xs font-bold text-gray-700">{category.name}</div>
+                        <div className="text-xs text-gray-500">{category.color}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 调试信息 */}
+                <div className="mt-6 p-4 bg-yellow-50 rounded-lg text-xs">
+                  <p><strong>调试说明：</strong></p>
+                  <p>1. 打开浏览器开发者工具查看控制台日志</p>
+                  <p>2. 切换不同分类观察光效颜色变化</p>
+                  <p>3. 检查 categories 数据是否正确传递</p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // 渲染应用
+        const root = createRoot(document.getElementById('root'));
+        root.render(<TestApp />);
+    </script>
+</body>
+</html>

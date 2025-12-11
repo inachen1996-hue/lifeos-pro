@@ -34,6 +34,8 @@ export interface Timer {
   id: string;
   name: string;
   icon: string;
+  iconSource?: 'default' | 'smart' | 'manual'; // New: tracks how icon was selected
+  iconSelectedAt?: string; // New: timestamp of icon selection
   categoryId: string;
   mode: 'stopwatch' | 'countdown' | 'pomodoro';
   settings: TimerSettings;

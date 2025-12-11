@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器页面平滑切换测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 应用的修复样式 */
+        .timer-container-smooth {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            contain: layout style;
+        }
+        
+        .category-button {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            backface-visibility: hidden;
+        }
+        
+        .timer-list-smooth {
+            contain: layout style paint;
+            transform: translate3d(0, 0, 0);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🚀 计时器页面平滑切换测试</h1>
+            <p class="text-blue-100 text-sm">验证Tab切换抖动修复效果</p>
+        </div>
+        
+        <!-- 修复说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ 已应用的修复：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• 移除了 <code>animate-in</code> 类</li>
+                <li>• 添加了 <code>timer-container-smooth</code> 类</li>
+                <li>• 使用 GPU 加速 (<code>transform3d</code>)</li>
+                <li>• 优化过渡时间：300ms → 200ms</li>
+                <li>• 添加 <code>contain</code> 属性避免重绘</li>
+            </ul>
+        </div>
+        
+        <!-- 模拟计时器页面 -->
+        <div class="p-4">
+            <div class="timer-container-smooth flex h-80 gap-3">
+                <!-- 左侧分类 -->
+                <div class="w-20 flex flex-col gap-3">
+                    <button class="category-button bg-gray-200 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105 active-category" onclick="switchTab(this, '待分类')">
+                        <span class="text-xs font-bold text-gray-700">待分类</span>
+                    </button>
+                    <button class="category-button bg-pink-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchTab(this, '工作')">
+                        <span class="text-xs font-bold text-pink-700">工作</span>
+                    </button>
+                    <button class="category-button bg-yellow-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchTab(this, '学习')">
+                        <span class="text-xs font-bold text-yellow-700">学习</span>
+                    </button>
+                    <button class="category-button bg-green-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchTab(this, '运动')">
+                        <span class="text-xs font-bold text-green-700">运动</span>
+                    </button>
+                    <button class="category-button bg-blue-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchTab(this, '兴趣')">
+                        <span class="text-xs font-bold text-blue-700">兴趣</span>
+                    </button>
+                </div>
+                
+                <!-- 右侧内容 -->
+                <div class="flex-1 timer-list-smooth bg-white rounded-3xl p-4 shadow-lg">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-gray-800" id="current-category">待分类</h3>
+                        <p class="text-sm text-gray-500">快速点击左侧分类测试切换效果</p>
+                    </div>
+                    
+                    <div class="space-y-3" id="timer-content">
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                            <div class="font-medium text-gray-800">示例计时器 1</div>
+                            <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                            <div class="font-medium text-gray-800">示例计时器 2</div>
+                            <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试指南 -->
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">🧪 测试步骤：</h3>
+                <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li>快速连续点击左侧不同的分类按钮</li>
+                    <li>观察右侧内容区域是否有抖动现象</li>
+                    <li>检查分类按钮的缩放动画是否平滑</li>
+                    <li>验证整体切换流畅度</li>
+                </ol>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">📊 预期效果：</h3>
+                <div class="text-sm text-yellow-700 space-y-1">
+                    <div>✅ 分类切换时无抖动</div>
+                    <div>✅ 动画过渡平滑自然</div>
+                    <div>✅ 内容更新无闪烁</div>
+                    <div>✅ 整体性能提升</div>
+                </div>
+            </div>
+            
+            <button onclick="autoTest()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all">
+                🤖 自动测试切换效果
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(button, categoryName) {
+            // 移除所有活跃状态
+            document.querySelectorAll('.category-button').forEach(btn => {
+                btn.classList.remove('active-category', 'scale-105', 'shadow-xl');
+            });
+            
+            // 添加活跃状态
+            button.classList.add('active-category', 'scale-105', 'shadow-xl');
+            
+            // 更新内容
+            document.getElementById('current-category').textContent = categoryName;
+            
+            // 模拟内容更新（平滑无抖动）
+            const content = document.getElementById('timer-content');
+            content.innerHTML = `
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 1</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 2</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+            `;
+        }
+        
+        function autoTest() {
+            const buttons = document.querySelectorAll('.category-button');
+            const categories = ['待分类', '工作', '学习', '运动', '兴趣'];
+            let index = 0;
+            
+            const interval = setInterval(() => {
+                if (index >= buttons.length) {
+                    clearInterval(interval);
+                    console.log('✅ 自动测试完成');
+                    return;
+                }
+                
+                switchTab(buttons[index], categories[index]);
+                index++;
+            }, 500);
+        }
+        
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器页面平滑切换测试已加载');
+            console.log('🔧 主要修复：移除animate-in，GPU加速，优化过渡');
+        });
+    </script>
+</body>
+</html>

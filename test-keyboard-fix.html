@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>键盘弹起问题修复验证</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        input, textarea, select { 
+            font-size: 16px !important; 
+            transition: all 0.3s ease;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        .modal-keyboard-safe {
+            align-items: flex-start !important;
+            padding-top: 10vh !important;
+            padding-bottom: 10vh !important;
+            overflow-y: auto !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="p-4 min-h-screen">
+        <div class="max-w-md mx-auto">
+            <h1 class="text-2xl font-bold text-center mb-8">🔧 键盘问题修复验证</h1>
+            
+            <!-- 状态显示 -->
+            <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
+                <h3 class="font-bold mb-2">修复状态</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span>移除了 autoFocus 属性</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span>添加了键盘检测和管理</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span>优化了模态框位置</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span>添加了手动隐藏键盘功能</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 测试按钮 -->
+            <div class="space-y-4 mb-6">
+                <button 
+                    onclick="openApp()" 
+                    class="w-full bg-blue-500 text-white p-4 rounded-xl font-bold hover:bg-blue-600 transition-colors"
+                >
+                    🚀 打开修复后的应用
+                </button>
+                
+                <button 
+                    onclick="testModal()" 
+                    class="w-full bg-green-500 text-white p-4 rounded-xl font-bold hover:bg-green-600 transition-colors"
+                >
+                    📝 测试创建分类模态框
+                </button>
+                
+                <button 
+                    onclick="hideKeyboard()" 
+                    class="w-full bg-red-500 text-white p-4 rounded-xl font-bold hover:bg-red-600 transition-colors"
+                >
+                    ⌨️ 强制隐藏键盘
+                </button>
+            </div>
+            
+            <!-- 测试说明 -->
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                <h3 class="font-bold text-yellow-800 mb-2">📋 测试步骤</h3>
+                <ol class="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                    <li>点击"打开修复后的应用"</li>
+                    <li>观察是否还会自动弹起键盘</li>
+                    <li>尝试创建新分类，测试输入框行为</li>
+                    <li>测试键盘的显示和隐藏</li>
+                    <li>验证按下键盘下拉键是否能正常关闭</li>
+                </ol>
+            </div>
+            
+            <!-- 问题解决方案 -->
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 mt-6">
+                <h3 class="font-bold text-blue-800 mb-2">✅ 已修复的问题</h3>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li>• <strong>自动弹起键盘</strong>：移除了所有 autoFocus 属性</li>
+                    <li>• <strong>键盘难以关闭</strong>：添加了强制隐藏键盘功能</li>
+                    <li>• <strong>页面跳动</strong>：优化了模态框位置和样式</li>
+                    <li>• <strong>重新进入问题</strong>：添加了页面可见性检测</li>
+                </ul>
+            </div>
+            
+            <!-- 键盘状态监控 -->
+            <div class="bg-gray-50 p-4 rounded-xl mt-6">
+                <h3 class="font-bold mb-2">键盘状态</h3>
+                <div id="keyboardStatus" class="text-sm text-gray-600">
+                    等待检测...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 测试模态框 -->
+    <div id="testModal" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-50 modal-keyboard-safe">
+        <div class="bg-white w-full max-w-md mx-4 p-6 rounded-2xl shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">创建新分类</h2>
+                <button onclick="closeTestModal()" class="text-gray-500 hover:text-gray-700">
+                    ✕
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">分类名称</label>
+                    <input 
+                        id="testInput"
+                        type="text" 
+                        class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-400 outline-none"
+                        placeholder="例如：运动、阅读"
+                        maxLength="4"
+                    />
+                    <p class="text-xs text-gray-400 mt-1">建议 2-3 个字，最多 4 个字</p>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeTestModal()" class="flex-1 bg-gray-300 text-gray-700 p-3 rounded-xl font-bold">
+                        取消
+                    </button>
+                    <button onclick="saveTestCategory()" class="flex-[2] bg-blue-500 text-white p-3 rounded-xl font-bold">
+                        创建分类
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 键盘管理
+        let isKeyboardVisible = false;
+        const initialViewportHeight = window.innerHeight;
+        
+        function updateKeyboardStatus() {
+            const currentHeight = window.innerHeight;
+            const heightDiff = initialViewportHeight - currentHeight;
+            isKeyboardVisible = heightDiff > 150;
+            
+            const statusEl = document.getElementById('keyboardStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `
+                    键盘状态: ${isKeyboardVisible ? '显示' : '隐藏'}<br>
+                    视口高度: ${currentHeight}px (初始: ${initialViewportHeight}px)<br>
+                    高度差: ${heightDiff}px
+                `;
+            }
+        }
+        
+        function hideKeyboard() {
+            // 强制失焦所有输入框
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                activeElement.blur();
+            }
+            
+            // 创建临时输入框来强制隐藏键盘
+            const tempInput = document.createElement('input');
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            tempInput.style.opacity = '0';
+            tempInput.setAttribute('readonly', 'readonly');
+            
+            document.body.appendChild(tempInput);
+            tempInput.focus();
+            
+            setTimeout(() => {
+                tempInput.blur();
+                document.body.removeChild(tempInput);
+            }, 100);
+        }
+        
+        function openApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function testModal() {
+            document.getElementById('testModal').classList.remove('hidden');
+        }
+        
+        function closeTestModal() {
+            hideKeyboard();
+            document.getElementById('testModal').classList.add('hidden');
+        }
+        
+        function saveTestCategory() {
+            const input = document.getElementById('testInput');
+            if (input.value.trim()) {
+                alert(`创建成功: ${input.value}`);
+                input.value = '';
+                closeTestModal();
+            } else {
+                alert('请输入分类名称');
+            }
+        }
+        
+        // 事件监听
+        window.addEventListener('resize', updateKeyboardStatus);
+        
+        document.addEventListener('focusin', (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                setTimeout(updateKeyboardStatus, 300);
+            }
+        });
+        
+        document.addEventListener('focusout', () => {
+            setTimeout(updateKeyboardStatus, 300);
+        });
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                setTimeout(hideKeyboard, 100);
+            }
+        });
+        
+        // 点击模态框外部关闭
+        document.getElementById('testModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeTestModal();
+            }
+        });
+        
+        // 初始化
+        updateKeyboardStatus();
+        
+        // 防止页面加载时自动弹起键盘
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                activeElement.blur();
+            }
+        });
+    </script>
+</body>
+</html>

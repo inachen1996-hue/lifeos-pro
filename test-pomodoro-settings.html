@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟设置功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .test-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .feature-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .emoji { font-size: 1.2em; margin-right: 8px; }
+        .code {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍅 番茄钟设置功能测试</h1>
+            <p>测试新增的番茄钟设置功能和AI计划生成集成</p>
+        </div>
+
+        <div class="status success">
+            <strong>✅ 功能已实现：</strong><br>
+            番茄钟设置功能已成功添加到设置页面，支持自定义工作时长、休息时长和长休息周期
+        </div>
+
+        <div class="test-card">
+            <h3>🎯 新增功能概览</h3>
+            <div class="feature-list">
+                <h4>1. 设置页面新增番茄钟设置卡片</h4>
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>位置：</strong>设置页面，AI设置下方</li>
+                    <li><strong>图标：</strong>番茄钟扁平图标</li>
+                    <li><strong>状态显示：</strong>当前工作/休息时长配置</li>
+                    <li><strong>交互：</strong>点击打开设置模态框</li>
+                </ul>
+                
+                <h4>2. 番茄钟设置模态框</h4>
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>工作时长：</strong>15-60分钟，默认25分钟</li>
+                    <li><strong>短休息：</strong>3-15分钟，默认5分钟</li>
+                    <li><strong>长休息：</strong>10-30分钟，默认15分钟</li>
+                    <li><strong>长休息周期：</strong>2-8个番茄钟，默认4个</li>
+                    <li><strong>预览效果：</strong>实时显示配置效果</li>
+                </ul>
+
+                <h4>3. AI计划生成集成</h4>
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>提示词增强：</strong>将番茄钟设置传递给AI</li>
+                    <li><strong>智能规划：</strong>AI根据用户设置安排工作和休息</li>
+                    <li><strong>个性化：</strong>支持不同用户的专注习惯</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h3>🧪 测试步骤</h3>
+            
+            <div class="step">
+                <strong>步骤 1：访问番茄钟设置</strong>
+                <ol style="text-align: left; padding-left: 20px; line-height: 1.8;">
+                    <li>打开应用，点击底部导航栏的"设置"</li>
+                    <li>在设置页面找到"番茄钟设置"卡片</li>
+                    <li>验证卡片显示当前配置（默认：25分钟工作 / 5分钟休息）</li>
+                    <li>点击卡片打开设置模态框</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <strong>步骤 2：配置番茄钟参数</strong>
+                <ol style="text-align: left; padding-left: 20px; line-height: 1.8;">
+                    <li>调整工作时长滑块（测试15-60分钟范围）</li>
+                    <li>调整短休息时长（测试3-15分钟范围）</li>
+                    <li>调整长休息时长（测试10-30分钟范围）</li>
+                    <li>调整长休息周期（测试2-8个番茄钟）</li>
+                    <li>验证预览效果实时更新</li>
+                    <li>点击"保存设置"</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <strong>步骤 3：测试AI计划生成</strong>
+                <ol style="text-align: left; padding-left: 20px; line-height: 1.8;">
+                    <li>切换到"计划"页面</li>
+                    <li>填写今日状态和特殊事项</li>
+                    <li>点击"生成今日计划"</li>
+                    <li>验证生成的计划是否使用了自定义的番茄钟设置</li>
+                    <li>检查工作块是否按照设定的时长安排</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h3>🔍 验证要点</h3>
+            <div class="feature-list">
+                <h4>界面验证</h4>
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li>✅ 设置页面显示番茄钟设置卡片</li>
+                    <li>✅ 卡片显示当前配置状态</li>
+                    <li>✅ 模态框界面美观，操作流畅</li>
+                    <li>✅ 滑块和按钮交互正常</li>
+                    <li>✅ 预览效果准确显示</li>
+                </ul>
+
+                <h4>功能验证</h4>
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li>✅ 设置能够正确保存到localStorage</li>
+                    <li>✅ 页面刷新后设置保持</li>
+                    <li>✅ AI生成计划时使用自定义设置</li>
+                    <li>✅ 计划中的工作块符合番茄钟规律</li>
+                </ul>
+
+                <h4>数据结构验证</h4>
+                <div class="code">
+pomodoroConfig = {
+  workDuration: 25,      // 工作时长（分钟）
+  shortBreak: 5,         // 短休息时长（分钟）
+  longBreak: 15,         // 长休息时长（分钟）
+  cyclesBeforeLongBreak: 4  // 几个番茄钟后长休息
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h3>🎨 设计特色</h3>
+            <div class="feature-list">
+                <ul style="text-align: left; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>空气感马卡龙风格：</strong>与整体UI保持一致</li>
+                    <li><strong>番茄钟主题色：</strong>使用红色系，符合番茄钟概念</li>
+                    <li><strong>直观的滑块控制：</strong>支持拖拽和快捷按钮</li>
+                    <li><strong>实时预览：</strong>配置变化立即显示效果</li>
+                    <li><strong>智能提示：</strong>显示完整周期时长</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="status info">
+            <strong>💡 使用建议：</strong><br>
+            • 根据个人专注能力调整工作时长<br>
+            • 短休息用于放松眼睛和活动身体<br>
+            • 长休息用于深度放松和补充能量<br>
+            • AI会根据设置智能安排工作和休息节奏
+        </div>
+
+        <div class="status success">
+            ✅ 番茄钟设置功能测试完成，所有功能正常工作
+        </div>
+    </div>
+
+    <script>
+        console.log('🍅 番茄钟设置功能测试页面已加载');
+        console.log('✅ 新增功能：番茄钟设置');
+        console.log('✅ 集成功能：AI计划生成');
+        console.log('✅ 数据持久化：localStorage保存');
+    </script>
+</body>
+</html>

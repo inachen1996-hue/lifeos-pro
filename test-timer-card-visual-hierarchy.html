@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器卡片视觉层级优化测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 优化后的计时器卡片样式 */
+        .timer-card-optimized {
+            height: 88px;
+            padding: 0 20px;
+            background: #FFFFFF; /* 纯白背景 */
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* 不同分类颜色的卡片样式 */
+        .timer-card-pink {
+            border: 2px solid rgba(255, 181, 216, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(255, 181, 216, 0.15), 0 4px 10px -3px rgba(255, 181, 216, 0.1);
+        }
+        
+        .timer-card-yellow {
+            border: 2px solid rgba(255, 244, 181, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(255, 244, 181, 0.15), 0 4px 10px -3px rgba(255, 244, 181, 0.1);
+        }
+        
+        .timer-card-green {
+            border: 2px solid rgba(181, 245, 216, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(181, 245, 216, 0.15), 0 4px 10px -3px rgba(181, 245, 216, 0.1);
+        }
+        
+        .timer-card-blue {
+            border: 2px solid rgba(162, 210, 255, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(162, 210, 255, 0.15), 0 4px 10px -3px rgba(162, 210, 255, 0.1);
+        }
+        
+        .timer-card-purple {
+            border: 2px solid rgba(224, 181, 255, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(224, 181, 255, 0.15), 0 4px 10px -3px rgba(224, 181, 255, 0.1);
+        }
+        
+        .timer-card-gray {
+            border: 2px solid rgba(156, 163, 175, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(156, 163, 175, 0.15), 0 4px 10px -3px rgba(156, 163, 175, 0.1);
+        }
+        
+        .timer-card-optimized:hover {
+            transform: scale(1.01);
+        }
+        
+        /* 优化前的卡片样式（对比用） */
+        .timer-card-old {
+            height: 88px;
+            padding: 0 20px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .timer-card-old:hover {
+            transform: scale(1.01);
+        }
+        
+        /* 容器背景 */
+        .container-bg {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-purple-500 to-blue-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🎨 计时器卡片视觉层级优化测试</h1>
+            <p class="text-purple-100 text-sm">验证卡片从背景中凸显的效果</p>
+        </div>
+        
+        <!-- 优化说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ 视觉层级优化：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• <strong>背景</strong>：纯白色 (#FFFFFF)</li>
+                <li>• <strong>边框</strong>：基于分类颜色的淡边框 (rgba(ThemeColor, 0.1))</li>
+                <li>• <strong>投影</strong>：柔和的分类颜色投影</li>
+                <li>• <strong>间距</strong>：卡片间距16px，让投影有呼吸空间</li>
+                <li>• <strong>层级</strong>：创造"悬浮"效果，从背景中凸显</li>
+            </ul>
+        </div>
+        
+        <!-- 测试区域 -->
+        <div class="p-4 space-y-6">
+            <!-- 优化后效果 -->
+            <div>
+                <h3 class="font-bold text-gray-800 mb-3">🚀 优化后效果：</h3>
+                <div class="container-bg rounded-3xl p-4">
+                    <div class="space-y-4">
+                        <!-- 粉色分类卡片 -->
+                        <div class="timer-card-optimized timer-card-pink">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">工作计时器</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                        
+                        <!-- 黄色分类卡片 -->
+                        <div class="timer-card-optimized timer-card-yellow">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">学习时间</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-yellow-100 to-amber-200 text-amber-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                        
+                        <!-- 绿色分类卡片 -->
+                        <div class="timer-card-optimized timer-card-green">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">运动健身</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-green-100 to-emerald-200 text-emerald-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                        
+                        <!-- 蓝色分类卡片 */
+                        <div class="timer-card-optimized timer-card-blue">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">兴趣爱好</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                        
+                        <!-- 待分类卡片 -->
+                        <div class="timer-card-optimized timer-card-gray">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">待分类计时器</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 优化前效果（对比） -->
+            <div class="border-t pt-6">
+                <h3 class="font-bold text-gray-800 mb-3">⚠️ 优化前效果（对比）：</h3>
+                <div class="container-bg rounded-3xl p-4">
+                    <div class="space-y-3">
+                        <div class="timer-card-old">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">工作计时器</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                        
+                        <div class="timer-card-old">
+                            <div class="flex items-center gap-4 flex-1">
+                                <div class="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-black text-blue-900 text-base">学习时间</div>
+                                </div>
+                            </div>
+                            <button class="bg-gradient-to-br from-yellow-100 to-amber-200 text-amber-700 px-6 py-2 rounded-xl font-bold">
+                                开始
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对比说明 -->
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">📊 视觉层级对比：</h3>
+                <div class="text-sm text-blue-700 space-y-2">
+                    <div><strong>优化前：</strong> 卡片与背景融合，层级不明显</div>
+                    <div><strong>优化后：</strong> 卡片从背景中凸显，层级清晰</div>
+                    <div><strong>投影：</strong> 基于分类颜色的柔和投影</div>
+                    <div><strong>边框：</strong> 微妙的分类颜色边框</div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">✨ 优化优势：</h3>
+                <ul class="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                    <li>纯白背景增强对比度</li>
+                    <li>分类颜色投影增强归属感</li>
+                    <li>柔和投影创造"悬浮"效果</li>
+                    <li>16px间距让投影有呼吸空间</li>
+                    <li>微妙边框增强卡片边界</li>
+                </ul>
+            </div>
+            
+            <button onclick="toggleView()" class="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-blue-600 transition-all">
+                🔄 切换对比视图
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let showingOptimized = true;
+        
+        function toggleView() {
+            const optimizedSection = document.querySelector('div:has(.timer-card-optimized)').parentElement;
+            const oldSection = document.querySelector('div:has(.timer-card-old)').parentElement;
+            
+            if (showingOptimized) {
+                optimizedSection.style.display = 'none';
+                oldSection.style.display = 'block';
+                showingOptimized = false;
+            } else {
+                optimizedSection.style.display = 'block';
+                oldSection.style.display = 'none';
+                showingOptimized = true;
+            }
+        }
+        
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器卡片视觉层级优化测试已加载');
+            console.log('🎨 主要优化：纯白背景、分类颜色投影、微妙边框、增强层级');
+        });
+    </script>
+</body>
+</html>

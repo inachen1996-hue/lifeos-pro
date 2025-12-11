@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器阴影平滑修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 修复后的样式 */
+        .macaron-card-fixed {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            /* 更柔和的阴影，避免突兀感 */
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            /* 添加平滑过渡 */
+            transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .macaron-card-fixed:hover {
+            transform: translateY(-2px);
+            /* 悬停时稍微增强阴影 */
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.18), 
+                        0 4px 12px -2px rgba(162, 210, 255, 0.12),
+                        inset 0 2px 8px rgba(255, 255, 255, 0.9);
+        }
+        
+        /* 修复前的样式（对比用） */
+        .macaron-card-old {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.2), 
+                        0 4px 12px -2px rgba(162, 210, 255, 0.15),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+        .macaron-card-old:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px -4px rgba(162, 210, 255, 0.3), 
+                        0 8px 20px -2px rgba(162, 210, 255, 0.2),
+                        inset 0 2px 8px rgba(255, 255, 255, 0.9);
+        }
+        
+        .timer-container-smooth {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            contain: layout style;
+        }
+        
+        .category-button {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            backface-visibility: hidden;
+        }
+        
+        .timer-list-smooth {
+            contain: layout style paint;
+            transform: translate3d(0, 0, 0);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-green-500 to-blue-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🎨 计时器阴影平滑修复测试</h1>
+            <p class="text-green-100 text-sm">验证右侧容器阴影突然出现的问题修复</p>
+        </div>
+        
+        <!-- 修复说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ 阴影修复内容：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• 移除了重复的 <code>shadow-lg</code> 类</li>
+                <li>• 优化 <code>macaron-card</code> 阴影强度</li>
+                <li>• 添加平滑过渡动画</li>
+                <li>• 减少阴影突兀感</li>
+                <li>• 悬停效果更加柔和</li>
+            </ul>
+        </div>
+        
+        <!-- 对比测试 -->
+        <div class="p-4 space-y-6">
+            <div>
+                <h3 class="font-bold text-gray-800 mb-3">🔧 修复后效果（推荐）</h3>
+                <div class="timer-container-smooth flex h-64 gap-3">
+                    <!-- 左侧分类 -->
+                    <div class="w-20 flex flex-col gap-3">
+                        <button class="category-button bg-gray-200 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105 active-category" onclick="switchContent('fixed', this, '待分类')">
+                            <span class="text-xs font-bold text-gray-700">待分类</span>
+                        </button>
+                        <button class="category-button bg-pink-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('fixed', this, '工作')">
+                            <span class="text-xs font-bold text-pink-700">工作</span>
+                        </button>
+                        <button class="category-button bg-blue-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('fixed', this, '兴趣')">
+                            <span class="text-xs font-bold text-blue-700">兴趣</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 右侧内容（修复后） -->
+                    <div class="flex-1 timer-list-smooth macaron-card-fixed rounded-3xl p-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800" id="fixed-category">待分类</h3>
+                            <p class="text-sm text-gray-500">柔和阴影，无突兀感</p>
+                        </div>
+                        <div class="space-y-3" id="fixed-content">
+                            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                                <div class="font-medium text-gray-800">示例计时器 1</div>
+                                <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t pt-6">
+                <h3 class="font-bold text-gray-800 mb-3">⚠️ 修复前效果（对比）</h3>
+                <div class="timer-container-smooth flex h-64 gap-3">
+                    <!-- 左侧分类 -->
+                    <div class="w-20 flex flex-col gap-3">
+                        <button class="category-button bg-gray-200 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105 active-category-old" onclick="switchContent('old', this, '待分类')">
+                            <span class="text-xs font-bold text-gray-700">待分类</span>
+                        </button>
+                        <button class="category-button bg-pink-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('old', this, '工作')">
+                            <span class="text-xs font-bold text-pink-700">工作</span>
+                        </button>
+                        <button class="category-button bg-blue-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('old', this, '兴趣')">
+                            <span class="text-xs font-bold text-blue-700">兴趣</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 右侧内容（修复前） -->
+                    <div class="flex-1 timer-list-smooth macaron-card-old shadow-lg rounded-3xl p-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800" id="old-category">待分类</h3>
+                            <p class="text-sm text-gray-500">强烈阴影，突兀感明显</p>
+                        </div>
+                        <div class="space-y-3" id="old-content">
+                            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                                <div class="font-medium text-gray-800">示例计时器 1</div>
+                                <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试指南 -->
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">🧪 测试方法：</h3>
+                <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li>分别快速点击上下两组的分类按钮</li>
+                    <li>观察右侧容器的阴影变化</li>
+                    <li>对比修复前后的视觉差异</li>
+                    <li>注意阴影的柔和程度</li>
+                </ol>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">📊 修复对比：</h3>
+                <div class="text-sm text-yellow-700 space-y-2">
+                    <div><strong>修复前：</strong> 阴影强烈，切换时突兀</div>
+                    <div><strong>修复后：</strong> 阴影柔和，过渡平滑</div>
+                </div>
+            </div>
+            
+            <button onclick="autoTestBoth()" class="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-xl font-bold hover:from-green-600 hover:to-blue-600 transition-all">
+                🤖 自动对比测试
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        function switchContent(type, button, categoryName) {
+            const prefix = type === 'fixed' ? '' : '-old';
+            
+            // 移除同组的活跃状态
+            const selector = type === 'fixed' ? '.active-category' : '.active-category-old';
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove(type === 'fixed' ? 'active-category' : 'active-category-old', 'scale-105', 'shadow-xl');
+            });
+            
+            // 添加活跃状态
+            button.classList.add(type === 'fixed' ? 'active-category' : 'active-category-old', 'scale-105', 'shadow-xl');
+            
+            // 更新内容
+            document.getElementById(`${type}-category`).textContent = categoryName;
+            
+            const content = document.getElementById(`${type}-content`);
+            content.innerHTML = `
+                <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 1</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 2</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+            `;
+        }
+        
+        function autoTestBoth() {
+            const categories = ['待分类', '工作', '兴趣'];
+            let index = 0;
+            
+            const interval = setInterval(() => {
+                if (index >= categories.length * 2) {
+                    clearInterval(interval);
+                    console.log('✅ 自动对比测试完成');
+                    return;
+                }
+                
+                const isFixed = index < categories.length;
+                const categoryIndex = index % categories.length;
+                const type = isFixed ? 'fixed' : 'old';
+                const buttons = document.querySelectorAll(isFixed ? 
+                    '.timer-container-smooth:first-of-type .category-button' : 
+                    '.timer-container-smooth:last-of-type .category-button'
+                );
+                
+                if (buttons[categoryIndex]) {
+                    switchContent(type, buttons[categoryIndex], categories[categoryIndex]);
+                }
+                
+                index++;
+            }, 800);
+        }
+        
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器阴影平滑修复测试已加载');
+            console.log('🎨 主要修复：柔和阴影，平滑过渡，无突兀感');
+        });
+    </script>
+</body>
+</html>

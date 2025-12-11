@@ -28,6 +28,8 @@ export interface Timer {
     id: string;
     name: string;
     icon: string;
+    iconSource?: 'default' | 'smart' | 'manual';
+    iconSelectedAt?: string;
     categoryId: string;
     mode: 'stopwatch' | 'countdown' | 'pomodoro';
     settings: TimerSettings;

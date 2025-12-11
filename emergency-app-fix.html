@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紧急应用修复</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const EmergencyApp = () => {
+            const [status, setStatus] = useState('checking');
+            const [error, setError] = useState(null);
+
+            const checkMainApp = async () => {
+                try {
+                    const response = await fetch('/index.html');
+                    if (response.ok) {
+                        setStatus('available');
+                    } else {
+                        setStatus('error');
+                        setError(`HTTP ${response.status}`);
+                    }
+                } catch (err) {
+                    setStatus('error');
+                    setError(err.message);
+                }
+            };
+
+            React.useEffect(() => {
+                checkMainApp();
+            }, []);
+
+            const openMainApp = () => {
+                window.open('/index.html', '_blank');
+            };
+
+            const openMinimalTest = () => {
+                window.open('/minimal-app-test.html', '_blank');
+            };
+
+            const openSyntaxCheck = () => {
+                window.open('/syntax-check.html', '_blank');
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50 p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-3xl font-bold mb-8 text-center text-red-600">🚨 紧急应用修复</h1>
+                        
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+                            <h2 className="text-red-800 font-bold text-xl mb-4">问题诊断</h2>
+                            <div className="space-y-3 text-red-700">
+                                <p>• <strong>症状</strong>: 主应用一直加载不出来</p>
+                                <p>• <strong>错误</strong>: Uncaught SyntaxError: Unexpected token (366:17)</p>
+                                <p>• <strong>原因</strong>: JavaScript 语法错误导致 Babel 解析失败</p>
+                                <p>• <strong>位置</strong>: 可能在 ProgressTabContent 组件定义中</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
+                            <h2 className="text-xl font-semibold mb-6">应用状态检查</h2>
+                            
+                            <div className="text-center">
+                                {status === 'checking' && (
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                                        <p className="text-gray-600">正在检查主应用状态...</p>
+                                    </div>
+                                )}
+                                
+                                {status === 'available' && (
+                                    <div>
+                                        <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">⚠</div>
+                                        <h3 className="text-xl font-semibold text-yellow-800 mb-2">主应用可访问但有语法错误</h3>
+                                        <p className="text-yellow-600 mb-6">服务器正常，但 JavaScript 代码有语法问题</p>
+                                    </div>
+                                )}
+                                
+                                {status === 'error' && (
+                                    <div>
+                                        <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">✗</div>
+                                        <h3 className="text-xl font-semibold text-red-800 mb-2">主应用无法访问</h3>
+                                        <p className="text-red-600 mb-6">错误: {error}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white rounded-lg shadow-sm p-6">
+                                <h3 className="font-semibold mb-3">🔍 语法检查</h3>
+                                <p className="text-gray-600 text-sm mb-4">检查主应用的 JavaScript 语法错误</p>
+                                <button 
+                                    onClick={openSyntaxCheck}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                >
+                                    运行语法检查
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-sm p-6">
+                                <h3 className="font-semibold mb-3">🧪 最小化测试</h3>
+                                <p className="text-gray-600 text-sm mb-4">测试简化版本的组件功能</p>
+                                <button 
+                                    onClick={openMinimalTest}
+                                    className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                >
+                                    打开测试版本
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-sm p-6">
+                                <h3 className="font-semibold mb-3">🚀 主应用</h3>
+                                <p className="text-gray-600 text-sm mb-4">尝试访问主应用（可能有错误）</p>
+                                <button 
+                                    onClick={openMainApp}
+                                    className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                >
+                                    强制打开主应用
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h3 className="font-semibold text-blue-800 mb-3">修复建议</h3>
+                            <div className="text-blue-700 space-y-2">
+                                <p><strong>1. 立即修复</strong>: 检查 ProgressTabContent 组件定义中的语法错误</p>
+                                <p><strong>2. 临时方案</strong>: 使用最小化测试版本验证功能</p>
+                                <p><strong>3. 调试工具</strong>: 使用语法检查工具定位具体问题</p>
+                                <p><strong>4. 回滚方案</strong>: 如果问题严重，考虑回滚到之前的工作版本</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<EmergencyApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>

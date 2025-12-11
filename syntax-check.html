@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语法检查工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-50 p-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold mb-8 text-center">语法检查工具</h1>
+            
+            <div class="bg-white rounded-lg shadow-sm p-8 mb-8">
+                <h2 class="text-xl font-semibold mb-6">检查结果</h2>
+                <div id="results" class="space-y-4">
+                    <div class="text-center py-8">
+                        <div class="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full mx-auto mb-4"></div>
+                        <p class="text-gray-600">正在检查语法...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 class="font-semibold text-blue-800 mb-3">检查说明</h3>
+                <div class="text-blue-700 space-y-2">
+                    <p>• 检查主应用的 JavaScript 语法</p>
+                    <p>• 识别可能的语法错误</p>
+                    <p>• 提供修复建议</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkSyntax() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // 获取主应用内容
+                const response = await fetch('/index.html');
+                const content = await response.text();
+                
+                // 提取 JavaScript 代码
+                const scriptMatches = content.match(/<script[^>]*type="text\/babel"[^>]*>([\s\S]*?)<\/script>/gi);
+                
+                if (!scriptMatches) {
+                    resultsDiv.innerHTML = `
+                        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <h3 class="text-yellow-800 font-bold">未找到 Babel 脚本</h3>
+                            <p class="text-yellow-600">没有找到 type="text/babel" 的脚本标签</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let results = [];
+                
+                scriptMatches.forEach((script, index) => {
+                    // 提取脚本内容
+                    const scriptContent = script.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
+                    
+                    // 检查常见语法问题
+                    const issues = [];
+                    
+                    // 检查括号匹配
+                    const openBraces = (scriptContent.match(/\{/g) || []).length;
+                    const closeBraces = (scriptContent.match(/\}/g) || []).length;
+                    const openParens = (scriptContent.match(/\(/g) || []).length;
+                    const closeParens = (scriptContent.match(/\)/g) || []).length;
+                    const openBrackets = (scriptContent.match(/\[/g) || []).length;
+                    const closeBrackets = (scriptContent.match(/\]/g) || []).length;
+                    
+                    if (openBraces !== closeBraces) {
+                        issues.push(`大括号不匹配: ${openBraces} 个 '{' vs ${closeBraces} 个 '}'`);
+                    }
+                    
+                    if (openParens !== closeParens) {
+                        issues.push(`小括号不匹配: ${openParens} 个 '(' vs ${closeParens} 个 ')'`);
+                    }
+                    
+                    if (openBrackets !== closeBrackets) {
+                        issues.push(`中括号不匹配: ${openBrackets} 个 '[' vs ${closeBrackets} 个 ']'`);
+                    }
+                    
+                    // 检查常见语法错误模式
+                    if (scriptContent.includes('}{')) {
+                        issues.push('发现可能的语法错误: "}{"');
+                    }
+                    
+                    if (scriptContent.includes('))(')) {
+                        issues.push('发现可能的语法错误: ")("');
+                    }
+                    
+                    if (scriptContent.includes(';;')) {
+                        issues.push('发现多余的分号: ";;"');
+                    }
+                    
+                    // 检查未闭合的字符串
+                    const singleQuotes = (scriptContent.match(/'/g) || []).length;
+                    const doubleQuotes = (scriptContent.match(/"/g) || []).length;
+                    const backticks = (scriptContent.match(/\`/g) || []).length;
+                    
+                    if (singleQuotes % 2 !== 0) {
+                        issues.push('单引号可能未闭合');
+                    }
+                    
+                    if (doubleQuotes % 2 !== 0) {
+                        issues.push('双引号可能未闭合');
+                    }
+                    
+                    if (backticks % 2 !== 0) {
+                        issues.push('模板字符串可能未闭合');
+                    }
+                    
+                    results.push({
+                        index: index + 1,
+                        issues: issues,
+                        length: scriptContent.length
+                    });
+                });
+                
+                // 显示结果
+                let html = '';
+                
+                results.forEach(result => {
+                    const hasIssues = result.issues.length > 0;
+                    const bgColor = hasIssues ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
+                    const textColor = hasIssues ? 'text-red-800' : 'text-green-800';
+                    const icon = hasIssues ? '❌' : '✅';
+                    
+                    html += `
+                        <div class="p-4 ${bgColor} border rounded-lg">
+                            <h3 class="${textColor} font-bold">${icon} 脚本 ${result.index} (${result.length} 字符)</h3>
+                            ${hasIssues ? 
+                                `<ul class="text-red-600 mt-2 space-y-1">
+                                    ${result.issues.map(issue => `<li>• ${issue}</li>`).join('')}
+                                </ul>` :
+                                `<p class="text-green-600 mt-2">语法检查通过</p>`
+                            }
+                        </div>
+                    `;
+                });
+                
+                // 添加总结
+                const totalIssues = results.reduce((sum, r) => sum + r.issues.length, 0);
+                if (totalIssues === 0) {
+                    html += `
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h3 class="text-green-800 font-bold">🎉 所有检查通过</h3>
+                            <p class="text-green-600">未发现明显的语法错误</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <h3 class="text-red-800 font-bold">⚠️ 发现 ${totalIssues} 个潜在问题</h3>
+                            <p class="text-red-600">请检查上述问题并修复</p>
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h3 class="text-red-800 font-bold">检查失败</h3>
+                        <p class="text-red-600">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载后开始检查
+        checkSyntax();
+    </script>
+</body>
+</html>

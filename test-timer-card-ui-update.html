@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器卡片UI尺寸更新测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .update-summary {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(162, 210, 255, 0.2);
+        }
+        .spec-item:last-child {
+            border-bottom: none;
+        }
+        .spec-label {
+            font-weight: 600;
+            color: #023E8A;
+        }
+        .spec-value {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(162, 210, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #023E8A;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 计时器卡片UI尺寸更新完成</h1>
+        
+        <div class="update-summary">
+            <h3>📏 更新规格</h3>
+            <div class="spec-item">
+                <span class="spec-label">卡片高度</span>
+                <span class="spec-value">88px</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">卡片宽度</span>
+                <span class="spec-value">100% (填满父容器)</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">卡片圆角</span>
+                <span class="spec-value">24px</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">左侧图标</span>
+                <span class="spec-value">48px × 48px</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">右侧播放按钮</span>
+                <span class="spec-value">48px × 48px (圆形)</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">播放按钮内部图标</span>
+                <span class="spec-value">18px × 18px</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">标题文字</span>
+                <span class="spec-value">16px (粗体)</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">倒计时文字</span>
+                <span class="spec-value">13px</span>
+            </div>
+        </div>
+
+        <div class="status success">
+            <h3>✅ 更新完成</h3>
+            <p>已按照要求更新计时器卡片的UI尺寸：</p>
+            <ul>
+                <li>✅ 标题文字从 18px 调整为 16px (粗体)</li>
+                <li>✅ 倒计时文字从 12px 调整为 13px</li>
+                <li>✅ 播放按钮内部三角形图标从 24px 调整为 18px</li>
+                <li>✅ 保持卡片高度 88px、圆角 24px</li>
+                <li>✅ 保持左侧图标和右侧按钮 48px × 48px</li>
+            </ul>
+        </div>
+
+        <div class="status info">
+            <h3>🎯 视觉效果</h3>
+            <p>更新后的计时器卡片将呈现：</p>
+            <ul>
+                <li><strong>更可爱的左侧图标</strong> - 48px大图标更加醒目</li>
+                <li><strong>更协调的文字比例</strong> - 16px标题 + 13px副文字</li>
+                <li><strong>更精致的播放按钮</strong> - 18px三角形图标更加精致</li>
+                <li><strong>保持马卡龙治愈系风格</strong> - 圆润的24px圆角</li>
+            </ul>
+        </div>
+
+        <div class="status warning">
+            <h3>🧪 测试步骤</h3>
+            <ol>
+                <li>点击下方按钮打开主应用</li>
+                <li>查看计时器页面的卡片样式</li>
+                <li>检查文字大小是否符合新规格</li>
+                <li>检查播放按钮内部图标大小</li>
+                <li>验证整体视觉协调性</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用查看效果
+            </button>
+            <button class="test-btn" onclick="openWithGuide()">
+                📋 打开并显示测试指南
+            </button>
+        </div>
+
+        <div class="status info">
+            <h3>🔍 技术细节</h3>
+            <p><strong>修改位置：</strong></p>
+            <ul>
+                <li><code>标题文字</code>：添加 <code>style={{ fontSize: '16px' }}</code></li>
+                <li><code>副文字</code>：添加 <code>style={{ fontSize: '13px' }}</code></li>
+                <li><code>播放图标</code>：修改为 <code>style={{ width: '18px', height: '18px' }}</code></li>
+            </ul>
+            
+            <p><strong>保持不变：</strong></p>
+            <ul>
+                <li>卡片高度：88px</li>
+                <li>卡片圆角：24px</li>
+                <li>左侧图标：48px × 48px</li>
+                <li>右侧按钮：48px × 48px</li>
+                <li>马卡龙治愈系配色和动画效果</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithGuide() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            setTimeout(() => {
+                alert('🎨 UI更新测试指南：\n\n1. 查看计时器卡片的文字大小\n2. 标题应该是16px (粗体)\n3. 副文字应该是13px\n4. 播放按钮内的三角形应该是18px\n5. 整体视觉应该更加协调可爱');
+            }, 2000);
+        }
+        
+        console.log('🎨 计时器卡片UI尺寸更新完成');
+        console.log('更新时间:', new Date().toLocaleString());
+        console.log('更新内容: 文字尺寸优化 + 播放图标尺寸调整');
+    </script>
+</body>
+</html>

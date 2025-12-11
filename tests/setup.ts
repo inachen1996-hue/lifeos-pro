@@ -1,6 +1,9 @@
 /**
- * Test setup - Mock localStorage for Node.js environment
+ * Test setup - Mock localStorage and setup React Testing Library
  */
+
+import '@testing-library/jest-dom';
+import { beforeEach } from 'vitest';
 
 class LocalStorageMock {
   private store: Map<string, string> = new Map();
@@ -35,8 +38,6 @@ class LocalStorageMock {
 global.localStorage = new LocalStorageMock() as Storage;
 
 // Clear localStorage before each test
-import { beforeEach } from 'vitest';
-
 beforeEach(() => {
   global.localStorage.clear();
 });

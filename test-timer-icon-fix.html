@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器图标选择修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+            <div style="text-align: center;">
+                <div style="width: 60px; height: 60px; border: 4px solid #E2C2FF; border-top-color: #5D576B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p style="color: #5D576B; font-weight: bold;">加载中...</p>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { createRoot } = ReactDOM;
+
+        // 测试应用
+        const TestApp = () => {
+          return (
+            <div className="min-h-screen p-8">
+              <div className="max-w-md mx-auto">
+                <h1 className="text-2xl font-black text-[#023E8A] mb-6 text-center">
+                  🎯 图标选择修复测试
+                </h1>
+
+                <div className="bg-white/90 p-6 rounded-[24px] shadow-lg text-center"
+                     style={{
+                       boxShadow: '0 8px 24px -4px rgba(162, 210, 255, 0.2), inset 0 2px 8px rgba(255, 255, 255, 0.8)',
+                       border: '2px solid rgba(255, 255, 255, 0.9)'
+                     }}>
+                  
+                  <div className="mb-4">
+                    <div className="text-6xl mb-4">✅</div>
+                    <h2 className="text-lg font-black text-[#023E8A] mb-2">修复完成</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      categories 变量引用问题已修复
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 text-left text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>GlassIcon 组件添加 categories prop</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>IconSelector 组件添加 categories prop</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>TimerCreateModal 传递 categories</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>getTimerMainIcon 传递 categories</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-blue-700">
+                      <strong>修复说明：</strong><br/>
+                      所有组件现在正确接收和传递 categories 参数，
+                      避免了 "categories is not defined" 错误。
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={() => window.location.href = 'index.html'}
+                    className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-bold hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    返回主应用测试
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // 渲染应用
+        const root = createRoot(document.getElementById('root'));
+        root.render(<TestApp />);
+    </script>
+</body>
+</html>

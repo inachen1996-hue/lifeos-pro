@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics System Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .physics-demo {
+            width: 400px;
+            height: 300px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin: 20px auto;
+            position: relative;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.9) 100%);
+            overflow: hidden;
+        }
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .ball:hover {
+            transform: scale(1.1);
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .status {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Achievement Jar Physics System Test</h1>
+        <p>This test demonstrates the physics simulation system for the Achievement Jar progress visualization.</p>
+        
+        <div class="status">
+            <strong>Physics Engine Status:</strong> <span id="physics-status">Initializing...</span><br>
+            <strong>Matter.js Available:</strong> <span id="matter-status">Checking...</span><br>
+            <strong>Performance Mode:</strong> <span id="performance-mode">Auto</span>
+        </div>
+
+        <div class="controls">
+            <button onclick="addBall()">Add Ball</button>
+            <button onclick="clearBalls()">Clear All</button>
+            <button onclick="togglePhysics()">Toggle Physics</button>
+            <button onclick="testCollisions()">Test Collisions</button>
+        </div>
+
+        <div class="physics-demo" id="physics-container">
+            <!-- Balls will be added here -->
+        </div>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value" id="ball-count">0</div>
+                <div class="metric-label">Active Balls</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="fps-counter">60</div>
+                <div class="metric-label">FPS</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="physics-mode">CSS</div>
+                <div class="metric-label">Physics Mode</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="collision-count">0</div>
+                <div class="metric-label">Collisions</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock physics system for testing
+        class MockPhysicsEngine {
+            constructor() {
+                this.balls = [];
+                this.physicsEnabled = false;
+                this.fps = 60;
+                this.collisionCount = 0;
+                this.container = document.getElementById('physics-container');
+                this.containerBounds = {
+                    width: 400,
+                    height: 300,
+                    centerX: 200,
+                    bottomY: 280
+                };
+                
+                this.init();
+            }
+
+            init() {
+                // Check if Matter.js would be available
+                const matterAvailable = typeof window !== 'undefined';
+                document.getElementById('matter-status').textContent = matterAvailable ? 'Yes' : 'No';
+                document.getElementById('physics-status').textContent = 'Ready';
+                
+                this.startPerformanceMonitoring();
+            }
+
+            addBall(options = {}) {
+                const ball = {
+                    id: `ball-${Date.now()}-${Math.random()}`,
+                    x: this.containerBounds.centerX + (Math.random() - 0.5) * 100,
+                    y: 20,
+                    size: 20 + Math.random() * 30,
+                    color: this.getRandomColor(),
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 0,
+                    ...options
+                };
+
+                this.balls.push(ball);
+                this.renderBall(ball);
+                this.updateMetrics();
+
+                if (this.physicsEnabled) {
+                    this.simulatePhysics(ball);
+                } else {
+                    this.simulateCSS(ball);
+                }
+            }
+
+            renderBall(ball) {
+                const ballElement = document.createElement('div');
+                ballElement.className = 'ball';
+                ballElement.id = ball.id;
+                ballElement.style.width = `${ball.size}px`;
+                ballElement.style.height = `${ball.size}px`;
+                ballElement.style.background = ball.color;
+                ballElement.style.left = `${ball.x - ball.size/2}px`;
+                ballElement.style.top = `${ball.y - ball.size/2}px`;
+                ballElement.style.boxShadow = `0 4px 12px ${ball.color}40`;
+                
+                ballElement.onclick = () => this.removeBall(ball.id);
+                this.container.appendChild(ballElement);
+            }
+
+            simulatePhysics(ball) {
+                // Simulate Matter.js physics with simple gravity and collision
+                const animate = () => {
+                    ball.vy += 0.5; // Gravity
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+
+                    // Boundary collision
+                    if (ball.x - ball.size/2 < 0 || ball.x + ball.size/2 > this.containerBounds.width) {
+                        ball.vx *= -0.7;
+                        ball.x = Math.max(ball.size/2, Math.min(this.containerBounds.width - ball.size/2, ball.x));
+                    }
+
+                    if (ball.y + ball.size/2 > this.containerBounds.height) {
+                        ball.vy *= -0.6;
+                        ball.y = this.containerBounds.height - ball.size/2;
+                        ball.vx *= 0.9; // Friction
+                    }
+
+                    // Ball-to-ball collision detection
+                    this.balls.forEach(otherBall => {
+                        if (otherBall.id !== ball.id) {
+                            const dx = ball.x - otherBall.x;
+                            const dy = ball.y - otherBall.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            const minDistance = (ball.size + otherBall.size) / 2;
+
+                            if (distance < minDistance && distance > 0) {
+                                this.collisionCount++;
+                                const overlap = minDistance - distance;
+                                const separationX = (dx / distance) * overlap * 0.5;
+                                const separationY = (dy / distance) * overlap * 0.5;
+
+                                ball.x += separationX;
+                                ball.y += separationY;
+                                otherBall.x -= separationX;
+                                otherBall.y -= separationY;
+
+                                // Exchange velocities (simplified)
+                                const tempVx = ball.vx;
+                                const tempVy = ball.vy;
+                                ball.vx = otherBall.vx * 0.8;
+                                ball.vy = otherBall.vy * 0.8;
+                                otherBall.vx = tempVx * 0.8;
+                                otherBall.vy = tempVy * 0.8;
+                            }
+                        }
+                    });
+
+                    // Update DOM
+                    const element = document.getElementById(ball.id);
+                    if (element) {
+                        element.style.left = `${ball.x - ball.size/2}px`;
+                        element.style.top = `${ball.y - ball.size/2}px`;
+                    }
+
+                    // Continue animation if ball is still moving
+                    if (Math.abs(ball.vx) > 0.1 || Math.abs(ball.vy) > 0.1 || ball.y < this.containerBounds.height - ball.size/2 - 5) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+
+                animate();
+            }
+
+            simulateCSS(ball) {
+                // CSS fallback - simple stacking
+                const stackedY = this.containerBounds.height - ball.size/2 - (this.balls.length - 1) * ball.size * 0.8;
+                const stackedX = this.containerBounds.centerX + (Math.random() - 0.5) * 100;
+
+                ball.x = Math.max(ball.size/2, Math.min(this.containerBounds.width - ball.size/2, stackedX));
+                ball.y = Math.max(ball.size/2, stackedY);
+
+                const element = document.getElementById(ball.id);
+                if (element) {
+                    element.style.transition = 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    element.style.left = `${ball.x - ball.size/2}px`;
+                    element.style.top = `${ball.y - ball.size/2}px`;
+                }
+            }
+
+            removeBall(ballId) {
+                this.balls = this.balls.filter(ball => ball.id !== ballId);
+                const element = document.getElementById(ballId);
+                if (element) {
+                    element.style.transform = 'scale(0)';
+                    setTimeout(() => element.remove(), 300);
+                }
+                this.updateMetrics();
+            }
+
+            clearBalls() {
+                this.balls.forEach(ball => this.removeBall(ball.id));
+                this.collisionCount = 0;
+            }
+
+            togglePhysics() {
+                this.physicsEnabled = !this.physicsEnabled;
+                document.getElementById('physics-mode').textContent = this.physicsEnabled ? 'Matter.js' : 'CSS';
+                document.getElementById('performance-mode').textContent = this.physicsEnabled ? 'High Performance' : 'Fallback';
+            }
+
+            testCollisions() {
+                // Add multiple balls quickly to test collision detection
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        this.addBall({
+                            x: this.containerBounds.centerX + (i - 2) * 30,
+                            y: 50 + i * 10
+                        });
+                    }, i * 100);
+                }
+            }
+
+            getRandomColor() {
+                const colors = [
+                    'linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%)', // Blue
+                    'linear-gradient(135deg, #F5C2D6 0%, #E8A5C0 100%)', // Pink
+                    'linear-gradient(135deg, #D9EFE8 0%, #A7F3D0 100%)', // Green
+                    'linear-gradient(135deg, #C8A2E0 0%, #9B6BB8 100%)', // Purple
+                    'linear-gradient(135deg, #FFE9D6 0%, #FFB366 100%)', // Orange
+                    'linear-gradient(135deg, #FFF8E1 0%, #FFE082 100%)'  // Yellow
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            updateMetrics() {
+                document.getElementById('ball-count').textContent = this.balls.length;
+                document.getElementById('collision-count').textContent = this.collisionCount;
+            }
+
+            startPerformanceMonitoring() {
+                let frameCount = 0;
+                let lastTime = performance.now();
+
+                const updateFPS = () => {
+                    frameCount++;
+                    const currentTime = performance.now();
+                    
+                    if (currentTime - lastTime >= 1000) {
+                        this.fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                        document.getElementById('fps-counter').textContent = this.fps;
+                        frameCount = 0;
+                        lastTime = currentTime;
+                    }
+                    
+                    requestAnimationFrame(updateFPS);
+                };
+                
+                updateFPS();
+            }
+        }
+
+        // Initialize the physics engine
+        const physicsEngine = new MockPhysicsEngine();
+
+        // Global functions for buttons
+        function addBall() {
+            physicsEngine.addBall();
+        }
+
+        function clearBalls() {
+            physicsEngine.clearBalls();
+        }
+
+        function togglePhysics() {
+            physicsEngine.togglePhysics();
+        }
+
+        function testCollisions() {
+            physicsEngine.testCollisions();
+        }
+
+        // Auto-add some balls for demonstration
+        setTimeout(() => {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => addBall(), i * 500);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

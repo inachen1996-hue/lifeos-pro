@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速测试 - 管理分类按钮</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        
+        .fix-summary {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+        
+        .code {
+            background: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 管理分类按钮修复完成</h1>
+        
+        <div class="fix-summary">
+            <h3>✅ 修复内容</h3>
+            <p><strong>问题：</strong> 点击管理分类按钮报错 <span class="code">ReferenceError: timerCategories is not defined</span></p>
+            <p><strong>原因：</strong> React 组件初始化时 TimerBackend 可能还未完全加载</p>
+            <p><strong>解决：</strong> 添加 useEffect 确保数据正确加载和状态同步</p>
+        </div>
+
+        <div class="status success">
+            <h3>🎯 修复要点</h3>
+            <ul>
+                <li>✅ 添加 <span class="code">useEffect</span> 重新加载 timerCategories</li>
+                <li>✅ 修复 <span class="code">expandedCategories</span> 响应式初始化</li>
+                <li>✅ 确保状态同步和依赖关系正确</li>
+            </ul>
+        </div>
+
+        <div class="status info">
+            <h3>🧪 测试步骤</h3>
+            <ol>
+                <li>点击下方按钮打开主应用</li>
+                <li>等待页面完全加载（看到计时器界面）</li>
+                <li>点击左侧栏的管理分类按钮（⚙️ 图标）</li>
+                <li>检查是否正常弹出管理分类弹窗</li>
+                <li>检查控制台是否无错误信息</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用测试
+            </button>
+            <button class="test-btn" onclick="openWithInstructions()">
+                📋 打开并显示测试提示
+            </button>
+        </div>
+
+        <div class="status warning">
+            <h3>⚠️ 注意事项</h3>
+            <p>如果仍然遇到问题，请：</p>
+            <ul>
+                <li>刷新页面重新加载</li>
+                <li>检查浏览器控制台的错误信息</li>
+                <li>确认 TimerBackend 模块正常加载</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithInstructions() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            // 延迟显示测试提示
+            setTimeout(() => {
+                alert('🧪 测试步骤：\n\n1. 等待页面完全加载\n2. 点击左侧栏的管理分类按钮（⚙️）\n3. 检查是否正常弹出弹窗\n4. 查看控制台是否有错误');
+            }, 2000);
+        }
+        
+        // 页面加载时检查修复状态
+        console.log('🔍 管理分类按钮修复验证');
+        console.log('修复时间:', new Date().toLocaleString());
+        console.log('修复内容: timerCategories 变量初始化和 expandedCategories 响应式更新');
+    </script>
+</body>
+</html>

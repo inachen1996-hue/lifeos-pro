@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS 问题修复方案</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white p-8 rounded-3xl shadow-xl">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">🚨 CORS 问题修复方案</h1>
+            
+            <div class="grid gap-6">
+                <!-- 问题说明 -->
+                <div class="bg-red-50 p-6 rounded-2xl border border-red-200">
+                    <h2 class="font-bold text-lg text-red-800 mb-3">❌ 当前问题</h2>
+                    <div class="text-sm text-red-700 space-y-2">
+                        <p><strong>错误类型:</strong> CORS (跨域资源共享) 错误</p>
+                        <p><strong>错误原因:</strong> DeepSeek API 不允许从浏览器直接调用</p>
+                        <p><strong>技术细节:</strong> 浏览器安全策略阻止了跨域请求</p>
+                    </div>
+                </div>
+
+                <!-- 解决方案 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 方案1: 切换到 Gemini -->
+                    <div class="bg-green-50 p-6 rounded-2xl border border-green-200">
+                        <h3 class="font-bold text-lg text-green-800 mb-3">✅ 方案1: 使用 Gemini API</h3>
+                        <ul class="text-sm text-green-700 space-y-2 mb-4">
+                            <li>• Gemini API 支持浏览器直接调用</li>
+                            <li>• 无需服务器端代理</li>
+                            <li>• 立即可用，无需额外配置</li>
+                            <li>• 功能强大，响应质量高</li>
+                        </ul>
+                        <button id="switchToGemini" class="w-full py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all">
+                            🔄 切换到 Gemini API
+                        </button>
+                    </div>
+
+                    <!-- 方案2: 本地代理 -->
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                        <h3 class="font-bold text-lg text-blue-800 mb-3">🔧 方案2: 本地代理服务器</h3>
+                        <ul class="text-sm text-blue-700 space-y-2 mb-4">
+                            <li>• 创建本地代理绕过 CORS</li>
+                            <li>• 继续使用 DeepSeek API</li>
+                            <li>• 需要启动额外服务</li>
+                            <li>• 适合开发环境</li>
+                        </ul>
+                        <button id="createProxy" class="w-full py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-all">
+                            🛠️ 创建本地代理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 测试区域 -->
+                <div class="bg-gray-50 p-6 rounded-2xl">
+                    <h3 class="font-bold text-gray-800 mb-4">🧪 API 测试</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <button id="testGemini" class="py-3 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-all">
+                            💎 测试 Gemini API
+                        </button>
+                        <button id="testDeepSeekDirect" class="py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-all">
+                            🚫 测试 DeepSeek (会失败)
+                        </button>
+                    </div>
+                    <div id="testResult" class="bg-white p-4 rounded-lg min-h-[100px]">
+                        <p class="text-gray-500">点击按钮开始测试...</p>
+                    </div>
+                </div>
+
+                <!-- 技术说明 -->
+                <div class="bg-yellow-50 p-6 rounded-2xl border border-yellow-200">
+                    <h3 class="font-bold text-yellow-800 mb-3">📚 技术说明</h3>
+                    <div class="text-sm text-yellow-700 space-y-3">
+                        <div>
+                            <h4 class="font-bold">什么是 CORS？</h4>
+                            <p>跨域资源共享（CORS）是浏览器的安全机制，防止恶意网站访问其他域的资源。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">为什么 DeepSeek 不支持？</h4>
+                            <p>DeepSeek API 主要设计为服务器端使用，没有设置允许浏览器跨域访问的 CORS 头。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Gemini 为什么可以？</h4>
+                            <p>Google Gemini API 专门为前端应用设计，支持浏览器直接调用。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = 'AIzaSyAs95vJEeL-CkfTdvxeKgZsViKJtjAppBE';
+        const DEEPSEEK_API_KEY = 'sk-d1fdb210d0424ffdbad83f1ebe4e283b';
+        const testResultDiv = document.getElementById('testResult');
+
+        function showTestResult(message, type = 'info') {
+            const colors = {
+                info: 'text-blue-700 bg-blue-100',
+                success: 'text-green-700 bg-green-100',
+                error: 'text-red-700 bg-red-100'
+            };
+
+            testResultDiv.innerHTML = `
+                <div class="p-3 rounded ${colors[type]}">
+                    <pre class="whitespace-pre-wrap text-sm">${message}</pre>
+                    <p class="text-xs mt-2 opacity-75">时间: ${new Date().toLocaleTimeString()}</p>
+                </div>
+            `;
+        }
+
+        // 切换到 Gemini API
+        document.getElementById('switchToGemini').addEventListener('click', () => {
+            const config = {
+                provider: 'google',
+                keys: {
+                    google: GEMINI_API_KEY,
+                    openai: '',
+                    deepseek: DEEPSEEK_API_KEY
+                },
+                useServerKeys: false,
+                corsWorkaround: true
+            };
+
+            localStorage.setItem('lifeos_pro_api_config', JSON.stringify(config));
+            
+            alert('✅ 已切换到 Gemini API！\n\n配置已保存，请刷新页面生效。\n\nGemini API 支持浏览器直接调用，不会有 CORS 问题。');
+        });
+
+        // 创建本地代理
+        document.getElementById('createProxy').addEventListener('click', () => {
+            const proxyCode = `
+// 本地代理服务器 (proxy-server.js)
+const express = require('express');
+const cors = require('cors');
+const fetch = require('node-fetch');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.post('/deepseek', async (req, res) => {
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + req.body.apiKey
+      },
+      body: JSON.stringify({
+        model: req.body.model,
+        messages: req.body.messages,
+        temperature: 0.7,
+        max_tokens: 4000
+      })
+    });
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(3001, () => {
+  console.log('代理服务器运行在 http://localhost:3001');
+});
+
+// 安装依赖: npm install express cors node-fetch
+// 运行: node proxy-server.js
+            `;
+
+            // 创建下载链接
+            const blob = new Blob([proxyCode], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'proxy-server.js';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('📁 代理服务器代码已下载！\n\n使用步骤:\n1. 安装 Node.js\n2. 运行: npm install express cors node-fetch\n3. 运行: node proxy-server.js\n4. 修改应用配置使用 http://localhost:3001/deepseek');
+        });
+
+        // 测试 Gemini API
+        document.getElementById('testGemini').addEventListener('click', async () => {
+            showTestResult('正在测试 Gemini API...', 'info');
+            
+            try {
+                // 动态加载 Google AI SDK
+                if (!window.GoogleGenerativeAI) {
+                    const script = document.createElement('script');
+                    script.src = 'https://esm.run/@google/generative-ai';
+                    script.type = 'module';
+                    
+                    await new Promise((resolve, reject) => {
+                        script.onload = () => {
+                            import('https://esm.run/@google/generative-ai').then(module => {
+                                window.GoogleGenerativeAI = module.GoogleGenerativeAI;
+                                resolve();
+                            }).catch(reject);
+                        };
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+
+                const genAI = new window.GoogleGenerativeAI(GEMINI_API_KEY);
+                const model = genAI.getGenerativeModel({ 
+                    model: "gemini-2.0-flash-exp",
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+
+                const result = await model.generateContent('请用JSON格式回复：{"status": "success", "message": "Gemini API 测试成功", "timestamp": "' + new Date().toISOString() + '"}');
+                const response = result.response.text();
+
+                showTestResult(`✅ Gemini API 测试成功！
+
+响应内容: ${response}
+
+优势:
+• 无 CORS 问题
+• 浏览器直接调用
+• 响应速度快
+• 功能强大`, 'success');
+
+            } catch (error) {
+                showTestResult(`❌ Gemini API 测试失败: ${error.message}`, 'error');
+            }
+        });
+
+        // 测试 DeepSeek API (演示 CORS 错误)
+        document.getElementById('testDeepSeekDirect').addEventListener('click', async () => {
+            showTestResult('正在测试 DeepSeek API (预期会失败)...', 'info');
+            
+            try {
+                const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: '测试'
+                            }
+                        ],
+                        max_tokens: 10
+                    })
+                });
+
+                const data = await response.json();
+                showTestResult(`意外成功: ${JSON.stringify(data)}`, 'success');
+
+            } catch (error) {
+                showTestResult(`❌ 预期的 CORS 错误:
+
+错误信息: ${error.message}
+
+这证实了 CORS 问题:
+• 浏览器阻止了跨域请求
+• DeepSeek API 不支持浏览器直接调用
+• 需要服务器端代理或使用支持 CORS 的 API
+
+解决方案:
+1. 切换到 Gemini API (推荐)
+2. 使用本地代理服务器
+3. 部署到支持 serverless 的平台`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

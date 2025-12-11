@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>理想配比迁移测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        .test-item {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+        
+        .success { border-left: 4px solid #10B981; }
+        .info { border-left: 4px solid #3B82F6; }
+        .warning { border-left: 4px solid #F59E0B; }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 8px;
+            background: linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%);
+            color: #023E8A;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px -4px rgba(72, 202, 228, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h1 style="text-align: center; color: #023E8A; margin-bottom: 30px;">
+            🎯 理想配比迁移功能测试
+        </h1>
+        
+        <div class="test-item success">
+            <h3>✅ 迁移完成清单</h3>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>✅ 设置页面新增理想配比设置项</li>
+                <li>✅ 理想配比配置模态框创建完成</li>
+                <li>✅ 复盘页面移除理想配比标签</li>
+                <li>✅ 复盘分析继续使用理想配比数据</li>
+                <li>✅ 数据存储和同步机制保持不变</li>
+            </ul>
+        </div>
+
+        <div class="test-item info">
+            <h3>🔧 功能变更说明</h3>
+            <div style="margin: 15px 0;">
+                <h4 style="color: #3B82F6; margin: 10px 0;">变更前：</h4>
+                <p>• 复盘页面有4个标签：当前进度 | 复盘 | 习惯打卡 | 理想配比</p>
+                <p>• 理想配比在复盘页面中直接配置</p>
+                
+                <h4 style="color: #10B981; margin: 10px 0;">变更后：</h4>
+                <p>• 复盘页面简化为3个标签：当前进度 | 复盘 | 习惯打卡</p>
+                <p>• 理想配比移至设置页面统一管理</p>
+                <p>• 复盘分析继续使用理想配比进行对比</p>
+            </div>
+        </div>
+
+        <div class="test-item warning">
+            <h3>🧪 测试步骤</h3>
+            <ol style="margin: 15px 0; padding-left: 20px;">
+                <li><strong>测试设置页面</strong>：
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>点击底部导航栏的"设置"按钮</li>
+                        <li>查看是否有"理想配比"设置项</li>
+                        <li>点击理想配比设置项，查看模态框是否正常打开</li>
+                    </ul>
+                </li>
+                <li><strong>测试理想配比配置</strong>：
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>在模态框中调整各分类的时间滑块</li>
+                        <li>观察总时间显示是否实时更新</li>
+                        <li>点击保存按钮，查看是否有保存提示</li>
+                    </ul>
+                </li>
+                <li><strong>测试复盘页面</strong>：
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>点击底部导航栏的"复盘"按钮</li>
+                        <li>确认只有3个标签：当前进度、复盘、习惯打卡</li>
+                        <li>生成复盘报告，查看是否使用新的理想配比数据</li>
+                    </ul>
+                </li>
+                <li><strong>测试数据同步</strong>：
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>在设置中修改理想配比</li>
+                        <li>返回复盘页面生成新报告</li>
+                        <li>确认复盘分析使用了更新后的配比</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="test-item info">
+            <h3>🎨 视觉设计特点</h3>
+            <div style="margin: 15px 0;">
+                <p><strong>理想配比设置项：</strong></p>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>紫色渐变图标背景（Target图标）</li>
+                    <li>实时显示总时间状态（绿色=完美24h，橙色=未满24h）</li>
+                    <li>悬停效果和点击反馈</li>
+                </ul>
+                
+                <p><strong>配置模态框：</strong></p>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>大尺寸模态框（max-w-2xl）适配滑块布局</li>
+                    <li>状态显示区域（总时间、剩余时间、超出警告）</li>
+                    <li>8个分类滑块，保持原有交互体验</li>
+                    <li>使用说明和保存按钮</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-item success">
+            <h3>💡 用户体验改进</h3>
+            <div style="margin: 15px 0;">
+                <p><strong>功能组织更合理：</strong></p>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>配置类功能统一在设置页面管理</li>
+                    <li>复盘页面专注于数据分析和回顾</li>
+                    <li>减少复盘页面的认知负担</li>
+                </ul>
+                
+                <p><strong>操作流程优化：</strong></p>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>理想配比设置更加集中和专业</li>
+                    <li>模态框形式提供更好的专注体验</li>
+                    <li>保持数据的实时同步和一致性</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index.html" class="btn">🚀 开始测试主应用</a>
+            <button onclick="checkLocalStorage()" class="btn">📊 检查数据存储</button>
+        </div>
+
+        <div id="storageInfo" class="test-item info" style="display: none;">
+            <h3>📊 本地存储数据</h3>
+            <div id="storageContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function checkLocalStorage() {
+            const storageDiv = document.getElementById('storageInfo');
+            const contentDiv = document.getElementById('storageContent');
+            
+            const allocations = localStorage.getItem('lifeos_pro_allocations_v2');
+            
+            if (allocations) {
+                const data = JSON.parse(allocations);
+                const total = Object.values(data).reduce((a, b) => a + b, 0);
+                
+                contentDiv.innerHTML = `
+                    <p><strong>理想配比数据：</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>工作: ${data.work}h</li>
+                        <li>学习: ${data.study}h</li>
+                        <li>休息: ${data.rest}h</li>
+                        <li>睡眠: ${data.sleep}h</li>
+                        <li>生活: ${data.life}h</li>
+                        <li>娱乐: ${data.entertainment}h</li>
+                        <li>健康: ${data.health}h</li>
+                        <li>兴趣: ${data.hobby}h</li>
+                    </ul>
+                    <p><strong>总计: ${total}h / 24h</strong></p>
+                    <p style="color: ${total === 24 ? '#10B981' : '#F59E0B'};">
+                        状态: ${total === 24 ? '✨ 完美闭环' : total > 24 ? '⚠️ 超出限制' : '📝 待完善'}
+                    </p>
+                `;
+            } else {
+                contentDiv.innerHTML = '<p style="color: #EF4444;">❌ 未找到理想配比数据</p>';
+            }
+            
+            storageDiv.style.display = 'block';
+        }
+
+        // 页面加载完成提示
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 理想配比迁移测试页面加载完成');
+            console.log('📋 请按照测试步骤验证功能');
+        });
+    </script>
+</body>
+</html>

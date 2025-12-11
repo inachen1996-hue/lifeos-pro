@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器页面全屏布局优化测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .demo-section {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        
+        /* 布局演示 */
+        .layout-demo {
+            background: #f8f9fa;
+            border: 2px solid #A2D2FF;
+            border-radius: 12px;
+            height: 300px;
+            position: relative;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .top-area {
+            background: linear-gradient(135deg, #B5F5D8 0%, #C9F5E0 100%);
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #065F46;
+        }
+        
+        .content-area {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            height: calc(100% - 24px - 92px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #023E8A;
+            position: relative;
+        }
+        
+        .bottom-area {
+            background: linear-gradient(135deg, #FFB5D8 0%, #FFC9E0 100%);
+            height: 92px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #be185d;
+        }
+        
+        .height-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(162, 210, 255, 0.2);
+        }
+        
+        .comparison-item.before {
+            background: rgba(255, 181, 216, 0.1);
+        }
+        
+        .comparison-item.after {
+            background: rgba(181, 245, 216, 0.1);
+        }
+        
+        .height-bar {
+            width: 60px;
+            margin: 10px auto;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .height-bar.old {
+            height: 80px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .height-bar.new {
+            height: 120px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .spec-table th,
+        .spec-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(162, 210, 255, 0.3);
+        }
+        .spec-table th {
+            background: rgba(162, 210, 255, 0.1);
+            font-weight: bold;
+            color: #023E8A;
+        }
+        .spec-value {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(162, 210, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #023E8A;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 计时器页面全屏布局优化完成</h1>
+        
+        <div class="demo-section">
+            <h3>📐 新布局结构演示</h3>
+            <div class="layout-demo">
+                <div class="top-area">
+                    顶部间距: pt-6 (24px)
+                </div>
+                <div class="content-area">
+                    计时器页面内容区域<br>
+                    <small>h-[calc(100vh-120px)]</small>
+                </div>
+                <div class="bottom-area">
+                    底部导航栏: 72px + 20px间距 = 92px
+                </div>
+            </div>
+        </div>
+
+        <div class="status success">
+            <h3>✅ 全屏优化完成</h3>
+            <p>已调整计时器页面高度，让页面更好地铺满整个屏幕：</p>
+        </div>
+
+        <div class="height-comparison">
+            <div class="comparison-item before">
+                <h4>修改前 (空间浪费)</h4>
+                <div class="height-bar old">180px</div>
+                <p style="font-size: 12px; color: #666;">h-[calc(100vh-180px)]<br>预留过多空间</p>
+            </div>
+            <div class="comparison-item after">
+                <h4>修改后 (充分利用)</h4>
+                <div class="height-bar new">120px</div>
+                <p style="font-size: 12px; color: #666;">h-[calc(100vh-120px)]<br>合理预留空间</p>
+            </div>
+        </div>
+
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>空间分配</th>
+                    <th>实际需要</th>
+                    <th>修改前</th>
+                    <th>修改后</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>顶部间距</strong></td>
+                    <td><span class="spec-value">24px (pt-6)</span></td>
+                    <td><span class="spec-value">包含在180px中</span></td>
+                    <td><span class="spec-value">包含在120px中</span></td>
+                </tr>
+                <tr>
+                    <td><strong>底部导航</strong></td>
+                    <td><span class="spec-value">92px (72px+20px)</span></td>
+                    <td><span class="spec-value">包含在180px中</span></td>
+                    <td><span class="spec-value">包含在120px中</span></td>
+                </tr>
+                <tr>
+                    <td><strong>总预留</strong></td>
+                    <td><span class="spec-value">116px</span></td>
+                    <td><span class="spec-value">180px (过多64px)</span></td>
+                    <td><span class="spec-value">120px (合理4px缓冲)</span></td>
+                </tr>
+                <tr>
+                    <td><strong>内容区高度</strong></td>
+                    <td><span class="spec-value">最大化</span></td>
+                    <td><span class="spec-value">100vh - 180px</span></td>
+                    <td><span class="spec-value">100vh - 120px</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="status info">
+            <h3>🎯 优化效果</h3>
+            <ul>
+                <li><strong>增加60px内容高度</strong> - 从180px预留减少到120px预留</li>
+                <li><strong>更好的屏幕利用率</strong> - 内容区域占用更多可视空间</li>
+                <li><strong>保持安全边距</strong> - 4px缓冲确保不与导航栏重叠</li>
+                <li><strong>响应式友好</strong> - 在不同屏幕尺寸下都能良好适配</li>
+            </ul>
+        </div>
+
+        <div class="status warning">
+            <h3>🧪 测试要点</h3>
+            <ol>
+                <li><strong>高度检查</strong> - 计时器页面应该占用更多屏幕高度</li>
+                <li><strong>底部安全</strong> - 内容不应与底部导航栏重叠</li>
+                <li><strong>顶部间距</strong> - 保持24px的顶部间距</li>
+                <li><strong>滚动测试</strong> - 内容过多时应该可以正常滚动</li>
+                <li><strong>响应式</strong> - 在不同设备上测试布局效果</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用查看效果
+            </button>
+            <button class="test-btn" onclick="openWithGuide()">
+                📱 打开并显示全屏指南
+            </button>
+        </div>
+
+        <div class="status info">
+            <h3>🔍 技术实现</h3>
+            <p><strong>高度调整：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 修改前
+className="flex animate-in h-[calc(100vh-180px)]"
+
+// 修改后
+className="flex animate-in h-[calc(100vh-120px)]"</pre>
+            
+            <p><strong>空间计算：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+顶部间距: pt-6 = 24px
+底部导航: 72px (高度) + 20px (bottom-5) = 92px
+总需求: 24px + 92px = 116px
+实际设置: 120px (包含4px安全缓冲)</pre>
+
+            <p><strong>效果对比：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+修改前: 100vh - 180px (浪费64px空间)
+修改后: 100vh - 120px (增加60px内容高度)</pre>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithGuide() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            setTimeout(() => {
+                alert('📱 全屏布局测试指南：\n\n1. 观察计时器页面是否占用更多屏幕高度\n2. 检查内容是否与底部导航栏有适当间距\n3. 验证页面滚动是否正常\n4. 测试在不同窗口大小下的表现\n5. 确认整体视觉效果更加饱满');
+            }, 2000);
+        }
+        
+        console.log('📱 计时器页面全屏布局优化完成');
+        console.log('优化时间:', new Date().toLocaleString());
+        console.log('高度调整: 180px → 120px，增加60px内容高度');
+    </script>
+</body>
+</html>

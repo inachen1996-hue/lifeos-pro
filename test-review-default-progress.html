@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>复盘页面默认选中测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+            font-family: 'Quicksand', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="p-4 min-h-screen">
+        <div class="max-w-md mx-auto">
+            <h1 class="text-2xl font-bold text-center mb-8">📊 复盘页面默认选中测试</h1>
+            
+            <!-- 功能说明 -->
+            <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
+                <h3 class="font-bold mb-2">✨ 新功能</h3>
+                <p class="text-sm text-gray-600">
+                    现在进入复盘页面时，会自动选中"当前进度-今日"标签，
+                    让用户可以立即查看今天的进度情况。
+                </p>
+            </div>
+            
+            <!-- 模拟页面切换 -->
+            <div class="space-y-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <h3 class="font-bold text-blue-800 mb-2">🧪 测试步骤</h3>
+                    <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                        <li>点击下方"打开主应用"按钮</li>
+                        <li>点击底部导航栏的"复盘"按钮</li>
+                        <li>观察是否自动选中"当前进度"标签</li>
+                        <li>确认显示的是"今日"范围的数据</li>
+                    </ol>
+                </div>
+                
+                <button 
+                    onclick="openMainApp()" 
+                    class="w-full bg-purple-500 text-white p-4 rounded-xl font-bold hover:bg-purple-600 transition-colors"
+                >
+                    🚀 打开主应用
+                </button>
+            </div>
+            
+            <!-- 模拟复盘页面Tab -->
+            <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
+                <h3 class="font-bold mb-4">📋 复盘页面Tab模拟</h3>
+                
+                <!-- Tab 导航 -->
+                <div class="bg-gray-100 p-1.5 rounded-2xl flex gap-1 mb-4">
+                    <button 
+                        id="progressTab"
+                        onclick="switchTab('progress')" 
+                        class="flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200"
+                    >
+                        当前进度
+                    </button>
+                    <button 
+                        id="reviewTab"
+                        onclick="switchTab('review')" 
+                        class="flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:bg-slate-50"
+                    >
+                        复盘
+                    </button>
+                    <button 
+                        id="habitTab"
+                        onclick="switchTab('habit')" 
+                        class="flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:bg-slate-50"
+                    >
+                        习惯打卡
+                    </button>
+                </div>
+                
+                <!-- Tab 内容 -->
+                <div id="tabContent" class="text-center py-8">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">📊</span>
+                    </div>
+                    <h4 class="font-bold text-lg mb-2">当前进度 - 今日</h4>
+                    <p class="text-sm text-gray-600">
+                        ✅ 默认选中状态<br>
+                        显示今天的进度数据
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 实现说明 -->
+            <div class="bg-green-50 p-4 rounded-xl border border-green-200">
+                <h3 class="font-bold text-green-800 mb-2">🔧 实现方式</h3>
+                <div class="text-sm text-green-700 space-y-2">
+                    <div class="bg-white p-3 rounded-lg font-mono text-xs">
+                        <div class="text-gray-500 mb-1">// 监听页面切换</div>
+                        <div>useEffect(() => {</div>
+                        <div class="ml-2">if (activePage === 'review') {</div>
+                        <div class="ml-4">setReviewTab('progress');</div>
+                        <div class="ml-4">setProgressScope('today');</div>
+                        <div class="ml-2">}</div>
+                        <div>}, [activePage]);</div>
+                    </div>
+                    <p>当用户切换到复盘页面时，自动设置为"当前进度-今日"</p>
+                </div>
+            </div>
+            
+            <!-- 用户体验改进 -->
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 mt-6">
+                <h3 class="font-bold text-yellow-800 mb-2">🎯 用户体验改进</h3>
+                <ul class="text-sm text-yellow-700 space-y-1">
+                    <li>• <strong>直观性</strong>：进入复盘页面立即看到今日进度</li>
+                    <li>• <strong>效率</strong>：减少用户手动切换Tab的操作</li>
+                    <li>• <strong>一致性</strong>：每次进入都有相同的默认状态</li>
+                    <li>• <strong>实用性</strong>："今日进度"是最常查看的内容</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'progress';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // 更新Tab样式
+            const tabs = ['progress', 'review', 'habit'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(t + 'Tab');
+                if (t === tab) {
+                    btn.className = 'flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200';
+                } else {
+                    btn.className = 'flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:bg-slate-50';
+                }
+            });
+            
+            // 更新内容
+            const content = document.getElementById('tabContent');
+            const tabInfo = {
+                progress: {
+                    icon: '📊',
+                    title: '当前进度 - 今日',
+                    desc: '✅ 默认选中状态<br>显示今天的进度数据'
+                },
+                review: {
+                    icon: '🔍',
+                    title: '复盘分析',
+                    desc: '查看历史数据分析<br>生成复盘报告'
+                },
+                habit: {
+                    icon: '✅',
+                    title: '习惯打卡',
+                    desc: '记录和追踪<br>日常习惯完成情况'
+                }
+            };
+            
+            const info = tabInfo[tab];
+            content.innerHTML = `
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-2xl">${info.icon}</span>
+                </div>
+                <h4 class="font-bold text-lg mb-2">${info.title}</h4>
+                <p class="text-sm text-gray-600">${info.desc}</p>
+            `;
+        }
+        
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        // 模拟进入复盘页面的行为
+        function simulateEnterReview() {
+            console.log('模拟进入复盘页面...');
+            switchTab('progress');
+            
+            // 显示提示
+            const content = document.getElementById('tabContent');
+            content.innerHTML = `
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-2xl">🎉</span>
+                </div>
+                <h4 class="font-bold text-lg mb-2 text-green-600">自动选中成功！</h4>
+                <p class="text-sm text-green-600">
+                    ✅ 已自动切换到"当前进度-今日"<br>
+                    这就是用户进入复盘页面时看到的效果
+                </p>
+            `;
+        }
+        
+        // 页面加载时模拟进入复盘页面
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(simulateEnterReview, 1000);
+        });
+    </script>
+</body>
+</html>

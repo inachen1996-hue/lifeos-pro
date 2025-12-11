@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主白板容器样式更新测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .demo-section {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        
+        /* 主白板容器演示 */
+        .main-card-demo {
+            background: white;
+            border-radius: 36px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            padding-top: 24px;
+            padding-left: 18px;
+            padding-right: 18px;
+            padding-bottom: 18px;
+            margin: 20px 0;
+            min-height: 300px;
+            border: 2px solid rgba(162, 210, 255, 0.2);
+        }
+        
+        /* 顶部标题区演示 */
+        .header-demo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+        }
+        
+        .icon-demo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .icon-demo::after {
+            content: '⏰';
+            font-size: 24px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .icon-demo::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 100%);
+            border-radius: 16px;
+        }
+        
+        .title-demo {
+            font-size: 22px;
+            font-weight: 900;
+            color: #023E8A;
+            margin: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle-demo {
+            font-size: 12px;
+            color: #64748b;
+            opacity: 0.6;
+            font-weight: 500;
+            margin: 2px 0 0 0;
+        }
+        
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .spec-table th,
+        .spec-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(162, 210, 255, 0.3);
+        }
+        .spec-table th {
+            background: rgba(162, 210, 255, 0.1);
+            font-weight: bold;
+            color: #023E8A;
+        }
+        .spec-value {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(162, 210, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #023E8A;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+        
+        .measurement {
+            position: relative;
+            display: inline-block;
+        }
+        .measurement::after {
+            content: attr(data-size);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #023E8A;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 主白板容器样式更新完成</h1>
+        
+        <div class="demo-section">
+            <h3>📋 主白板容器演示</h3>
+            <div class="main-card-demo">
+                <div class="header-demo">
+                    <div class="icon-demo measurement" data-size="48×48"></div>
+                    <div>
+                        <h2 class="title-demo measurement" data-size="22px">工作计时器</h2>
+                        <p class="subtitle-demo measurement" data-size="12px">5 个计时器</p>
+                    </div>
+                </div>
+                <div style="color: #64748b; text-align: center; padding: 40px 0;">
+                    <p>这里是计时器卡片区域</p>
+                    <p style="font-size: 12px; opacity: 0.6;">内边距：上24px / 左右18px</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="status success">
+            <h3>✅ 更新完成</h3>
+            <p>已按照要求更新主白板容器和顶部标题区的样式：</p>
+        </div>
+
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>组件</th>
+                    <th>属性</th>
+                    <th>修改前</th>
+                    <th>修改后</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="2"><strong>主白板容器</strong></td>
+                    <td>圆角</td>
+                    <td><span class="spec-value">32px</span></td>
+                    <td><span class="spec-value">36px</span></td>
+                </tr>
+                <tr>
+                    <td>内边距</td>
+                    <td><span class="spec-value">20px (全方向)</span></td>
+                    <td><span class="spec-value">上24px / 左右18px</span></td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>分类图标</strong></td>
+                    <td>尺寸</td>
+                    <td><span class="spec-value">不固定</span></td>
+                    <td><span class="spec-value">48px × 48px</span></td>
+                </tr>
+                <tr>
+                    <td>圆角</td>
+                    <td><span class="spec-value">20px</span></td>
+                    <td><span class="spec-value">16px</span></td>
+                </tr>
+                <tr>
+                    <td>与标题间距</td>
+                    <td><span class="spec-value">12px</span></td>
+                    <td><span class="spec-value">12px</span></td>
+                </tr>
+                <tr>
+                    <td rowspan="2"><strong>标题文字</strong></td>
+                    <td>字号</td>
+                    <td><span class="spec-value">20px (text-xl)</span></td>
+                    <td><span class="spec-value">22px</span></td>
+                </tr>
+                <tr>
+                    <td>副标题</td>
+                    <td><span class="spec-value">12px</span></td>
+                    <td><span class="spec-value">12px + 60%透明度</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="status info">
+            <h3>🎯 设计理念</h3>
+            <ul>
+                <li><strong>稳固如桌</strong> - 36px圆角让白板容器更加稳重</li>
+                <li><strong>呼吸空间</strong> - 上24px、左右18px内边距给内容留出呼吸空间</li>
+                <li><strong>标准图标</strong> - 48×48px图标尺寸更加规范统一</li>
+                <li><strong>清晰层级</strong> - 22px标题 + 12px副标题，层级分明</li>
+            </ul>
+        </div>
+
+        <div class="status warning">
+            <h3>🧪 测试要点</h3>
+            <ol>
+                <li><strong>容器圆角</strong> - 检查白板容器是否为36px圆角</li>
+                <li><strong>内边距</strong> - 验证上方24px、左右18px的内边距</li>
+                <li><strong>图标尺寸</strong> - 确认分类图标为48×48px，圆角16px</li>
+                <li><strong>文字大小</strong> - 标题22px，副标题12px且60%透明度</li>
+                <li><strong>间距协调</strong> - 图标与标题间距12px是否合适</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用查看效果
+            </button>
+            <button class="test-btn" onclick="openWithGuide()">
+                📏 打开并显示测量指南
+            </button>
+        </div>
+
+        <div class="status info">
+            <h3>🔍 技术实现</h3>
+            <p><strong>主白板容器：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+className="flex-1 rounded-[36px] shadow-lg overflow-y-auto macaron-card"
+style={{
+  paddingTop: '24px',
+  paddingLeft: '18px', 
+  paddingRight: '18px',
+  paddingBottom: '18px'
+}}</pre>
+            
+            <p><strong>分类图标：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+style={{
+  width: '48px',
+  height: '48px',
+  borderRadius: '16px'
+}}</pre>
+
+            <p><strong>标题文字：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 主标题
+style={{ fontSize: '22px' }}
+
+// 副标题  
+style={{ fontSize: '12px', opacity: '0.6' }}</pre>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithGuide() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            setTimeout(() => {
+                alert('🏠 主白板容器测试指南：\n\n1. 检查右侧白色容器的圆角是否为36px\n2. 观察容器内边距：上24px，左右18px\n3. 查看分类图标：48×48px，圆角16px\n4. 验证标题文字：22px大小\n5. 确认副标题：12px + 60%透明度\n6. 测试整体视觉协调性');
+            }, 2000);
+        }
+        
+        console.log('🏠 主白板容器样式更新完成');
+        console.log('更新时间:', new Date().toLocaleString());
+        console.log('更新内容: 36px圆角 + 精确内边距 + 48px图标 + 22px标题');
+    </script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>庆祝效果系统测试 - Achievement Jar</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .celebration-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 20px 40px;
+            margin: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .celebration-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .celebration-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .celebration-button.drum {
+            background: linear-gradient(135deg, #A855F7, #7C3AED);
+        }
+        
+        .celebration-button.clap {
+            background: linear-gradient(135deg, #F87171, #DC2626);
+        }
+        
+        .celebration-button.cheer {
+            background: linear-gradient(135deg, #FB923C, #EA580C);
+        }
+        
+        .celebration-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .effect-indicator {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 12px;
+            animation: pulse 2s infinite;
+        }
+        
+        .effect-indicator.active {
+            background-color: #10B981;
+        }
+        
+        .effect-indicator.inactive {
+            background-color: #6B7280;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        .demo-section {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .celebration-preview {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // 模拟庆祝效果系统
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // 弹幕系统模拟
+        function DanmakuSystem({ isActive, celebrationType, onComplete }) {
+            const [danmakuItems, setDanmakuItems] = useState([]);
+            const nextIdRef = useRef(0);
+
+            const celebrationTexts = {
+                drum: ['🥁 节拍感满满！', '🎵 音乐响起来！', '🔥 激情四射！', '⚡ 能量爆发！', '🌟 超级棒！'],
+                clap: ['👏 掌声雷动！', '🎉 精彩表现！', '✨ 太棒了！', '🏆 值得鼓掌！', '💫 完美！'],
+                cheer: ['🎉 欢呼庆祝！', '🎊 太厉害了！', '🌈 彩虹般精彩！', '🚀 冲向云霄！', '💖 爱心满满！']
+            };
+
+            const themeColors = {
+                drum: ['#8B5CF6', '#A855F7', '#9333EA', '#7C3AED'],
+                clap: ['#EF4444', '#F87171', '#DC2626', '#B91C1C'],
+                cheer: ['#F97316', '#FB923C', '#EA580C', '#C2410C']
+            };
+
+            useEffect(() => {
+                if (!isActive) {
+                    setDanmakuItems([]);
+                    return;
+                }
+
+                const texts = celebrationTexts[celebrationType] || celebrationTexts.cheer;
+                const colors = themeColors[celebrationType] || themeColors.cheer;
+
+                // 生成弹幕
+                const generateDanmaku = () => {
+                    const newItem = {
+                        id: nextIdRef.current++,
+                        text: texts[Math.floor(Math.random() * texts.length)],
+                        top: Math.random() * 80 + 10,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        duration: Math.random() * 2 + 4,
+                        delay: Math.random() * 0.5
+                    };
+                    
+                    setDanmakuItems(prev => [...prev, newItem]);
+                    
+                    // 移除弹幕
+                    setTimeout(() => {
+                        setDanmakuItems(prev => prev.filter(item => item.id !== newItem.id));
+                    }, (newItem.duration + newItem.delay) * 1000);
+                };
+
+                // 立即生成几个弹幕
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(generateDanmaku, i * 300);
+                }
+
+                // 定期生成新弹幕
+                const interval = setInterval(generateDanmaku, 800);
+
+                // 3秒后停止
+                const timeout = setTimeout(() => {
+                    clearInterval(interval);
+                    setTimeout(() => onComplete?.(), 6000);
+                }, 3000);
+
+                return () => {
+                    clearInterval(interval);
+                    clearTimeout(timeout);
+                };
+            }, [isActive, celebrationType, onComplete]);
+
+            return (
+                <div className="celebration-preview">
+                    {danmakuItems.map(item => (
+                        <div
+                            key={item.id}
+                            className="fixed pointer-events-none z-50 whitespace-nowrap animate-pulse"
+                            style={{
+                                top: `${item.top}%`,
+                                right: '0',
+                                color: item.color,
+                                fontSize: '1.5rem',
+                                fontWeight: '600',
+                                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.3)',
+                                filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))',
+                                animation: `danmaku-move ${item.duration}s linear ${item.delay}s forwards`
+                            }}
+                        >
+                            {item.text}
+                        </div>
+                    ))}
+                    <style jsx>{`
+                        @keyframes danmaku-move {
+                            from { transform: translateX(100vw); opacity: 0; }
+                            10% { opacity: 1; }
+                            90% { opacity: 1; }
+                            to { transform: translateX(-100vw); opacity: 0; }
+                        }
+                    `}</style>
+                </div>
+            );
+        }
+
+        // 五彩纸屑系统模拟
+        function ConfettiRenderer({ isActive, celebrationType, intensity, onComplete }) {
+            const [particles, setParticles] = useState([]);
+            const nextIdRef = useRef(0);
+
+            const themeColors = {
+                drum: ['#8B5CF6', '#A855F7', '#9333EA', '#7C3AED', '#DDD6FE', '#C4B5FD'],
+                clap: ['#EF4444', '#F87171', '#DC2626', '#B91C1C', '#FECACA', '#FCA5A5'],
+                cheer: ['#F97316', '#FB923C', '#EA580C', '#C2410C', '#FED7AA', '#FDBA74']
+            };
+
+            const intensityConfig = {
+                low: { count: 20, duration: 3000 },
+                medium: { count: 40, duration: 4000 },
+                high: { count: 60, duration: 5000 }
+            };
+
+            useEffect(() => {
+                if (!isActive) {
+                    setParticles([]);
+                    return;
+                }
+
+                const colors = themeColors[celebrationType] || themeColors.cheer;
+                const config = intensityConfig[intensity] || intensityConfig.medium;
+
+                // 生成粒子
+                const generateParticles = () => {
+                    const newParticles = [];
+                    for (let i = 0; i < config.count; i++) {
+                        newParticles.push({
+                            id: nextIdRef.current++,
+                            x: Math.random() * window.innerWidth,
+                            y: -20,
+                            color: colors[Math.floor(Math.random() * colors.length)],
+                            size: Math.random() * 8 + 4,
+                            rotation: Math.random() * 360,
+                            delay: Math.random() * 2000
+                        });
+                    }
+                    setParticles(newParticles);
+
+                    // 清理粒子
+                    setTimeout(() => {
+                        setParticles([]);
+                        onComplete?.();
+                    }, config.duration);
+                };
+
+                generateParticles();
+            }, [isActive, celebrationType, intensity, onComplete]);
+
+            return (
+                <div className="celebration-preview">
+                    {particles.map(particle => (
+                        <div
+                            key={particle.id}
+                            className="fixed pointer-events-none z-50"
+                            style={{
+                                left: `${particle.x}px`,
+                                top: `${particle.y}px`,
+                                width: `${particle.size}px`,
+                                height: `${particle.size}px`,
+                                backgroundColor: particle.color,
+                                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                                boxShadow: '0 0 6px rgba(255, 255, 255, 0.3)',
+                                animation: `confetti-fall 3s linear ${particle.delay}ms forwards`,
+                                transform: `rotate(${particle.rotation}deg)`
+                            }}
+                        />
+                    ))}
+                    <style jsx>{`
+                        @keyframes confetti-fall {
+                            to {
+                                transform: translateY(100vh) rotate(720deg);
+                                opacity: 0;
+                            }
+                        }
+                    `}</style>
+                </div>
+            );
+        }
+
+        // 主测试组件
+        function CelebrationEffectsTest() {
+            const [activeCelebration, setActiveCelebration] = useState(null);
+            const [danmakuActive, setDanmakuActive] = useState(false);
+            const [confettiActive, setConfettiActive] = useState(false);
+            const [cooldown, setCooldown] = useState(false);
+
+            const startCelebration = (type) => {
+                if (cooldown) return;
+                
+                setActiveCelebration(type);
+                setDanmakuActive(true);
+                setConfettiActive(true);
+                setCooldown(true);
+
+                // 重置冷却
+                setTimeout(() => {
+                    setCooldown(false);
+                }, 2000);
+            };
+
+            const handleDanmakuComplete = () => {
+                setDanmakuActive(false);
+            };
+
+            const handleConfettiComplete = () => {
+                setConfettiActive(false);
+            };
+
+            useEffect(() => {
+                if (!danmakuActive && !confettiActive && activeCelebration) {
+                    setActiveCelebration(null);
+                }
+            }, [danmakuActive, confettiActive, activeCelebration]);
+
+            return (
+                <div className="test-container">
+                    <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+                        🎊 庆祝效果系统测试
+                    </h1>
+                    
+                    <div className="status-card">
+                        <h2 className="text-2xl font-semibold mb-4">系统状态</h2>
+                        <div className="space-y-3">
+                            <div className="flex items-center">
+                                <span className={`effect-indicator ${danmakuActive ? 'active' : 'inactive'}`}></span>
+                                <span className="text-lg">弹幕系统: {danmakuActive ? '活跃中' : '待机'}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <span className={`effect-indicator ${confettiActive ? 'active' : 'inactive'}`}></span>
+                                <span className="text-lg">五彩纸屑: {confettiActive ? '活跃中' : '待机'}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <span className={`effect-indicator ${activeCelebration ? 'active' : 'inactive'}`}></span>
+                                <span className="text-lg">当前庆祝: {activeCelebration || '无'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="demo-section">
+                        <h2 className="text-2xl font-semibold mb-6 text-center">庆祝效果演示</h2>
+                        <p className="text-gray-700 mb-6 text-center">
+                            点击下面的按钮体验不同类型的庆祝效果，包括全屏弹幕和五彩纸屑动画。
+                        </p>
+                        
+                        <div className="flex flex-wrap justify-center gap-4">
+                            <button 
+                                className={`celebration-button drum ${cooldown ? 'opacity-50' : ''}`}
+                                onClick={() => startCelebration('drum')}
+                                disabled={cooldown}
+                            >
+                                🥁 鼓声庆祝
+                            </button>
+                            
+                            <button 
+                                className={`celebration-button clap ${cooldown ? 'opacity-50' : ''}`}
+                                onClick={() => startCelebration('clap')}
+                                disabled={cooldown}
+                            >
+                                👏 掌声庆祝
+                            </button>
+                            
+                            <button 
+                                className={`celebration-button cheer ${cooldown ? 'opacity-50' : ''}`}
+                                onClick={() => startCelebration('cheer')}
+                                disabled={cooldown}
+                            >
+                                🎉 欢呼庆祝
+                            </button>
+                        </div>
+
+                        {cooldown && (
+                            <div className="text-center mt-4">
+                                <span className="text-sm text-gray-600 bg-yellow-100 px-3 py-1 rounded-full">
+                                    冷却中，请稍候...
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="feature-grid">
+                        <div className="feature-card">
+                            <h3 className="text-xl font-semibold mb-3">🎭 弹幕系统</h3>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                                <li>✅ 全屏浮动文字动画</li>
+                                <li>✅ 主题色彩协调</li>
+                                <li>✅ 随机位置和时间</li>
+                                <li>✅ 平滑进出动画</li>
+                            </ul>
+                        </div>
+                        
+                        <div className="feature-card">
+                            <h3 className="text-xl font-semibold mb-3">🎊 五彩纸屑</h3>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                                <li>✅ 物理模拟下落</li>
+                                <li>✅ 多种强度级别</li>
+                                <li>✅ 主题颜色匹配</li>
+                                <li>✅ 随机形状和大小</li>
+                            </ul>
+                        </div>
+                        
+                        <div className="feature-card">
+                            <h3 className="text-xl font-semibold mb-3">🎯 效果协调</h3>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                                <li>✅ 同步启动和停止</li>
+                                <li>✅ 性能优化管理</li>
+                                <li>✅ 冷却机制防刷屏</li>
+                                <li>✅ 完成回调处理</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="text-center mt-8">
+                        <p className="text-sm text-gray-500">
+                            庆祝效果系统已集成到 Achievement Jar 的 InteractionDock 组件中
+                        </p>
+                    </div>
+
+                    {/* 庆祝效果渲染 */}
+                    <DanmakuSystem
+                        isActive={danmakuActive}
+                        celebrationType={activeCelebration}
+                        onComplete={handleDanmakuComplete}
+                    />
+                    
+                    <ConfettiRenderer
+                        isActive={confettiActive}
+                        celebrationType={activeCelebration}
+                        intensity="medium"
+                        onComplete={handleConfettiComplete}
+                    />
+                </div>
+            );
+        }
+
+        // 渲染应用
+        ReactDOM.render(<CelebrationEffectsTest />, document.getElementById('root'));
+    </script>
+</body>
+</html>

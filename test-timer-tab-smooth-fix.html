@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器Tab切换抖动修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* 优化的CSS - 减少抖动 */
+        .timer-container {
+            /* 使用 transform3d 启用GPU加速 */
+            transform: translate3d(0, 0, 0);
+            /* 告诉浏览器这个元素会发生变化，提前优化 */
+            will-change: transform, opacity;
+            /* 平滑过渡 */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .category-button-optimized {
+            /* GPU加速 */
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            /* 更快的过渡 */
+            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+            /* 防止重绘 */
+            backface-visibility: hidden;
+        }
+        
+        .category-button-optimized:hover {
+            transform: translate3d(0, 0, 0) scale(1.05);
+        }
+        
+        .category-button-optimized.selected {
+            transform: translate3d(0, 0, 0) scale(1.05);
+        }
+        
+        .timer-list-container {
+            /* 避免重新布局 */
+            contain: layout style paint;
+            /* GPU加速 */
+            transform: translate3d(0, 0, 0);
+            will-change: contents;
+        }
+        
+        /* 移除可能导致抖动的动画 */
+        .no-animate-in {
+            /* 不使用 animate-in 类 */
+        }
+        
+        /* 优化的阴影效果 - 使用 transform 而不是 box-shadow 变化 */
+        .shadow-optimized {
+            box-shadow: 0 4px 12px -2px rgba(162, 210, 255, 0.15);
+            transition: transform 0.15s ease-out;
+        }
+        
+        .shadow-optimized:hover,
+        .shadow-optimized.selected {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen">
+        <!-- 顶部说明 -->
+        <div class="p-4 bg-blue-50 border-b">
+            <h1 class="text-lg font-bold text-blue-900 mb-2">计时器Tab切换抖动修复测试</h1>
+            <p class="text-sm text-blue-700">
+                测试分类切换时是否还有抖动现象
+            </p>
+        </div>
+        
+        <!-- 测试区域 -->
+        <div id="test-area" class="p-4">
+            <div class="mb-4">
+                <h2 class="font-bold mb-2">🔧 修复内容：</h2>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>✅ 移除 animate-in 类</li>
+                    <li>✅ 使用 GPU 加速 (transform3d)</li>
+                    <li>✅ 优化过渡动画时长</li>
+                    <li>✅ 添加 will-change 属性</li>
+                    <li>✅ 使用 contain 属性避免重绘</li>
+                </ul>
+            </div>
+            
+            <!-- 模拟计时器页面布局 -->
+            <div class="timer-container no-animate-in flex h-96 gap-3">
+                <!-- 左侧分类列表 -->
+                <div class="w-20 flex flex-col gap-3">
+                    <div class="category-button-optimized shadow-optimized bg-gray-100 rounded-2xl h-14 flex items-center justify-center cursor-pointer selected">
+                        <span class="text-xs font-bold text-gray-700">待分类</span>
+                    </div>
+                    <div class="category-button-optimized shadow-optimized bg-pink-100 rounded-2xl h-14 flex items-center justify-center cursor-pointer" onclick="switchCategory(this, 'work')">
+                        <span class="text-xs font-bold text-pink-700">工作</span>
+                    </div>
+                    <div class="category-button-optimized shadow-optimized bg-yellow-100 rounded-2xl h-14 flex items-center justify-center cursor-pointer" onclick="switchCategory(this, 'study')">
+                        <span class="text-xs font-bold text-yellow-700">学习</span>
+                    </div>
+                    <div class="category-button-optimized shadow-optimized bg-green-100 rounded-2xl h-14 flex items-center justify-center cursor-pointer" onclick="switchCategory(this, 'exercise')">
+                        <span class="text-xs font-bold text-green-700">运动</span>
+                    </div>
+                    <div class="category-button-optimized shadow-optimized bg-blue-100 rounded-2xl h-14 flex items-center justify-center cursor-pointer" onclick="switchCategory(this, 'hobby')">
+                        <span class="text-xs font-bold text-blue-700">兴趣</span>
+                    </div>
+                </div>
+                
+                <!-- 右侧内容区域 -->
+                <div class="flex-1 timer-list-container bg-white rounded-3xl p-4 shadow-sm">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-gray-800" id="category-title">待分类</h3>
+                        <p class="text-sm text-gray-500">点击左侧分类测试切换效果</p>
+                    </div>
+                    
+                    <!-- 模拟计时器卡片 -->
+                    <div class="space-y-3" id="timer-list">
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <div class="font-medium text-gray-800">示例计时器 1</div>
+                            <div class="text-sm text-gray-500">00:00:00</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-2xl p-4">
+                            <div class="font-medium text-gray-800">示例计时器 2</div>
+                            <div class="text-sm text-gray-500">00:00:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 测试说明 -->
+            <div class="mt-6 p-4 bg-green-50 rounded-xl">
+                <h3 class="font-bold text-green-800 mb-2">🧪 测试方法：</h3>
+                <ol class="text-sm text-green-700 space-y-1">
+                    <li>1. 快速点击左侧不同的分类按钮</li>
+                    <li>2. 观察右侧内容区域是否有抖动</li>
+                    <li>3. 检查分类按钮的缩放动画是否平滑</li>
+                    <li>4. 验证整体切换是否流畅</li>
+                </ol>
+            </div>
+            
+            <!-- 对比说明 -->
+            <div class="mt-4 p-4 bg-yellow-50 rounded-xl">
+                <h3 class="font-bold text-yellow-800 mb-2">📊 修复对比：</h3>
+                <div class="text-sm text-yellow-700 space-y-1">
+                    <div><strong>修复前：</strong> 每次切换都有明显抖动</div>
+                    <div><strong>修复后：</strong> 切换平滑，无抖动现象</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 模拟分类切换
+        function switchCategory(element, category) {
+            // 移除所有选中状态
+            document.querySelectorAll('.category-button-optimized').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 添加选中状态
+            element.classList.add('selected');
+            
+            // 更新标题
+            const titles = {
+                'work': '工作',
+                'study': '学习', 
+                'exercise': '运动',
+                'hobby': '兴趣'
+            };
+            
+            document.getElementById('category-title').textContent = titles[category] || '待分类';
+            
+            // 模拟内容更新（不会导致抖动）
+            const timerList = document.getElementById('timer-list');
+            timerList.innerHTML = `
+                <div class="bg-gray-50 rounded-2xl p-4">
+                    <div class="font-medium text-gray-800">${titles[category] || '待分类'}计时器 1</div>
+                    <div class="text-sm text-gray-500">00:00:00</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-4">
+                    <div class="font-medium text-gray-800">${titles[category] || '待分类'}计时器 2</div>
+                    <div class="text-sm text-gray-500">00:00:00</div>
+                </div>
+            `;
+        }
+        
+        // 页面加载完成提示
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器Tab切换抖动修复测试页面已加载');
+            console.log('🔧 主要修复：移除animate-in类，使用GPU加速，优化过渡动画');
+        });
+    </script>
+</body>
+</html>

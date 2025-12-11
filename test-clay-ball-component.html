@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClayBall Component Test - Achievement Jar Progress</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .clay-ball-showcase {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .jar-simulation {
+            width: 400px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 60px 60px 40px 40px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(162, 210, 255, 0.15);
+            margin: 2rem auto;
+        }
+        
+        .animate-in {
+            animation: slideIn 0.6s ease-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="text-4xl font-bold text-center text-slate-800 mb-8">
+            🎯 ClayBall Component Test
+        </h1>
+        
+        <div class="test-section">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">🎨 Different Macaron Colors</h2>
+            <p class="text-slate-600 mb-4">Testing all available macaron colors with 3D clay texture effects</p>
+            <div id="color-test" class="clay-ball-showcase"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">⭐ Priority Categories</h2>
+            <p class="text-slate-600 mb-4">High priority (work/study) vs normal priority categories</p>
+            <div id="priority-test" class="clay-ball-showcase"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">🌟 Special Achievement Balls</h2>
+            <p class="text-slate-600 mb-4">Golden star-shaped reward balls with sparkle effects</p>
+            <div id="special-test" class="clay-ball-showcase"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">📏 Size Variations</h2>
+            <p class="text-slate-600 mb-4">Different ball sizes based on time duration</p>
+            <div id="size-test" class="clay-ball-showcase"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">🏺 Jar Simulation</h2>
+            <p class="text-slate-600 mb-4">ClayBallCollection in a simulated jar container</p>
+            <div id="jar-test" class="jar-simulation"></div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        
+        // ClayBall Component (simplified for testing)
+        const ClayBall = ({ 
+            id, 
+            categoryId, 
+            size, 
+            color, 
+            position, 
+            isSpecial = false, 
+            glowIntensity = 0.1, 
+            priority,
+            onClick,
+            className = '',
+            animationDelay = 0 
+        }) => {
+            // Calculate 3D clay texture colors based on macaron color
+            const clayColors = useMemo(() => getClayTextureColors(color), [color]);
+            
+            // Calculate glow effect based on priority and special status
+            const glowEffect = useMemo(() => {
+                const intensity = isSpecial ? 0.8 : glowIntensity;
+                const glowColor = isSpecial ? '#FFD700' : clayColors.primary;
+                return {
+                    intensity,
+                    color: glowColor,
+                    blur: Math.max(8, size * 0.3)
+                };
+            }, [isSpecial, glowIntensity, clayColors.primary, size]);
+
+            // Special styling for golden star reward balls
+            const starShape = isSpecial && {
+                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+            };
+
+            return React.createElement('div', {
+                className: `clay-ball relative cursor-pointer transform transition-all duration-300 hover:scale-110 ${className}`,
+                style: {
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    left: `${position.x}px`,
+                    top: `${position.y}px`,
+                    animationDelay: `${animationDelay}ms`,
+                    zIndex: priority === 'high' ? 10 : 5
+                },
+                onClick: onClick
+            }, [
+                // Main Clay Ball
+                React.createElement('div', {
+                    key: 'main',
+                    className: 'clay-ball-main absolute inset-0 rounded-full animate-in',
+                    style: {
+                        background: `
+                            radial-gradient(circle at 30% 30%, ${clayColors.highlight} 0%, ${clayColors.primary} 40%, ${clayColors.shadow} 100%),
+                            linear-gradient(135deg, ${clayColors.light} 0%, ${clayColors.primary} 50%, ${clayColors.dark} 100%)
+                        `,
+                        boxShadow: `
+                            0 ${size * 0.1}px ${size * 0.3}px rgba(0, 0, 0, 0.15),
+                            0 ${size * 0.05}px ${size * 0.15}px rgba(0, 0, 0, 0.1),
+                            inset 0 ${size * 0.05}px ${size * 0.1}px ${clayColors.innerHighlight},
+                            inset 0 -${size * 0.03}px ${size * 0.08}px ${clayColors.innerShadow}
+                        `,
+                        filter: `drop-shadow(0 0 ${glowEffect.blur}px ${glowEffect.color}${Math.round(glowEffect.intensity * 255).toString(16).padStart(2, '0')})`,
+                        ...starShape
+                    }
+                }),
+                
+                // Clay Texture Overlay
+                React.createElement('div', {
+                    key: 'texture',
+                    className: 'clay-texture absolute inset-0 rounded-full opacity-60',
+                    style: {
+                        background: `
+                            radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+                            radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
+                            repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255, 255, 255, 0.05) 1deg, transparent 2deg)
+                        `,
+                        ...starShape
+                    }
+                }),
+                
+                // Highlight Spot
+                React.createElement('div', {
+                    key: 'highlight',
+                    className: 'clay-highlight absolute rounded-full',
+                    style: {
+                        width: `${size * 0.3}px`,
+                        height: `${size * 0.25}px`,
+                        top: `${size * 0.15}px`,
+                        left: `${size * 0.2}px`,
+                        background: `radial-gradient(ellipse, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.3) 70%, transparent 100%)`,
+                        filter: 'blur(1px)',
+                        transform: 'rotate(-15deg)'
+                    }
+                }),
+                
+                // Priority Indicator Ring for High Priority Categories
+                priority === 'high' && React.createElement('div', {
+                    key: 'priority-ring',
+                    className: 'priority-ring absolute inset-0 rounded-full animate-pulse',
+                    style: {
+                        border: `2px solid ${clayColors.primary}`,
+                        opacity: 0.6,
+                        transform: 'scale(1.1)',
+                        animation: 'pulse 2s infinite'
+                    }
+                }),
+                
+                // Special Achievement Sparkle Effect
+                isSpecial && [
+                    React.createElement('div', {
+                        key: 'sparkle-1',
+                        className: 'sparkle-1 absolute w-2 h-2 bg-yellow-300 rounded-full animate-ping',
+                        style: {
+                            top: `${size * 0.1}px`,
+                            right: `${size * 0.1}px`,
+                            animationDelay: '0s',
+                            animationDuration: '1.5s'
+                        }
+                    }),
+                    React.createElement('div', {
+                        key: 'sparkle-2',
+                        className: 'sparkle-2 absolute w-1 h-1 bg-yellow-200 rounded-full animate-ping',
+                        style: {
+                            bottom: `${size * 0.15}px`,
+                            left: `${size * 0.15}px`,
+                            animationDelay: '0.5s',
+                            animationDuration: '2s'
+                        }
+                    }),
+                    React.createElement('div', {
+                        key: 'sparkle-3',
+                        className: 'sparkle-3 absolute w-1.5 h-1.5 bg-yellow-400 rounded-full animate-ping',
+                        style: {
+                            top: `${size * 0.6}px`,
+                            right: `${size * 0.2}px`,
+                            animationDelay: '1s',
+                            animationDuration: '1.8s'
+                        }
+                    })
+                ]
+            ].filter(Boolean));
+        };
+        
+        // ClayBallCollection Component
+        const ClayBallCollection = ({ balls, onBallClick, containerWidth, containerHeight }) => {
+            // Simple stacking algorithm for CSS fallback
+            const positionedBalls = useMemo(() => {
+                return balls.map((ball, index) => {
+                    // Simple grid-based positioning for now
+                    const cols = Math.floor(containerWidth / (ball.size + 10));
+                    const row = Math.floor(index / cols);
+                    const col = index % cols;
+                    
+                    const x = col * (ball.size + 10) + (containerWidth - cols * (ball.size + 10)) / 2;
+                    const y = containerHeight - (row + 1) * (ball.size + 10);
+                    
+                    return {
+                        ...ball,
+                        position: { x, y }
+                    };
+                });
+            }, [balls, containerWidth, containerHeight]);
+
+            return React.createElement('div', {
+                className: 'clay-ball-collection relative w-full h-full'
+            }, positionedBalls.map((ball, index) => 
+                React.createElement(ClayBall, {
+                    key: ball.id,
+                    ...ball,
+                    onClick: () => onBallClick?.(ball.categoryId),
+                    animationDelay: index * 100
+                })
+            ));
+        };
+        
+        // Helper function to get clay texture colors
+        function getClayTextureColors(color) {
+            const colorMappings = {
+                'bg-macaron-blue': {
+                    primary: '#BDE0FE',
+                    light: '#E7F5FF',
+                    dark: '#A2D2FF',
+                    highlight: '#FFFFFF',
+                    shadow: '#7CC7F7',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(124, 199, 247, 0.3)'
+                },
+                'bg-macaron-pink': {
+                    primary: '#F5C2D6',
+                    light: '#FDF5F8',
+                    dark: '#E8A5C0',
+                    highlight: '#FFFFFF',
+                    shadow: '#D89BB3',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(216, 155, 179, 0.3)'
+                },
+                'bg-macaron-green': {
+                    primary: '#D9EFE8',
+                    light: '#F0F9F5',
+                    dark: '#A7F3D0',
+                    highlight: '#FFFFFF',
+                    shadow: '#86EFAC',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(134, 239, 172, 0.3)'
+                },
+                'bg-macaron-purple': {
+                    primary: '#C8A2E0',
+                    light: '#F3EBFA',
+                    dark: '#9B6BB8',
+                    highlight: '#FFFFFF',
+                    shadow: '#8B5A9F',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(139, 90, 159, 0.3)'
+                },
+                'bg-macaron-orange': {
+                    primary: '#FFE9D6',
+                    light: '#FFF5ED',
+                    dark: '#FFB366',
+                    highlight: '#FFFFFF',
+                    shadow: '#FF9500',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(255, 149, 0, 0.3)'
+                },
+                'bg-macaron-yellow': {
+                    primary: '#FFF8E1',
+                    light: '#FFFEF7',
+                    dark: '#FFE082',
+                    highlight: '#FFFFFF',
+                    shadow: '#FFD54F',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(255, 213, 79, 0.3)'
+                },
+                'bg-emerald-200': {
+                    primary: '#A7F3D0',
+                    light: '#ECFDF5',
+                    dark: '#6EE7B7',
+                    highlight: '#FFFFFF',
+                    shadow: '#34D399',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(52, 211, 153, 0.3)'
+                },
+                'bg-macaron-rose': {
+                    primary: '#FFE5E5',
+                    light: '#FFF5F5',
+                    dark: '#FCA5A5',
+                    highlight: '#FFFFFF',
+                    shadow: '#F87171',
+                    innerHighlight: 'rgba(255, 255, 255, 0.6)',
+                    innerShadow: 'rgba(248, 113, 113, 0.3)'
+                }
+            };
+
+            return colorMappings[color] || colorMappings['bg-macaron-blue'];
+        }
+        
+        // Test Components
+        const ColorTest = () => {
+            const colors = [
+                'bg-macaron-blue', 'bg-macaron-pink', 'bg-macaron-green', 'bg-macaron-purple',
+                'bg-macaron-orange', 'bg-macaron-yellow', 'bg-emerald-200', 'bg-macaron-rose'
+            ];
+            
+            return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' } },
+                colors.map((color, index) => 
+                    React.createElement(ClayBall, {
+                        key: color,
+                        id: `color-${index}`,
+                        categoryId: color,
+                        size: 50,
+                        color: color,
+                        position: { x: 0, y: 0 },
+                        priority: 'normal',
+                        animationDelay: index * 100
+                    })
+                )
+            );
+        };
+        
+        const PriorityTest = () => {
+            const balls = [
+                { id: 'work', categoryId: 'work', size: 60, color: 'bg-macaron-blue', priority: 'high', label: 'Work (High)' },
+                { id: 'study', categoryId: 'study', size: 60, color: 'bg-macaron-pink', priority: 'high', label: 'Study (High)' },
+                { id: 'rest', categoryId: 'rest', size: 50, color: 'bg-macaron-green', priority: 'normal', label: 'Rest (Normal)' },
+                { id: 'hobby', categoryId: 'hobby', size: 50, color: 'bg-macaron-rose', priority: 'normal', label: 'Hobby (Normal)' }
+            ];
+            
+            return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'center', alignItems: 'center' } },
+                balls.map((ball, index) => 
+                    React.createElement('div', { key: ball.id, style: { textAlign: 'center' } }, [
+                        React.createElement(ClayBall, {
+                            key: 'ball',
+                            ...ball,
+                            position: { x: 0, y: 0 },
+                            animationDelay: index * 150
+                        }),
+                        React.createElement('div', { 
+                            key: 'label',
+                            style: { marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b', fontWeight: '500' } 
+                        }, ball.label)
+                    ])
+                )
+            );
+        };
+        
+        const SpecialTest = () => {
+            const specialBalls = [
+                { id: 'achievement-1', categoryId: 'achievement', size: 45, color: 'bg-macaron-yellow', isSpecial: true, label: 'Golden Star' },
+                { id: 'achievement-2', categoryId: 'achievement', size: 50, color: 'bg-macaron-yellow', isSpecial: true, label: 'Large Achievement' },
+                { id: 'achievement-3', categoryId: 'achievement', size: 40, color: 'bg-macaron-yellow', isSpecial: true, label: 'Small Achievement' }
+            ];
+            
+            return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'center', alignItems: 'center' } },
+                specialBalls.map((ball, index) => 
+                    React.createElement('div', { key: ball.id, style: { textAlign: 'center' } }, [
+                        React.createElement(ClayBall, {
+                            key: 'ball',
+                            ...ball,
+                            position: { x: 0, y: 0 },
+                            priority: 'high',
+                            glowIntensity: 0.8,
+                            animationDelay: index * 200
+                        }),
+                        React.createElement('div', { 
+                            key: 'label',
+                            style: { marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b', fontWeight: '500' } 
+                        }, ball.label)
+                    ])
+                )
+            );
+        };
+        
+        const SizeTest = () => {
+            const sizes = [
+                { size: 25, label: '25px (Small)' },
+                { size: 35, label: '35px (Medium)' },
+                { size: 45, label: '45px (Large)' },
+                { size: 55, label: '55px (X-Large)' }
+            ];
+            
+            return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'center', alignItems: 'center' } },
+                sizes.map((item, index) => 
+                    React.createElement('div', { key: index, style: { textAlign: 'center' } }, [
+                        React.createElement(ClayBall, {
+                            key: 'ball',
+                            id: `size-${index}`,
+                            categoryId: 'test',
+                            size: item.size,
+                            color: 'bg-macaron-blue',
+                            position: { x: 0, y: 0 },
+                            priority: 'normal',
+                            animationDelay: index * 100
+                        }),
+                        React.createElement('div', { 
+                            key: 'label',
+                            style: { marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b', fontWeight: '500' } 
+                        }, item.label)
+                    ])
+                )
+            );
+        };
+        
+        const JarTest = () => {
+            const testBalls = [
+                { id: 'work-1', categoryId: 'work', size: 45, color: 'bg-macaron-blue', priority: 'high' },
+                { id: 'work-2', categoryId: 'work', size: 40, color: 'bg-macaron-blue', priority: 'high' },
+                { id: 'study-1', categoryId: 'study', size: 50, color: 'bg-macaron-pink', priority: 'high' },
+                { id: 'rest-1', categoryId: 'rest', size: 35, color: 'bg-macaron-green', priority: 'normal' },
+                { id: 'hobby-1', categoryId: 'hobby', size: 30, color: 'bg-macaron-rose', priority: 'normal' },
+                { id: 'achievement-1', categoryId: 'achievement', size: 45, color: 'bg-macaron-yellow', priority: 'high', isSpecial: true, glowIntensity: 0.8 }
+            ];
+            
+            return React.createElement(ClayBallCollection, {
+                balls: testBalls,
+                onBallClick: (categoryId) => console.log('Clicked:', categoryId),
+                containerWidth: 360,
+                containerHeight: 260
+            });
+        };
+        
+        // Render all tests
+        ReactDOM.render(React.createElement(ColorTest), document.getElementById('color-test'));
+        ReactDOM.render(React.createElement(PriorityTest), document.getElementById('priority-test'));
+        ReactDOM.render(React.createElement(SpecialTest), document.getElementById('special-test'));
+        ReactDOM.render(React.createElement(SizeTest), document.getElementById('size-test'));
+        ReactDOM.render(React.createElement(JarTest), document.getElementById('jar-test'));
+    </script>
+</body>
+</html>

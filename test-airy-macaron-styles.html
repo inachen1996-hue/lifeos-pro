@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>空气感马卡龙样式系统测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FEFEFE 0%, #FBFBFB 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .demo-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #64748B;
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .color-card {
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            color: #64748B;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .clay-balls-demo {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .clay-ball {
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .clay-ball:hover {
+            transform: scale(1.1);
+        }
+        
+        .metric-pills-demo {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .metric-pill {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-radius: 32px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        .metric-pill:hover {
+            transform: scale(1.02);
+        }
+        
+        .celebration-buttons-demo {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .celebration-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .celebration-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .celebration-button:active {
+            transform: scale(0.95);
+        }
+        
+        .frosted-glass-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .glass-card {
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            color: #64748B;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        /* Airy Macaron CSS Custom Properties */
+        :root {
+            --airy-bg-primary: #FEFEFE;
+            --airy-bg-secondary: #FBFBFB;
+            --airy-text-primary: #64748B;
+            --airy-text-secondary: #94A3B8;
+            --airy-border-light: rgba(255, 255, 255, 0.2);
+            --airy-shadow-soft: rgba(0, 0, 0, 0.05);
+            --airy-glow-radius: 20px;
+        }
+
+        /* Gentle pulse animation */
+        @keyframes gentle-pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: scale(1.02); 
+                opacity: 0.9; 
+            }
+        }
+
+        /* Floating animation */
+        @keyframes gentle-float {
+            0%, 100% { 
+                transform: translateY(0px); 
+            }
+            50% { 
+                transform: translateY(-8px); 
+            }
+        }
+
+        /* Shimmer effect */
+        @keyframes airy-shimmer {
+            0% { 
+                background-position: -200px 0; 
+            }
+            100% { 
+                background-position: calc(200px + 100%) 0; 
+            }
+        }
+
+        /* Backdrop blur support */
+        .airy-backdrop-blur {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+
+        /* Fallback for browsers without backdrop-filter */
+        @supports not (backdrop-filter: blur()) {
+            .airy-backdrop-blur {
+                background: rgba(255, 255, 255, 0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Airy Macaron Color Palette
+        const airyMacaronColors = {
+            'bg-macaron-blue': {
+                primary: '#E8F4FD',
+                gradient: 'linear-gradient(135deg, #F0F8FF 0%, #E8F4FD 50%, #D1E9FC 100%)',
+                shadow: 'rgba(162, 210, 255, 0.15)'
+            },
+            'bg-macaron-green': {
+                primary: '#F0FDF4',
+                gradient: 'linear-gradient(135deg, #F7FFFA 0%, #F0FDF4 50%, #DCFCE7 100%)',
+                shadow: 'rgba(167, 243, 208, 0.15)'
+            },
+            'bg-macaron-pink': {
+                primary: '#FDF2F8',
+                gradient: 'linear-gradient(135deg, #FFFAFC 0%, #FDF2F8 50%, #FCE7F3 100%)',
+                shadow: 'rgba(245, 194, 214, 0.15)'
+            },
+            'bg-macaron-purple': {
+                primary: '#FAF5FF',
+                gradient: 'linear-gradient(135deg, #FEFCFF 0%, #FAF5FF 50%, #F3E8FF 100%)',
+                shadow: 'rgba(221, 214, 254, 0.15)'
+            },
+            'bg-macaron-orange': {
+                primary: '#FFF7ED',
+                gradient: 'linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 50%, #FFEDD5 100%)',
+                shadow: 'rgba(254, 215, 170, 0.15)'
+            },
+            'bg-macaron-yellow': {
+                primary: '#FEFCE8',
+                gradient: 'linear-gradient(135deg, #FFFEF5 0%, #FEFCE8 50%, #FEF3C7 100%)',
+                shadow: 'rgba(254, 240, 138, 0.15)'
+            },
+            'bg-emerald-200': {
+                primary: '#F0FDF4',
+                gradient: 'linear-gradient(135deg, #F7FFFA 0%, #F0FDF4 50%, #D1FAE5 100%)',
+                shadow: 'rgba(167, 243, 208, 0.15)'
+            },
+            'bg-macaron-rose': {
+                primary: '#FFF1F2',
+                gradient: 'linear-gradient(135deg, #FFFBFB 0%, #FFF1F2 50%, #FFE4E6 100%)',
+                shadow: 'rgba(254, 202, 202, 0.15)'
+            }
+        };
+
+        // Color Palette Demo Component
+        const ColorPaletteDemo = () => {
+            return (
+                <div className="demo-section">
+                    <div className="demo-title">🎨 空气感马卡龙色彩系统</div>
+                    <div className="color-palette">
+                        {Object.entries(airyMacaronColors).map(([name, config]) => (
+                            <div 
+                                key={name}
+                                className="color-card"
+                                style={{
+                                    background: config.gradient,
+                                    boxShadow: `0 4px 12px ${config.shadow}`,
+                                    border: '1px solid rgba(255, 255, 255, 0.4)'
+                                }}
+                            >
+                                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                    {name.replace('bg-', '').replace('-', ' ')}
+                                </div>
+                                <div style={{ fontSize: '10px', opacity: 0.7 }}>
+                                    {config.primary}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // Clay Balls Demo Component
+        const ClayBallsDemo = () => {
+            const [hoveredBall, setHoveredBall] = useState(null);
+            
+            const ballSizes = [30, 40, 50, 35, 45];
+            const colorKeys = Object.keys(airyMacaronColors).slice(0, 5);
+
+            return (
+                <div className="demo-section">
+                    <div className="demo-title">🏀 3D黏土小球效果</div>
+                    <div className="clay-balls-demo">
+                        {colorKeys.map((colorKey, index) => {
+                            const config = airyMacaronColors[colorKey];
+                            const size = ballSizes[index];
+                            const isHovered = hoveredBall === index;
+                            
+                            return (
+                                <div
+                                    key={colorKey}
+                                    className="clay-ball"
+                                    style={{
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        background: `
+                                            radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.6) 0%, transparent 45%),
+                                            radial-gradient(circle at 75% 75%, rgba(100, 116, 139, 0.08) 0%, transparent 45%),
+                                            ${config.gradient}
+                                        `,
+                                        boxShadow: `
+                                            0 ${size * 0.12}px ${size * 0.35}px ${config.shadow},
+                                            0 ${size * 0.06}px ${size * 0.18}px rgba(100, 116, 139, 0.08),
+                                            inset 0 ${size * 0.06}px ${size * 0.12}px rgba(255, 255, 255, 0.7),
+                                            inset 0 -${size * 0.04}px ${size * 0.1}px rgba(100, 116, 139, 0.1)
+                                        `,
+                                        transform: isHovered ? 'scale(1.2)' : 'scale(1)',
+                                        animation: index === 2 ? 'gentle-pulse 3s ease-in-out infinite' : 'none'
+                                    }}
+                                    onMouseEnter={() => setHoveredBall(index)}
+                                    onMouseLeave={() => setHoveredBall(null)}
+                                />
+                            );
+                        })}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--airy-text-secondary)' }}>
+                        悬停查看交互效果，中间的小球有轻柔脉冲动画
+                    </div>
+                </div>
+            );
+        };
+
+        // Metric Pills Demo Component
+        const MetricPillsDemo = () => {
+            const [activePill, setActivePill] = useState(null);
+            
+            const metrics = [
+                { name: '工作', icon: '💼', duration: '2.5小时', color: 'bg-macaron-blue' },
+                { name: '学习', icon: '📚', duration: '1.8小时', color: 'bg-macaron-pink' },
+                { name: '运动', icon: '🏃', duration: '45分钟', color: 'bg-macaron-green' },
+                { name: '休息', icon: '😴', duration: '30分钟', color: 'bg-macaron-purple' }
+            ];
+
+            return (
+                <div className="demo-section">
+                    <div className="demo-title">💊 统计药丸卡片</div>
+                    <div className="metric-pills-demo">
+                        {metrics.map((metric, index) => {
+                            const config = airyMacaronColors[metric.color];
+                            const isActive = activePill === index;
+                            
+                            return (
+                                <div
+                                    key={metric.name}
+                                    className="metric-pill"
+                                    style={{
+                                        background: config.gradient,
+                                        border: `1px solid ${config.primary}40`,
+                                        boxShadow: isActive 
+                                            ? `0 8px 24px ${config.shadow}, inset 0 2px 4px rgba(255, 255, 255, 0.6)`
+                                            : `0 4px 12px ${config.shadow}`,
+                                        transform: isActive ? 'scale(1.02)' : 'scale(1)'
+                                    }}
+                                    onMouseEnter={() => setActivePill(index)}
+                                    onMouseLeave={() => setActivePill(null)}
+                                >
+                                    <div 
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            background: config.gradient,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: '12px',
+                                            fontSize: '16px',
+                                            boxShadow: `0 4px 12px ${config.shadow}, inset 0 2px 4px rgba(255, 255, 255, 0.7)`
+                                        }}
+                                    >
+                                        {metric.icon}
+                                    </div>
+                                    <div>
+                                        <div style={{ 
+                                            fontSize: '14px', 
+                                            fontWeight: '600', 
+                                            color: 'var(--airy-text-primary)',
+                                            marginBottom: '2px'
+                                        }}>
+                                            {metric.name}
+                                        </div>
+                                        <div style={{ 
+                                            fontSize: '12px', 
+                                            color: 'var(--airy-text-secondary)' 
+                                        }}>
+                                            {metric.duration}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // Celebration Buttons Demo Component
+        const CelebrationButtonsDemo = () => {
+            const [pressedButton, setPressedButton] = useState(null);
+            
+            const buttons = [
+                { type: 'drum', icon: '🥁', colors: ['#A855F7', '#7C3AED'], label: '鼓声' },
+                { type: 'clap', icon: '👏', colors: ['#F87171', '#DC2626'], label: '掌声' },
+                { type: 'cheer', icon: '🎉', colors: ['#FB923C', '#EA580C'], label: '欢呼' }
+            ];
+
+            const handleButtonPress = (index) => {
+                setPressedButton(index);
+                setTimeout(() => setPressedButton(null), 300);
+            };
+
+            return (
+                <div className="demo-section">
+                    <div className="demo-title">🎮 庆祝按钮交互</div>
+                    <div className="celebration-buttons-demo">
+                        {buttons.map((button, index) => {
+                            const isPressed = pressedButton === index;
+                            
+                            return (
+                                <div key={button.type} style={{ textAlign: 'center' }}>
+                                    <button
+                                        className="celebration-button"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${button.colors[0]} 0%, ${button.colors[1]} 100%)`,
+                                            boxShadow: isPressed 
+                                                ? `0 2px 8px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1)`
+                                                : `0 6px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1)`,
+                                            transform: isPressed ? 'scale(0.95)' : 'scale(1)'
+                                        }}
+                                        onClick={() => handleButtonPress(index)}
+                                    >
+                                        {/* Gradient overlay */}
+                                        <div 
+                                            style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.4) 50%, transparent 70%)',
+                                                opacity: 0.4,
+                                                pointerEvents: 'none'
+                                            }}
+                                        />
+                                        <span style={{ position: 'relative', zIndex: 1 }}>
+                                            {button.icon}
+                                        </span>
+                                    </button>
+                                    <div style={{ 
+                                        marginTop: '8px', 
+                                        fontSize: '12px', 
+                                        color: 'var(--airy-text-secondary)' 
+                                    }}>
+                                        {button.label}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // Frosted Glass Demo Component
+        const FrostedGlassDemo = () => {
+            const glassEffects = [
+                {
+                    name: '轻度毛玻璃',
+                    style: {
+                        backdropFilter: 'blur(10px) saturate(180%)',
+                        background: 'rgba(255, 255, 255, 0.25)',
+                        border: '1px solid rgba(255, 255, 255, 0.18)',
+                        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.37)'
+                    }
+                },
+                {
+                    name: '中度毛玻璃',
+                    style: {
+                        backdropFilter: 'blur(16px) saturate(180%)',
+                        background: 'rgba(255, 255, 255, 0.35)',
+                        border: '1px solid rgba(255, 255, 255, 0.25)',
+                        boxShadow: '0 12px 40px rgba(31, 38, 135, 0.45)'
+                    }
+                },
+                {
+                    name: '重度毛玻璃',
+                    style: {
+                        backdropFilter: 'blur(24px) saturate(200%)',
+                        background: 'rgba(255, 255, 255, 0.45)',
+                        border: '1px solid rgba(255, 255, 255, 0.35)',
+                        boxShadow: '0 16px 48px rgba(31, 38, 135, 0.55)'
+                    }
+                }
+            ];
+
+            return (
+                <div className="demo-section">
+                    <div className="demo-title">🪟 毛玻璃效果层级</div>
+                    <div className="frosted-glass-demo">
+                        {glassEffects.map((effect, index) => (
+                            <div
+                                key={effect.name}
+                                className="glass-card"
+                                style={{
+                                    ...effect.style,
+                                    WebkitBackdropFilter: effect.style.backdropFilter
+                                }}
+                            >
+                                <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                                    {effect.name}
+                                </div>
+                                <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                                    {effect.style.backdropFilter}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            return (
+                <div>
+                    <div style={{ 
+                        textAlign: 'center', 
+                        marginBottom: '40px',
+                        padding: '20px'
+                    }}>
+                        <h1 style={{ 
+                            fontSize: '28px', 
+                            fontWeight: '700', 
+                            color: 'var(--airy-text-primary)',
+                            marginBottom: '8px',
+                            letterSpacing: '0.025em'
+                        }}>
+                            ✨ 空气感马卡龙样式系统
+                        </h1>
+                        <p style={{ 
+                            fontSize: '16px', 
+                            color: 'var(--airy-text-secondary)',
+                            margin: 0,
+                            letterSpacing: '0.01em'
+                        }}>
+                            低饱和度、高亮度的治愈系设计语言
+                        </p>
+                    </div>
+
+                    <ColorPaletteDemo />
+                    <ClayBallsDemo />
+                    <MetricPillsDemo />
+                    <CelebrationButtonsDemo />
+                    <FrostedGlassDemo />
+
+                    <div className="demo-section">
+                        <div className="demo-title">📋 样式系统特性</div>
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                            gap: '16px',
+                            fontSize: '14px',
+                            color: 'var(--airy-text-secondary)'
+                        }}>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '8px', color: 'var(--airy-text-primary)' }}>
+                                    🎨 颜色系统
+                                </div>
+                                <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                                    <li>低饱和度、高亮度配色</li>
+                                    <li>8种马卡龙主题色彩</li>
+                                    <li>渐变与阴影一致性</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '8px', color: 'var(--airy-text-primary)' }}>
+                                    🪟 毛玻璃效果
+                                </div>
+                                <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                                    <li>三级模糊强度</li>
+                                    <li>自动浏览器兼容</li>
+                                    <li>优雅降级处理</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '8px', color: 'var(--airy-text-primary)' }}>
+                                    🎭 3D质感
+                                </div>
+                                <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                                    <li>黏土纹理效果</li>
+                                    <li>多层次阴影</li>
+                                    <li>优先级视觉增强</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '8px', color: 'var(--airy-text-primary)' }}>
+                                    ⚡ 动画系统
+                                </div>
+                                <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                                    <li>轻柔缓动曲线</li>
+                                    <li>减少动画支持</li>
+                                    <li>性能优化</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

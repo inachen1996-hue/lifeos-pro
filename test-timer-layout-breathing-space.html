@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器页面布局呼吸感优化测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .layout-demo {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 82px 12px 1fr 16px;
+            grid-template-areas: "sidebar gap main margin";
+            height: 200px;
+            border: 2px solid #A2D2FF;
+            border-radius: 12px;
+            background: #F8FCFF;
+            margin: 20px 0;
+        }
+        .sidebar-demo {
+            grid-area: sidebar;
+            background: linear-gradient(135deg, #FFB5D8 0%, #FFC9E0 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+        .gap-demo {
+            grid-area: gap;
+            background: repeating-linear-gradient(
+                45deg,
+                #A2D2FF,
+                #A2D2FF 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #023E8A;
+            font-weight: bold;
+        }
+        .main-demo {
+            grid-area: main;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(162, 210, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #023E8A;
+            font-weight: bold;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        .margin-demo {
+            grid-area: margin;
+            background: repeating-linear-gradient(
+                135deg,
+                #B5F5D8,
+                #B5F5D8 2px,
+                transparent 2px,
+                transparent 8px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #065F46;
+            font-weight: bold;
+        }
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .spec-table th,
+        .spec-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(162, 210, 255, 0.3);
+        }
+        .spec-table th {
+            background: rgba(162, 210, 255, 0.1);
+            font-weight: bold;
+            color: #023E8A;
+        }
+        .spec-value {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(162, 210, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #023E8A;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌬️ 计时器页面布局呼吸感优化完成</h1>
+        
+        <div class="layout-demo">
+            <h3>📐 新布局结构预览</h3>
+            <div class="layout-grid">
+                <div class="sidebar-demo">
+                    侧边栏<br>82px
+                </div>
+                <div class="gap-demo">
+                    12px
+                </div>
+                <div class="main-demo">
+                    右侧主内容区 (Flex: 1)
+                </div>
+                <div class="margin-demo">
+                    16px
+                </div>
+            </div>
+        </div>
+
+        <div class="status success">
+            <h3>✅ 布局优化完成</h3>
+            <p>已按照要求实现侧边栏和右侧内容区的"分家"设计，增加呼吸感：</p>
+        </div>
+
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>布局元素</th>
+                    <th>修改前</th>
+                    <th>修改后</th>
+                    <th>说明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>侧边栏宽度</strong></td>
+                    <td><span class="spec-value">88px</span></td>
+                    <td><span class="spec-value">82px</span></td>
+                    <td>更紧凑，节省6px空间</td>
+                </tr>
+                <tr>
+                    <td><strong>左右间距</strong></td>
+                    <td><span class="spec-value">16px</span></td>
+                    <td><span class="spec-value">12px</span></td>
+                    <td>侧边栏与右侧内容区的分离距离</td>
+                </tr>
+                <tr>
+                    <td><strong>右侧内容区</strong></td>
+                    <td><span class="spec-value">flex: 1</span></td>
+                    <td><span class="spec-value">flex: 1</span></td>
+                    <td>保持占满剩余空间</td>
+                </tr>
+                <tr>
+                    <td><strong>右边距</strong></td>
+                    <td><span class="spec-value">0px</span></td>
+                    <td><span class="spec-value">16px</span></td>
+                    <td>新增，距离屏幕右边缘的呼吸空间</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="status info">
+            <h3>🎯 呼吸感设计理念</h3>
+            <ul>
+                <li><strong>彻底分离</strong> - 侧边栏和主内容区通过12px间距完全分开</li>
+                <li><strong>边缘呼吸</strong> - 右侧16px边距让内容不贴边，更舒适</li>
+                <li><strong>紧凑侧边栏</strong> - 82px宽度保持功能性的同时更节省空间</li>
+                <li><strong>最大化内容区</strong> - 主内容区获得更多显示空间</li>
+            </ul>
+        </div>
+
+        <div class="status warning">
+            <h3>🧪 测试要点</h3>
+            <ol>
+                <li><strong>视觉分离</strong> - 侧边栏和主内容区应该明显分开</li>
+                <li><strong>呼吸空间</strong> - 右侧应该有明显的边距，不贴边</li>
+                <li><strong>响应式</strong> - 在不同屏幕尺寸下布局应该保持协调</li>
+                <li><strong>功能完整</strong> - 所有交互功能应该正常工作</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用查看布局
+            </button>
+            <button class="test-btn" onclick="openWithGuide()">
+                📏 打开并显示测量指南
+            </button>
+        </div>
+
+        <div class="status info">
+            <h3>🔍 技术实现</h3>
+            <p><strong>CSS 修改：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 主容器
+style={{ gap: '12px', marginRight: '16px' }}
+
+// 侧边栏
+style={{ width: '82px', gap: '16px' }}
+
+// 右侧内容区 (保持不变)
+className="flex-1 rounded-[32px] shadow-lg overflow-y-auto macaron-card"</pre>
+            
+            <p><strong>布局公式：</strong></p>
+            <p><code>总宽度 = 侧边栏(82px) + 间距(12px) + 主内容区(flex:1) + 右边距(16px)</code></p>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithGuide() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            setTimeout(() => {
+                alert('🌬️ 布局呼吸感测试指南：\n\n1. 观察侧边栏宽度是否为82px\n2. 检查侧边栏与右侧内容区是否有明显分离\n3. 查看右侧是否有边距，不贴屏幕边缘\n4. 验证整体布局的呼吸感和舒适度\n5. 测试在不同窗口大小下的表现');
+            }, 2000);
+        }
+        
+        console.log('🌬️ 计时器页面布局呼吸感优化完成');
+        console.log('优化时间:', new Date().toLocaleString());
+        console.log('布局规格: 侧边栏82px + 间距12px + 主内容区flex:1 + 右边距16px');
+    </script>
+</body>
+</html>

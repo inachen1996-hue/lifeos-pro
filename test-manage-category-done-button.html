@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理分类完成按钮优化测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .macaron-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 优化后的完成按钮样式 */
+        .done-button-optimized {
+            width: calc(100% - 48px);
+            height: 56px;
+            background: linear-gradient(135deg, #A2D2FF 0%, #6EACEF 100%);
+            border-radius: 28px;
+            font-size: 16px;
+            margin-left: 24px;
+            margin-right: 24px;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 20px -6px rgba(110, 172, 239, 0.5);
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .done-button-optimized:hover {
+            transform: scale(1.02);
+        }
+        
+        .done-button-optimized:active {
+            transform: scale(0.95);
+        }
+        
+        /* 修复前的按钮样式（对比用） */
+        .done-button-old {
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            border-radius: 24px;
+            font-size: 18px;
+            margin-top: 24px;
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5), inset 0 2px 12px rgba(255, 255, 255, 0.7);
+            border: none;
+            cursor: pointer;
+            color: #1e3a8a;
+            font-weight: 900;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+        
+        .done-button-old:hover {
+            transform: scale(1.02);
+        }
+        
+        .done-button-old:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🎨 管理分类完成按钮优化测试</h1>
+            <p class="text-blue-100 text-sm">验证Done Button的视觉风格优化</p>
+        </div>
+        
+        <!-- 优化说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ 按钮优化内容：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• <strong>渐变背景</strong>：linear-gradient(135deg, #A2D2FF 0%, #6EACEF 100%)</li>
+                <li>• <strong>文字颜色</strong>：白色 (#FFFFFF)，粗体，16px</li>
+                <li>• <strong>宽度</strong>：calc(100% - 48px) (左右各留24px边距)</li>
+                <li>• <strong>高度</strong>：56px (标准移动端按钮高度)</li>
+                <li>• <strong>圆角</strong>：28px (完全圆润的胶囊形状)</li>
+                <li>• <strong>阴影</strong>：0 8px 20px -6px rgba(110, 172, 239, 0.5)</li>
+                <li>• <strong>边距</strong>：底部16px</li>
+            </ul>
+        </div>
+        
+        <!-- 测试区域 -->}
+        <div class="p-4 space-y-6">
+            <!-- 优化后的弹窗 -->
+            <div>
+                <h3 class="font-bold text-gray-800 mb-3">🚀 优化后效果：</h3>
+                <div class="macaron-card rounded-3xl p-8 max-w-sm mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-2xl text-blue-900">管理分类</h3>
+                        <button class="p-3 bg-gradient-to-br from-pink-200 to-pink-300 rounded-full">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <p class="text-sm text-slate-400 font-medium mb-5">拖动分类可以调整顺序</p>
+                    
+                    <!-- 模拟分类列表 -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-pink-100 to-pink-200">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-pink-700 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                </svg>
+                                <div>
+                                    <div class="font-black text-pink-900 text-lg">工作</div>
+                                    <div class="text-xs text-pink-900 opacity-60 font-medium">3 个计时器</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-yellow-100 to-amber-200">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-amber-800 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                </svg>
+                                <div>
+                                    <div class="font-black text-amber-800 text-lg">学习</div>
+                                    <div class="text-xs text-amber-800 opacity-60 font-medium">2 个计时器</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 优化后的完成按钮 -->
+                    <button class="done-button-optimized">
+                        <span style="position: relative; z-index: 10;">完成</span>
+                        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%); border-radius: 28px;"></div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 优化前的弹窗（对比） -->
+            <div class="border-t pt-6">
+                <h3 class="font-bold text-gray-800 mb-3">⚠️ 优化前效果（对比）：</h3>
+                <div class="macaron-card rounded-3xl p-8 max-w-sm mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-2xl text-blue-900">管理分类</h3>
+                        <button class="p-3 bg-gradient-to-br from-pink-200 to-pink-300 rounded-full">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <p class="text-sm text-slate-400 font-medium mb-5">拖动分类可以调整顺序</p>
+                    
+                    <!-- 模拟分类列表 -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-pink-100 to-pink-200">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-pink-700 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                </svg>
+                                <div>
+                                    <div class="font-black text-pink-900 text-lg">工作</div>
+                                    <div class="text-xs text-pink-900 opacity-60 font-medium">3 个计时器</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-yellow-100 to-amber-200">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-amber-800 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                </svg>
+                                <div>
+                                    <div class="font-black text-amber-800 text-lg">学习</div>
+                                    <div class="text-xs text-amber-800 opacity-60 font-medium">2 个计时器</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 优化前的完成按钮 -->
+                    <button class="done-button-old">
+                        <span style="position: relative; z-index: 10;">完成</span>
+                        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 100%); border-radius: 24px;"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对比说明 -->}
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">📊 优化对比：</h3>
+                <div class="text-sm text-blue-700 space-y-2">
+                    <div><strong>视觉风格：</strong> 从淡蓝色 → 鲜艳蓝色渐变</div>
+                    <div><strong>文字颜色：</strong> 从深蓝色 → 白色</div>
+                    <div><strong>按钮宽度：</strong> 从100% → calc(100% - 48px)</div>
+                    <div><strong>圆角：</strong> 从24px → 28px (更圆润)</div>
+                    <div><strong>阴影：</strong> 从复杂阴影 → 简洁发光效果</div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">✨ 优化优势：</h3>
+                <ul class="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                    <li>更加"可点击"和"多汁"的视觉效果</li>
+                    <li>移除了淡色、冲淡的外观</li>
+                    <li>标准移动端按钮高度(56px)</li>
+                    <li>完全圆润的胶囊形状</li>
+                    <li>有色发光阴影效果</li>
+                    <li>左右边距避免贴边</li>
+                </ul>
+            </div>
+            
+            <button onclick="toggleComparison()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all">
+                🔄 切换对比视图
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let showingOptimized = true;
+        
+        function toggleComparison() {
+            const optimizedSection = document.querySelector('div:has(.done-button-optimized)').parentElement;
+            const oldSection = document.querySelector('div:has(.done-button-old)').parentElement;
+            
+            if (showingOptimized) {
+                optimizedSection.style.display = 'none';
+                oldSection.style.display = 'block';
+                showingOptimized = false;
+            } else {
+                optimizedSection.style.display = 'block';
+                oldSection.style.display = 'none';
+                showingOptimized = true;
+            }
+        }
+        
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 管理分类完成按钮优化测试已加载');
+            console.log('🎨 主要优化：鲜艳渐变、白色文字、胶囊形状、发光阴影');
+        });
+    </script>
+</body>
+</html>

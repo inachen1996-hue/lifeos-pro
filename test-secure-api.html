@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全 API 系统测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-cyan-50 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white p-8 rounded-3xl shadow-xl">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">🔒 安全 API 系统测试</h1>
+            
+            <div class="grid gap-6">
+                <!-- 安全说明 -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-200">
+                    <h2 class="font-bold text-lg text-green-800 mb-3">🛡️ 安全特性</h2>
+                    <ul class="text-sm text-green-700 space-y-2">
+                        <li>• API 密钥存储在服务器端环境变量中</li>
+                        <li>• 前端代码中不包含任何敏感信息</li>
+                        <li>• 通过后端 API 路由安全获取密钥</li>
+                        <li>• 支持多用户部署，每个部署可配置不同密钥</li>
+                    </ul>
+                </div>
+
+                <!-- 测试按钮 -->}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button id="testConfig" class="py-4 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-all">
+                        📋 检查 API 配置
+                    </button>
+                    <button id="testDeepSeek" class="py-4 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-all">
+                        🧠 测试 DeepSeek
+                    </button>
+                    <button id="testGemini" class="py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-all">
+                        💎 测试 Gemini
+                    </button>
+                </div>
+
+                <!-- 一键连接测试 -->
+                <button id="testOneClick" class="w-full py-4 bg-gradient-to-r from-emerald-400 to-cyan-400 text-white rounded-2xl font-bold text-lg hover:from-emerald-500 hover:to-cyan-500 transition-all shadow-lg">
+                    🚀 测试一键连接
+                </button>
+
+                <!-- 结果显示 -->
+                <div id="result" class="bg-gray-50 p-6 rounded-2xl min-h-[200px]">
+                    <h3 class="font-bold text-gray-800 mb-3">📊 测试结果</h3>
+                    <p class="text-gray-500">点击按钮开始测试...</p>
+                </div>
+
+                <!-- 环境配置说明 -->
+                <div class="bg-yellow-50 p-6 rounded-2xl border border-yellow-200">
+                    <h3 class="font-bold text-lg text-yellow-800 mb-3">⚙️ 环境配置</h3>
+                    <div class="text-sm text-yellow-700 space-y-2">
+                        <p><strong>本地开发:</strong> 在 <code>.env.local</code> 文件中配置 API 密钥</p>
+                        <p><strong>Vercel 部署:</strong> 在 Vercel 项目设置中添加环境变量</p>
+                        <p><strong>其他平台:</strong> 根据平台要求配置环境变量</p>
+                    </div>
+                </div>
+
+                <!-- API 路由说明 -->
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                    <h3 class="font-bold text-lg text-blue-800 mb-3">🔗 API 路由</h3>
+                    <div class="text-sm text-blue-700 space-y-2">
+                        <p><code>GET /api/config</code> - 获取可用的 API 服务列表</p>
+                        <p><code>POST /api/config</code> - 测试 API 连接或获取密钥</p>
+                        <p><code>POST /api/deepseek</code> - DeepSeek API 代理</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+
+        function updateResult(message, type = 'info') {
+            const colors = {
+                info: 'text-blue-700 bg-blue-100 border-blue-200',
+                success: 'text-green-700 bg-green-100 border-green-200',
+                error: 'text-red-700 bg-red-100 border-red-200'
+            };
+
+            const icons = {
+                info: '🔄',
+                success: '✅',
+                error: '❌'
+            };
+
+            resultDiv.innerHTML = `
+                <h3 class="font-bold text-gray-800 mb-3">📊 测试结果</h3>
+                <div class="p-4 rounded-lg border ${colors[type]}">
+                    <div class="flex items-start gap-3">
+                        <span class="text-xl">${icons[type]}</span>
+                        <div class="flex-1">
+                            <pre class="whitespace-pre-wrap font-medium">${message}</pre>
+                            <p class="text-xs mt-2 opacity-75">时间: ${new Date().toLocaleTimeString()}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 检查 API 配置
+        document.getElementById('testConfig').addEventListener('click', async () => {
+            updateResult('正在检查 API 配置...', 'info');
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                const result = `API 配置检查结果:
+                
+✅ 配置服务: 正常
+🔧 默认服务: ${data.defaultProvider}
+
+可用服务:
+• DeepSeek: ${data.services.deepseek ? '✅ 已配置' : '❌ 未配置'}
+• Gemini: ${data.services.gemini ? '✅ 已配置' : '❌ 未配置'}
+• OpenAI: ${data.services.openai ? '✅ 已配置' : '❌ 未配置'}`;
+
+                updateResult(result, 'success');
+                
+            } catch (error) {
+                updateResult(`API 配置检查失败: ${error.message}`, 'error');
+            }
+        });
+
+        // 测试 DeepSeek
+        document.getElementById('testDeepSeek').addEventListener('click', async () => {
+            updateResult('正在测试 DeepSeek API...', 'info');
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'test', provider: 'deepseek' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                const result = `DeepSeek API 测试结果:
+
+${data.success ? '✅' : '❌'} 连接状态: ${data.message}
+🔧 服务商: ${data.provider}
+🕒 测试时间: ${new Date().toLocaleString()}`;
+
+                updateResult(result, data.success ? 'success' : 'error');
+                
+            } catch (error) {
+                updateResult(`DeepSeek API 测试失败: ${error.message}`, 'error');
+            }
+        });
+
+        // 测试 Gemini
+        document.getElementById('testGemini').addEventListener('click', async () => {
+            updateResult('正在测试 Gemini API...', 'info');
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'test', provider: 'gemini' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                const result = `Gemini API 测试结果:
+
+${data.success ? '✅' : '❌'} 连接状态: ${data.message}
+🔧 服务商: ${data.provider}
+🕒 测试时间: ${new Date().toLocaleString()}`;
+
+                updateResult(result, data.success ? 'success' : 'error');
+                
+            } catch (error) {
+                updateResult(`Gemini API 测试失败: ${error.message}`, 'error');
+            }
+        });
+
+        // 测试一键连接
+        document.getElementById('testOneClick').addEventListener('click', async () => {
+            updateResult('正在测试一键连接功能...', 'info');
+            
+            try {
+                // 1. 检查配置
+                const configResponse = await fetch('/api/config', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!configResponse.ok) {
+                    throw new Error('无法获取 API 配置');
+                }
+                
+                const configData = await configResponse.json();
+                
+                // 2. 测试 DeepSeek
+                const testResponse = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'test', provider: 'deepseek' })
+                });
+                
+                const testData = await testResponse.json();
+                
+                // 3. 模拟保存配置
+                const newConfig = {
+                    provider: 'deepseek',
+                    keys: { google: '', openai: '', deepseek: '' },
+                    useServerKeys: true
+                };
+                
+                localStorage.setItem('lifeos_pro_api_config', JSON.stringify(newConfig));
+                
+                const result = `一键连接测试完成:
+
+🔧 配置检查: ✅ 成功
+🧠 DeepSeek 测试: ${testData.success ? '✅ 成功' : '❌ 失败'}
+💾 配置保存: ✅ 已保存到本地存储
+🔒 安全模式: ✅ 使用服务器端密钥
+
+配置详情:
+• 默认服务: ${configData.defaultProvider}
+• 服务器密钥: 已启用
+• 本地存储: 已更新`;
+
+                updateResult(result, testData.success ? 'success' : 'error');
+                
+            } catch (error) {
+                updateResult(`一键连接测试失败: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音效系统测试 - Achievement Jar</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sound-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sound-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sound-button:active {
+            transform: translateY(0);
+        }
+        
+        .drum-button {
+            background: linear-gradient(135deg, #A855F7, #7C3AED);
+        }
+        
+        .clap-button {
+            background: linear-gradient(135deg, #F87171, #DC2626);
+        }
+        
+        .cheer-button {
+            background: linear-gradient(135deg, #FB923C, #EA580C);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-ready {
+            background-color: #10B981;
+        }
+        
+        .status-loading {
+            background-color: #F59E0B;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // 模拟音效系统类型定义
+        const CelebrationType = {
+            DRUM: 'drum',
+            CLAP: 'clap',
+            CHEER: 'cheer'
+        };
+
+        // 音效系统类（简化版本用于演示）
+        class SoundEffectsSystemClass {
+            constructor(options = {}) {
+                this.volume = options.volume || 0.7;
+                this.useWebAudio = options.useWebAudio !== false;
+                this.onError = options.onError;
+                this.isInitialized = false;
+                this.isWebAudioSupported = false;
+                this.audioContext = null;
+                this.audioElements = {};
+                
+                this.initialize();
+            }
+
+            async initialize() {
+                try {
+                    // 尝试初始化 Web Audio API
+                    if (this.useWebAudio && typeof AudioContext !== 'undefined') {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.isWebAudioSupported = true;
+                    }
+                } catch (error) {
+                    console.warn('Web Audio API not supported, falling back to HTML5 audio');
+                    this.isWebAudioSupported = false;
+                }
+
+                // 初始化 HTML5 音频元素作为回退
+                const soundConfigs = {
+                    drum: { frequency: 80, duration: 0.3, volume: 0.7, waveType: 'sine' },
+                    clap: { frequency: 1000, duration: 0.15, volume: 0.6, waveType: 'square' },
+                    cheer: { frequency: 440, duration: 0.5, volume: 0.8, waveType: 'triangle' }
+                };
+
+                for (const type of Object.keys(soundConfigs)) {
+                    const audio = new Audio();
+                    audio.volume = this.volume;
+                    this.audioElements[type] = audio;
+                }
+                
+                this.isInitialized = true;
+            }
+
+            generateWebAudioSound(type) {
+                if (!this.audioContext) return;
+
+                const configs = {
+                    drum: { frequency: 80, duration: 0.3, volume: 0.7, waveType: 'sine' },
+                    clap: { frequency: 1000, duration: 0.15, volume: 0.6, waveType: 'square' },
+                    cheer: { frequency: 440, duration: 0.5, volume: 0.8, waveType: 'triangle' }
+                };
+
+                const config = configs[type];
+                if (!config) return;
+
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.type = config.waveType;
+                    oscillator.frequency.setValueAtTime(config.frequency, this.audioContext.currentTime);
+                    
+                    const now = this.audioContext.currentTime;
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(config.volume * this.volume, now + 0.01);
+                    gainNode.gain.linearRampToValueAtTime(0, now + config.duration);
+                    
+                    oscillator.start(now);
+                    oscillator.stop(now + config.duration);
+                } catch (error) {
+                    console.error('Web Audio API sound generation failed:', error);
+                    this.onError?.('Web Audio API sound generation failed');
+                }
+            }
+
+            playSound(type) {
+                if (!this.isInitialized) {
+                    console.warn('Sound system not initialized yet');
+                    return;
+                }
+
+                // 尝试使用 Web Audio API，回退到 HTML5 音频
+                if (this.isWebAudioSupported && this.audioContext?.state === 'running') {
+                    this.generateWebAudioSound(type);
+                } else {
+                    // HTML5 音频回退（静默，因为没有实际音频文件）
+                    console.log(`Playing ${type} sound (HTML5 fallback)`);
+                }
+            }
+
+            async resumeAudioContext() {
+                if (this.audioContext?.state === 'suspended') {
+                    try {
+                        await this.audioContext.resume();
+                    } catch (error) {
+                        console.error('Failed to resume audio context:', error);
+                    }
+                }
+            }
+
+            get ready() { return this.isInitialized; }
+            get webAudioSupported() { return this.isWebAudioSupported; }
+        }
+
+        // React Hook 用于音效系统
+        function useSoundEffects(options = {}) {
+            const [soundSystem, setSoundSystem] = React.useState(null);
+            const [isReady, setIsReady] = React.useState(false);
+
+            React.useEffect(() => {
+                const system = new SoundEffectsSystemClass(options);
+                setSoundSystem(system);
+                
+                const checkReady = () => {
+                    if (system.ready) {
+                        setIsReady(true);
+                    } else {
+                        setTimeout(checkReady, 100);
+                    }
+                };
+                checkReady();
+
+                return () => {
+                    // 清理
+                };
+            }, []);
+
+            const playSound = React.useCallback((type) => {
+                soundSystem?.playSound(type);
+            }, [soundSystem]);
+
+            const resumeAudioContext = React.useCallback(async () => {
+                await soundSystem?.resumeAudioContext();
+            }, [soundSystem]);
+
+            return {
+                playSound,
+                resumeAudioContext,
+                isReady,
+                isWebAudioSupported: soundSystem?.webAudioSupported || false
+            };
+        }
+
+        // 主测试组件
+        function SoundEffectsTest() {
+            const { playSound, resumeAudioContext, isReady, isWebAudioSupported } = useSoundEffects({
+                volume: 0.7,
+                useWebAudio: true,
+                onError: (error) => console.warn('Sound effect error:', error)
+            });
+
+            const [lastPlayed, setLastPlayed] = React.useState(null);
+
+            // 恢复音频上下文（浏览器要求用户交互后才能播放音频）
+            React.useEffect(() => {
+                const handleFirstInteraction = () => {
+                    resumeAudioContext();
+                    document.removeEventListener('click', handleFirstInteraction);
+                    document.removeEventListener('touchstart', handleFirstInteraction);
+                };
+
+                document.addEventListener('click', handleFirstInteraction);
+                document.addEventListener('touchstart', handleFirstInteraction);
+
+                return () => {
+                    document.removeEventListener('click', handleFirstInteraction);
+                    document.removeEventListener('touchstart', handleFirstInteraction);
+                };
+            }, [resumeAudioContext]);
+
+            const handlePlaySound = (type) => {
+                playSound(type);
+                setLastPlayed(type);
+                setTimeout(() => setLastPlayed(null), 1000);
+            };
+
+            return (
+                <div className="test-container">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+                        🎵 音效系统测试
+                    </h1>
+                    
+                    <div className="info-card">
+                        <h2 className="text-xl font-semibold mb-3">系统状态</h2>
+                        <div className="space-y-2">
+                            <div className="flex items-center">
+                                <span className={`status-indicator ${isReady ? 'status-ready' : 'status-loading'}`}></span>
+                                <span>音效系统: {isReady ? '已就绪' : '初始化中...'}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <span className={`status-indicator ${isWebAudioSupported ? 'status-ready' : 'status-loading'}`}></span>
+                                <span>Web Audio API: {isWebAudioSupported ? '支持' : '不支持（使用HTML5音频回退）'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="info-card">
+                        <h2 className="text-xl font-semibold mb-3">庆祝音效测试</h2>
+                        <p className="text-gray-600 mb-4">
+                            点击下面的按钮测试不同类型的庆祝音效。每种音效都有独特的频率和波形特征。
+                        </p>
+                        
+                        <div className="flex flex-wrap justify-center gap-4">
+                            <button 
+                                className={`sound-button drum-button ${lastPlayed === 'drum' ? 'animate-bounce' : ''}`}
+                                onClick={() => handlePlaySound('drum')}
+                                disabled={!isReady}
+                            >
+                                🥁 鼓声 (80Hz, Sine)
+                            </button>
+                            
+                            <button 
+                                className={`sound-button clap-button ${lastPlayed === 'clap' ? 'animate-bounce' : ''}`}
+                                onClick={() => handlePlaySound('clap')}
+                                disabled={!isReady}
+                            >
+                                👏 掌声 (1000Hz, Square)
+                            </button>
+                            
+                            <button 
+                                className={`sound-button cheer-button ${lastPlayed === 'cheer' ? 'animate-bounce' : ''}`}
+                                onClick={() => handlePlaySound('cheer')}
+                                disabled={!isReady}
+                            >
+                                🎉 欢呼 (440Hz, Triangle)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="info-card">
+                        <h2 className="text-xl font-semibold mb-3">技术特性</h2>
+                        <ul className="space-y-2 text-gray-700">
+                            <li>✅ Web Audio API 音效生成</li>
+                            <li>✅ HTML5 音频回退机制</li>
+                            <li>✅ 音量控制和错误处理</li>
+                            <li>✅ 浏览器兼容性支持</li>
+                            <li>✅ 用户交互后音频上下文恢复</li>
+                            <li>✅ 不同庆祝类型的独特音效</li>
+                        </ul>
+                    </div>
+
+                    <div className="text-center mt-6">
+                        <p className="text-sm text-gray-500">
+                            音效系统已集成到 Achievement Jar 的 InteractionDock 组件中
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // 渲染应用
+        ReactDOM.render(<SoundEffectsTest />, document.getElementById('root'));
+    </script>
+</body>
+</html>

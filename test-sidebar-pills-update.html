@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边栏胶囊样式更新测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .demo-section {
+            background: linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%);
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            border: 2px solid rgba(162, 210, 255, 0.3);
+        }
+        
+        /* 侧边栏胶囊演示 */
+        .sidebar-demo {
+            width: 82px;
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%);
+            padding: 16px 0;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            border: 2px solid rgba(162, 210, 255, 0.2);
+        }
+        
+        .pill-demo {
+            width: 70px;
+            height: 56px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pill-demo.selected {
+            background: linear-gradient(135deg, #FFB5D8 0%, #FFC9E0 100%);
+            box-shadow: 0 12px 32px -4px rgba(255, 181, 216, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+        
+        .pill-demo.unselected {
+            background: transparent;
+            box-shadow: 0 4px 12px -2px rgba(162, 210, 255, 0.15);
+        }
+        
+        .pill-demo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.3);
+        }
+        
+        .pill-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .pill-demo.selected .pill-text {
+            color: #be185d;
+        }
+        
+        .pill-demo::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 100%);
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pill-demo.selected::after {
+            opacity: 1;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(162, 210, 255, 0.2);
+        }
+        
+        .comparison-item.before {
+            background: rgba(255, 181, 216, 0.1);
+        }
+        
+        .comparison-item.after {
+            background: rgba(181, 245, 216, 0.1);
+        }
+        
+        .old-pill {
+            width: 72px;
+            height: 64px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #FFB5D8 0%, #FFC9E0 100%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px auto;
+            font-size: 16px;
+            font-weight: 900;
+            color: #be185d;
+        }
+        
+        .new-pill {
+            width: 70px;
+            height: 56px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #FFB5D8 0%, #FFC9E0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px auto;
+            font-size: 13px;
+            font-weight: 600;
+            color: #be185d;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .new-pill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 100%);
+            border-radius: 20px;
+        }
+        
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .spec-table th,
+        .spec-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(162, 210, 255, 0.3);
+        }
+        .spec-table th {
+            background: rgba(162, 210, 255, 0.1);
+            font-weight: bold;
+            color: #023E8A;
+        }
+        .spec-value {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: rgba(162, 210, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #023E8A;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #A2D2FF 0%, #BDE0FE 100%);
+            color: #023E8A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -4px rgba(162, 210, 255, 0.5);
+        }
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        h1 { color: #023E8A; margin-bottom: 10px; }
+        h3 { color: #023E8A; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍬 侧边栏胶囊样式更新完成</h1>
+        
+        <div class="demo-section">
+            <h3>🎯 新胶囊样式演示</h3>
+            <div style="display: flex; justify-content: center;">
+                <div class="sidebar-demo">
+                    <div class="pill-demo selected">
+                        <span class="pill-text">工作</span>
+                    </div>
+                    <div class="pill-demo unselected">
+                        <span class="pill-text">学习</span>
+                    </div>
+                    <div class="pill-demo unselected">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                            <span class="pill-text">健</span>
+                            <span class="pill-text">身</span>
+                            <span class="pill-text">房</span>
+                        </div>
+                    </div>
+                    <div class="pill-demo unselected">
+                        <span class="pill-text">待分类</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status success">
+            <h3>✅ 更新完成</h3>
+            <p>已按照要求更新侧边栏胶囊样式，让它们更像软糖，不再"胖硬"：</p>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="comparison-item before">
+                <h4>修改前 (胖硬)</h4>
+                <div class="old-pill">工作</div>
+                <p style="font-size: 12px; color: #666;">72×64px, 24px圆角, 边框描边</p>
+            </div>
+            <div class="comparison-item after">
+                <h4>修改后 (软糖)</h4>
+                <div class="new-pill">工作</div>
+                <p style="font-size: 12px; color: #666;">70×56px, 20px圆角, 全填充</p>
+            </div>
+        </div>
+
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>属性</th>
+                    <th>修改前</th>
+                    <th>修改后</th>
+                    <th>改进效果</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>胶囊尺寸</strong></td>
+                    <td><span class="spec-value">72px × 64px</span></td>
+                    <td><span class="spec-value">70px × 56px</span></td>
+                    <td>更紧凑，不再"胖"</td>
+                </tr>
+                <tr>
+                    <td><strong>圆角</strong></td>
+                    <td><span class="spec-value">24px</span></td>
+                    <td><span class="spec-value">20px</span></td>
+                    <td>稍微方一点，更像软糖</td>
+                </tr>
+                <tr>
+                    <td><strong>垂直间距</strong></td>
+                    <td><span class="spec-value">16px</span></td>
+                    <td><span class="spec-value">12px</span></td>
+                    <td>更紧密的排列</td>
+                </tr>
+                <tr>
+                    <td><strong>文字大小</strong></td>
+                    <td><span class="spec-value">16px/14px (粗黑)</span></td>
+                    <td><span class="spec-value">13px (600)</span></td>
+                    <td>更精致的文字</td>
+                </tr>
+                <tr>
+                    <td><strong>选中态</strong></td>
+                    <td><span class="spec-value">渐变 + 边框</span></td>
+                    <td><span class="spec-value">全填充色</span></td>
+                    <td>去除硬边框，更柔软</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="status info">
+            <h3>🍭 软糖设计理念</h3>
+            <ul>
+                <li><strong>不再"胖"</strong> - 从72×64px缩小到70×56px，更苗条</li>
+                <li><strong>不再"硬"</strong> - 去除边框描边，改为全填充色</li>
+                <li><strong>软糖圆角</strong> - 20px圆角，稍微方一点点，像软糖的形状</li>
+                <li><strong>精致文字</strong> - 13px + 600字重，更加精致</li>
+                <li><strong>紧密排列</strong> - 12px间距，胶囊之间更紧密</li>
+            </ul>
+        </div>
+
+        <div class="status warning">
+            <h3>🧪 测试要点</h3>
+            <ol>
+                <li><strong>尺寸检查</strong> - 胶囊应该是70×56px，看起来更苗条</li>
+                <li><strong>圆角验证</strong> - 20px圆角，不是全圆角，稍微方一点</li>
+                <li><strong>间距测试</strong> - 胶囊之间12px间距，更紧密</li>
+                <li><strong>文字样式</strong> - 13px字号，600字重，更精致</li>
+                <li><strong>选中态</strong> - 无边框，全填充色，更柔软</li>
+                <li><strong>软糖感觉</strong> - 整体应该像软糖，不再胖硬</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-btn" onclick="openMainApp()">
+                🚀 打开主应用查看效果
+            </button>
+            <button class="test-btn" onclick="openWithGuide()">
+                🍬 打开并显示软糖指南
+            </button>
+        </div>
+
+        <div class="status info">
+            <h3>🔍 技术实现</h3>
+            <p><strong>胶囊容器：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 间距调整
+style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+
+// 胶囊尺寸
+style={{
+  width: '70px',
+  height: '56px'
+}}
+
+// 圆角调整
+className="rounded-[20px]"</pre>
+            
+            <p><strong>文字样式：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 新文字样式
+style={{ fontSize: '13px', fontWeight: '600' }}</pre>
+
+            <p><strong>选中态优化：</strong></p>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow-x: auto;">
+// 去除边框，只保留填充色和阴影
+boxShadow: '0 12px 32px -4px rgba(255, 181, 216, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.6)'
+// 移除: border: '2px solid rgba(255, 255, 255, 0.9)'</pre>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function openWithGuide() {
+            const newWindow = window.open('index.html', '_blank');
+            
+            setTimeout(() => {
+                alert('🍬 软糖胶囊测试指南：\n\n1. 观察左侧胶囊是否更苗条 (70×56px)\n2. 检查圆角是否为20px，稍微方一点\n3. 验证胶囊间距是否为12px，更紧密\n4. 查看文字是否为13px + 600字重\n5. 确认选中态无边框，全填充色\n6. 整体感受是否像软糖，不再胖硬');
+            }, 2000);
+        }
+        
+        // 演示交互
+        document.querySelectorAll('.pill-demo').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.pill-demo').forEach(p => {
+                    p.classList.remove('selected');
+                    p.classList.add('unselected');
+                });
+                pill.classList.remove('unselected');
+                pill.classList.add('selected');
+            });
+        });
+        
+        console.log('🍬 侧边栏胶囊样式更新完成');
+        console.log('更新时间:', new Date().toLocaleString());
+        console.log('设计理念: 软糖胶囊 - 苗条、柔软、精致');
+    </script>
+</body>
+</html>

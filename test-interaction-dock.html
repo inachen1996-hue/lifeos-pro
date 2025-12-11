@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InteractionDock 庆祝按钮测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .description {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .demo-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .celebration-log {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .celebration-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .danmaku {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            animation: danmaku-float 3s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes danmaku-float {
+            0% {
+                transform: translateX(100vw) translateY(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-100px) translateY(-20px);
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎉 InteractionDock 庆祝按钮测试</h1>
+        <p class="description">
+            这是成就罐进度功能的交互按钮组件测试页面。点击下方的庆祝按钮体验不同的庆祝效果！
+        </p>
+
+        <div class="demo-section">
+            <div class="demo-title">庆祝按钮组</div>
+            <div id="interaction-dock-container"></div>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">控制面板</div>
+            <div class="controls">
+                <button class="control-button" onclick="toggleDisabled()">
+                    切换禁用状态
+                </button>
+                <button class="control-button" onclick="clearLog()">
+                    清空日志
+                </button>
+                <button class="control-button" onclick="testAllButtons()">
+                    测试所有按钮
+                </button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">庆祝日志</div>
+            <div id="celebration-log" class="celebration-log">
+                <div class="log-entry">等待庆祝事件...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="celebration-effects" class="celebration-effects"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useEffect } = React;
+
+        // 模拟 InteractionDock 组件的简化版本
+        const InteractionDock = ({ onCelebration, disabled = false, className = '' }) => {
+            const [lastCelebration, setLastCelebration] = useState(null);
+            const [cooldownActive, setCooldownActive] = useState(false);
+
+            const handleCelebration = useCallback((type) => {
+                if (disabled || cooldownActive) return;
+                
+                setLastCelebration(type);
+                setCooldownActive(true);
+                onCelebration(type);
+                
+                setTimeout(() => {
+                    setCooldownActive(false);
+                }, 1000);
+            }, [disabled, cooldownActive, onCelebration]);
+
+            const buttonConfigs = [
+                {
+                    type: 'drum',
+                    icon: '🥁',
+                    themeColor: '#8B5CF6',
+                    gradientColors: ['#A855F7', '#7C3AED'],
+                    label: '鼓声庆祝'
+                },
+                {
+                    type: 'clap',
+                    icon: '👏',
+                    themeColor: '#EF4444',
+                    gradientColors: ['#F87171', '#DC2626'],
+                    label: '掌声庆祝'
+                },
+                {
+                    type: 'cheer',
+                    icon: '🎉',
+                    themeColor: '#F97316',
+                    gradientColors: ['#FB923C', '#EA580C'],
+                    label: '欢呼庆祝'
+                }
+            ];
+
+            return React.createElement('div', {
+                className: `interaction-dock flex items-center justify-center gap-6 p-6 ${className}`,
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '24px',
+                    padding: '24px',
+                    position: 'relative',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                    borderRadius: '16px',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                }
+            }, [
+                ...buttonConfigs.map((config) => 
+                    React.createElement('button', {
+                        key: config.type,
+                        className: 'celebration-button',
+                        style: {
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            background: `linear-gradient(135deg, ${config.gradientColors[0]} 0%, ${config.gradientColors[1]} 100%)`,
+                            boxShadow: disabled ? '0 2px 8px rgba(0, 0, 0, 0.1)' : '0 6px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1)',
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            opacity: disabled ? 0.5 : 1,
+                            transition: 'all 0.15s ease-out',
+                            fontSize: '2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        },
+                        disabled: disabled || cooldownActive,
+                        onClick: () => handleCelebration(config.type),
+                        onMouseDown: (e) => {
+                            if (!disabled && !cooldownActive) {
+                                e.target.style.transform = 'scale(0.95)';
+                                if (navigator.vibrate) {
+                                    navigator.vibrate(50);
+                                }
+                            }
+                        },
+                        onMouseUp: (e) => {
+                            if (!disabled && !cooldownActive) {
+                                e.target.style.transform = 'scale(1.05)';
+                                setTimeout(() => {
+                                    e.target.style.transform = 'scale(1)';
+                                }, 150);
+                            }
+                        },
+                        onMouseLeave: (e) => {
+                            e.target.style.transform = 'scale(1)';
+                        },
+                        'aria-label': `${config.type} celebration button`
+                    }, [
+                        React.createElement('span', {
+                            style: {
+                                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))',
+                                userSelect: 'none'
+                            }
+                        }, config.icon)
+                    ])
+                ),
+                cooldownActive && React.createElement('div', {
+                    style: {
+                        position: 'absolute',
+                        top: '-8px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(0, 0, 0, 0.2)',
+                        backdropFilter: 'blur(4px)',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        fontSize: '12px'
+                    }
+                }, '庆祝中...')
+            ]);
+        };
+
+        // 主应用组件
+        const App = () => {
+            const [disabled, setDisabled] = useState(false);
+            const [celebrationLog, setCelebrationLog] = useState([]);
+
+            const handleCelebration = useCallback((type) => {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = {
+                    id: Date.now(),
+                    type,
+                    timestamp,
+                    message: `${getTypeEmoji(type)} ${getTypeName(type)} 庆祝触发`
+                };
+                
+                setCelebrationLog(prev => [logEntry, ...prev.slice(0, 19)]); // 保留最近20条
+                
+                // 触发视觉效果
+                createCelebrationEffects(type);
+                
+                // 播放音效（模拟）
+                console.log(`🔊 播放 ${getTypeName(type)} 音效`);
+            }, []);
+
+            const getTypeEmoji = (type) => {
+                const emojis = { drum: '🥁', clap: '👏', cheer: '🎉' };
+                return emojis[type] || '🎊';
+            };
+
+            const getTypeName = (type) => {
+                const names = { drum: '鼓声', clap: '掌声', cheer: '欢呼' };
+                return names[type] || '庆祝';
+            };
+
+            const createCelebrationEffects = (type) => {
+                const container = document.getElementById('celebration-effects');
+                
+                // 创建弹幕效果
+                createDanmaku(container, type);
+                
+                // 创建彩带效果
+                createConfetti(container, type);
+            };
+
+            const createDanmaku = (container, type) => {
+                const messages = {
+                    drum: ['🥁 节奏感满分！', '🎵 鼓声震天！', '💪 干得漂亮！'],
+                    clap: ['👏 掌声雷动！', '🌟 表现出色！', '🎊 值得庆祝！'],
+                    cheer: ['🎉 太棒了！', '🚀 继续加油！', '✨ 成就解锁！']
+                };
+
+                const messageList = messages[type] || messages.cheer;
+                const message = messageList[Math.floor(Math.random() * messageList.length)];
+                
+                const danmaku = document.createElement('div');
+                danmaku.className = 'danmaku';
+                danmaku.textContent = message;
+                danmaku.style.top = Math.random() * 60 + 20 + '%';
+                danmaku.style.color = getTypeColor(type);
+                
+                container.appendChild(danmaku);
+                
+                setTimeout(() => {
+                    if (container.contains(danmaku)) {
+                        container.removeChild(danmaku);
+                    }
+                }, 3000);
+            };
+
+            const createConfetti = (container, type) => {
+                const colors = {
+                    drum: ['#8B5CF6', '#A855F7', '#7C3AED'],
+                    clap: ['#EF4444', '#F87171', '#DC2626'],
+                    cheer: ['#F97316', '#FB923C', '#EA580C']
+                };
+
+                const colorList = colors[type] || colors.cheer;
+                
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.backgroundColor = colorList[Math.floor(Math.random() * colorList.length)];
+                        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                        
+                        container.appendChild(confetti);
+                        
+                        setTimeout(() => {
+                            if (container.contains(confetti)) {
+                                container.removeChild(confetti);
+                            }
+                        }, 3000);
+                    }, i * 50);
+                }
+            };
+
+            const getTypeColor = (type) => {
+                const colors = { drum: '#8B5CF6', clap: '#EF4444', cheer: '#F97316' };
+                return colors[type] || '#F97316';
+            };
+
+            return React.createElement('div', null, [
+                React.createElement(InteractionDock, {
+                    key: 'dock',
+                    onCelebration: handleCelebration,
+                    disabled: disabled
+                })
+            ]);
+        };
+
+        // 全局控制函数
+        let appInstance;
+
+        window.toggleDisabled = () => {
+            if (appInstance) {
+                appInstance.setState(prev => ({ disabled: !prev.disabled }));
+            }
+        };
+
+        window.clearLog = () => {
+            const logContainer = document.getElementById('celebration-log');
+            logContainer.innerHTML = '<div class="log-entry">日志已清空</div>';
+        };
+
+        window.testAllButtons = () => {
+            const buttons = document.querySelectorAll('.celebration-button');
+            buttons.forEach((button, index) => {
+                setTimeout(() => {
+                    if (!button.disabled) {
+                        button.click();
+                    }
+                }, index * 500);
+            });
+        };
+
+        // 渲染应用
+        const container = document.getElementById('interaction-dock-container');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(App));
+
+        // 监听庆祝日志更新
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            const logContainer = document.getElementById('celebration-log');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${args.join(' ')}`;
+            
+            if (logContainer.firstChild) {
+                logContainer.insertBefore(logEntry, logContainer.firstChild);
+            } else {
+                logContainer.appendChild(logEntry);
+            }
+            
+            // 保持最多20条日志
+            while (logContainer.children.length > 20) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        };
+    </script>
+</body>
+</html>

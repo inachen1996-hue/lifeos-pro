@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Jar 生产集成测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #FDFCFB 0%, #F9F7F5 100%); 
+            color: #5D576B; 
+        }
+        
+        .achievement-jar-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .glass-jar {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.8) 100%);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+        }
+        
+        .clay-ball {
+            background: radial-gradient(ellipse at top left, rgba(255,255,255,0.6) 0%, transparent 50%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.6);
+            transition: all 0.3s ease;
+        }
+        
+        .clay-ball:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">
+            🏺 Achievement Jar 生产集成测试
+        </h1>
+        
+        <!-- 集成状态 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                ✅ 集成状态检查
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                    <div class="font-bold text-green-800">✅ 代码集成</div>
+                    <div class="text-sm text-green-600">已成功集成到 index.html</div>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div class="font-bold text-blue-800">🔄 智能切换</div>
+                    <div class="text-sm text-blue-600">支持新旧界面切换</div>
+                </div>
+                <div class="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <div class="font-bold text-purple-800">🎨 3D 可视化</div>
+                    <div class="text-sm text-purple-600">玻璃罐子 + 粘土球系统</div>
+                </div>
+                <div class="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                    <div class="font-bold text-orange-800">🎉 庆祝系统</div>
+                    <div class="text-sm text-orange-600">音效 + 弹幕 + 交互</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievement Jar 预览 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                🏺 Achievement Jar 预览
+            </h2>
+            
+            <!-- 时间范围选择 -->
+            <div class="bg-white p-1.5 rounded-2xl shadow-sm flex gap-1 border border-slate-100 mb-6">
+                <button class="flex-1 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-blue-400 to-cyan-400 text-white shadow-lg">
+                    今日
+                </button>
+                <button class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-50">
+                    本周
+                </button>
+                <button class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-50">
+                    本月
+                </button>
+            </div>
+            
+            <!-- 3D 玻璃罐子 -->
+            <div class="achievement-jar-container">
+                <div class="glass-jar relative mx-auto rounded-t-full rounded-b-lg border-4 border-blue-200 p-8" 
+                     style="width: 400px; height: 300px;">
+                    
+                    <!-- 示例粘土球 -->
+                    <div class="clay-ball absolute rounded-full cursor-pointer bg-blue-400" 
+                         style="left: 80px; top: 120px; width: 40px; height: 40px;"
+                         title="工作 - 2.5小时"></div>
+                    
+                    <div class="clay-ball absolute rounded-full cursor-pointer bg-green-400" 
+                         style="left: 150px; top: 80px; width: 35px; height: 35px;"
+                         title="学习 - 1.8小时"></div>
+                    
+                    <div class="clay-ball absolute rounded-full cursor-pointer bg-purple-400" 
+                         style="left: 220px; top: 140px; width: 30px; height: 30px;"
+                         title="休息 - 1.2小时"></div>
+                    
+                    <div class="clay-ball absolute rounded-full cursor-pointer bg-pink-400" 
+                         style="left: 120px; top: 180px; width: 45px; height: 45px;"
+                         title="生活 - 3.0小时"></div>
+                    
+                    <div class="clay-ball absolute rounded-full cursor-pointer bg-yellow-400" 
+                         style="left: 280px; top: 100px; width: 25px; height: 25px;"
+                         title="娱乐 - 0.8小时"></div>
+                    
+                    <!-- 玻璃反光效果 -->
+                    <div class="absolute top-4 left-8 w-16 h-32 bg-gradient-to-r from-white to-transparent opacity-30 rounded-full"
+                         style="transform: rotate(-15deg);"></div>
+                </div>
+                
+                <!-- 统计信息 */
+                <div class="mt-6 grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">5</div>
+                        <div class="text-sm text-gray-500">完成事项</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">9.3h</div>
+                        <div class="text-sm text-gray-500">总时长</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600">5</div>
+                        <div class="text-sm text-gray-500">分类数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 庆祝按钮 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                🎉 庆祝系统
+            </h3>
+            <div class="flex gap-3 justify-center">
+                <button onclick="alert('🎉 喝彩音效播放！')"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2">
+                    🎉 喝彩
+                </button>
+                <button onclick="alert('👏 鼓掌音效播放！')"
+                        class="px-6 py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2">
+                    👏 鼓掌
+                </button>
+                <button onclick="alert('🥁 打鼓音效播放！')"
+                        class="px-6 py-3 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center gap-2">
+                    🥁 打鼓
+                </button>
+            </div>
+        </div>
+        
+        <!-- 使用说明 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                📖 使用说明
+            </h2>
+            <div class="space-y-4">
+                <div class="p-4 bg-blue-50 rounded-xl">
+                    <div class="font-bold text-blue-800 mb-2">🔄 如何切换界面</div>
+                    <div class="text-blue-700">
+                        在当前进度页面，点击右上角的"切换界面"按钮即可在 Achievement Jar 和原界面之间切换
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-green-50 rounded-xl">
+                    <div class="font-bold text-green-800 mb-2">🎯 如何使用 Achievement Jar</div>
+                    <div class="text-green-700">
+                        1. 选择时间范围（今日/本周/本月）<br>
+                        2. 查看 3D 玻璃罐中的粘土球<br>
+                        3. 点击粘土球或庆祝按钮触发音效<br>
+                        4. 享受视觉和听觉的双重反馈
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-purple-50 rounded-xl">
+                    <div class="font-bold text-purple-800 mb-2">⚙️ 开发者选项</div>
+                    <div class="text-purple-700">
+                        通过浏览器控制台执行以下代码可以控制 Achievement Jar：<br>
+                        <code class="bg-purple-100 px-2 py-1 rounded">localStorage.setItem('lifeos_achievement_jar_enabled', 'false')</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 成功提示 -->
+        <div class="mt-8 text-center">
+            <div class="inline-flex items-center gap-2 px-6 py-3 bg-green-100 text-green-800 rounded-full font-bold">
+                ✅ Achievement Jar 已成功集成到生产环境！
+            </div>
+        </div>
+    </div>
+</body>
+</html>

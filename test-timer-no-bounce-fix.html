@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器切换无抖动修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 修复后的样式 - 无抖动版本 */
+        .macaron-card-no-bounce {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            /* 柔和阴影 */
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            /* 只保留阴影过渡，避免位置变化导致抖动 */
+            transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .macaron-card-no-bounce:hover {
+            /* 移除 translateY，避免切换时抖动 */
+            /* 悬停时只增强阴影，不改变位置 */
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.18), 
+                        0 4px 12px -2px rgba(162, 210, 255, 0.12),
+                        inset 0 2px 8px rgba(255, 255, 255, 0.9);
+        }
+        
+        /* 修复前的样式 - 有抖动版本（对比用） */
+        .macaron-card-with-bounce {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9F7F5 100%);
+            box-shadow: 0 4px 16px -2px rgba(162, 210, 255, 0.12), 
+                        0 2px 8px -1px rgba(162, 210, 255, 0.08),
+                        inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            /* 包含transform过渡，会导致抖动 */
+            transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .macaron-card-with-bounce:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px -4px rgba(162, 210, 255, 0.18), 
+                        0 4px 12px -2px rgba(162, 210, 255, 0.12),
+                        inset 0 2px 8px rgba(255, 255, 255, 0.9);
+        }
+        
+        .timer-container-smooth {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            contain: layout style;
+        }
+        
+        .category-button {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            backface-visibility: hidden;
+        }
+        
+        .timer-list-smooth {
+            contain: layout style paint;
+            transform: translate3d(0, 0, 0);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        <!-- 头部 -->
+        <div class="p-6 bg-gradient-to-r from-purple-500 to-pink-600 text-white">
+            <h1 class="text-xl font-bold mb-2">🚫 计时器切换无抖动修复测试</h1>
+            <p class="text-purple-100 text-sm">验证切换分类时右侧容器不再上下抖动</p>
+        </div>
+        
+        <!-- 修复说明 -->
+        <div class="p-4 bg-green-50 border-l-4 border-green-400">
+            <h2 class="font-bold text-green-800 mb-2">✅ 抖动修复内容：</h2>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>• 移除悬停时的 <code>translateY(-2px)</code> 效果</li>
+                <li>• 移除 <code>transform</code> 过渡动画</li>
+                <li>• 只保留阴影变化，不改变位置</li>
+                <li>• 避免重新渲染时的位置抖动</li>
+            </ul>
+        </div>
+        
+        <!-- 对比测试 -->
+        <div class="p-4 space-y-6">
+            <div>
+                <h3 class="font-bold text-gray-800 mb-3">✅ 修复后效果（无抖动）</h3>
+                <div class="timer-container-smooth flex h-64 gap-3">
+                    <!-- 左侧分类 -->
+                    <div class="w-20 flex flex-col gap-3">
+                        <button class="category-button bg-gray-200 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105 active-category" onclick="switchContent('no-bounce', this, '待分类')">
+                            <span class="text-xs font-bold text-gray-700">待分类</span>
+                        </button>
+                        <button class="category-button bg-pink-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('no-bounce', this, '工作')">
+                            <span class="text-xs font-bold text-pink-700">工作</span>
+                        </button>
+                        <button class="category-button bg-yellow-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('no-bounce', this, '学习')">
+                            <span class="text-xs font-bold text-yellow-700">学习</span>
+                        </button>
+                        <button class="category-button bg-blue-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('no-bounce', this, '兴趣')">
+                            <span class="text-xs font-bold text-blue-700">兴趣</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 右侧内容（无抖动版本） -->
+                    <div class="flex-1 timer-list-smooth macaron-card-no-bounce rounded-3xl p-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800" id="no-bounce-category">待分类</h3>
+                            <p class="text-sm text-gray-500">切换时完全不抖动</p>
+                        </div>
+                        <div class="space-y-3" id="no-bounce-content">
+                            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                                <div class="font-medium text-gray-800">示例计时器 1</div>
+                                <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t pt-6">
+                <h3 class="font-bold text-gray-800 mb-3">⚠️ 修复前效果（有抖动）</h3>
+                <div class="timer-container-smooth flex h-64 gap-3">
+                    <!-- 左侧分类 -->
+                    <div class="w-20 flex flex-col gap-3">
+                        <button class="category-button bg-gray-200 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105 active-category-bounce" onclick="switchContent('with-bounce', this, '待分类')">
+                            <span class="text-xs font-bold text-gray-700">待分类</span>
+                        </button>
+                        <button class="category-button bg-pink-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('with-bounce', this, '工作')">
+                            <span class="text-xs font-bold text-pink-700">工作</span>
+                        </button>
+                        <button class="category-button bg-yellow-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('with-bounce', this, '学习')">
+                            <span class="text-xs font-bold text-yellow-700">学习</span>
+                        </button>
+                        <button class="category-button bg-blue-100 rounded-2xl h-14 flex items-center justify-center transition-all duration-200 hover:scale-105" onclick="switchContent('with-bounce', this, '兴趣')">
+                            <span class="text-xs font-bold text-blue-700">兴趣</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 右侧内容（有抖动版本） -->
+                    <div class="flex-1 timer-list-smooth macaron-card-with-bounce rounded-3xl p-4">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800" id="with-bounce-category">待分类</h3>
+                            <p class="text-sm text-gray-500">切换时可能会抖动</p>
+                        </div>
+                        <div class="space-y-3" id="with-bounce-content">
+                            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                                <div class="font-medium text-gray-800">示例计时器 1</div>
+                                <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试指南 -->
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-50 rounded-xl p-4">
+                <h3 class="font-bold text-blue-800 mb-2">🧪 测试方法：</h3>
+                <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li>快速连续点击上下两组的分类按钮</li>
+                    <li>仔细观察右侧容器是否有上下抖动</li>
+                    <li>对比修复前后的稳定性差异</li>
+                    <li>验证悬停效果是否仍然存在</li>
+                </ol>
+            </div>
+            
+            <div class="bg-yellow-50 rounded-xl p-4">
+                <h3 class="font-bold text-yellow-800 mb-2">📊 修复对比：</h3>
+                <div class="text-sm text-yellow-700 space-y-2">
+                    <div><strong>修复前：</strong> 切换时容器上下抖动</div>
+                    <div><strong>修复后：</strong> 切换时容器完全稳定</div>
+                    <div><strong>保留：</strong> 悬停时阴影增强效果</div>
+                </div>
+            </div>
+            
+            <button onclick="rapidTest()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-pink-600 transition-all">
+                ⚡ 快速切换测试
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        function switchContent(type, button, categoryName) {
+            const isNoBounce = type === 'no-bounce';
+            const activeClass = isNoBounce ? 'active-category' : 'active-category-bounce';
+            const selector = isNoBounce ? '.active-category' : '.active-category-bounce';
+            
+            // 移除同组的活跃状态
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove(activeClass, 'scale-105', 'shadow-xl');
+            });
+            
+            // 添加活跃状态
+            button.classList.add(activeClass, 'scale-105', 'shadow-xl');
+            
+            // 更新内容
+            const categoryId = type + '-category';
+            const contentId = type + '-content';
+            
+            document.getElementById(categoryId).textContent = categoryName;
+            
+            const content = document.getElementById(contentId);
+            content.innerHTML = `
+                <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 1</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <div class="font-medium text-gray-800">${categoryName}计时器 2</div>
+                    <div class="text-sm text-gray-500 mt-1">⏱️ 00:00:00</div>
+                </div>
+            `;
+        }
+        
+        function rapidTest() {
+            const categories = ['待分类', '工作', '学习', '兴趣'];
+            let index = 0;
+            let round = 0;
+            
+            const interval = setInterval(() => {
+                if (round >= 3) { // 测试3轮
+                    clearInterval(interval);
+                    console.log('✅ 快速切换测试完成');
+                    return;
+                }
+                
+                const isNoBounce = round % 2 === 0;
+                const type = isNoBounce ? 'no-bounce' : 'with-bounce';
+                const buttons = document.querySelectorAll(isNoBounce ? 
+                    '.timer-container-smooth:first-of-type .category-button' : 
+                    '.timer-container-smooth:last-of-type .category-button'
+                );
+                
+                if (buttons[index]) {
+                    switchContent(type, buttons[index], categories[index]);
+                }
+                
+                index++;
+                if (index >= categories.length) {
+                    index = 0;
+                    round++;
+                }
+            }, 300); // 快速切换
+        }
+        
+        // 页面加载完成
+        window.addEventListener('load', () => {
+            console.log('✅ 计时器切换无抖动修复测试已加载');
+            console.log('🚫 主要修复：移除translateY，只保留阴影变化');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek API 调试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center">🔧 DeepSeek API 调试</h1>
+        
+        <div class="space-y-4">
+            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                <h3 class="font-bold text-red-800 mb-2">❌ 检测到的问题</h3>
+                <ul class="text-sm text-red-700 space-y-1">
+                    <li>• 404 错误: /api/config 路由不存在</li>
+                    <li>• 501 错误: 不支持的 HTTP 方法</li>
+                    <li>• 语法错误: 返回 HTML 而不是 JSON</li>
+                    <li>• 本地环境不支持 Vercel API 路由</li>
+                </ul>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 class="font-bold text-blue-800 mb-2">🔍 环境检测</h3>
+                <div id="envInfo" class="text-sm text-blue-700"></div>
+            </div>
+
+            <button id="testDirectDeepSeek" class="w-full py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-all">
+                🧪 直接测试 DeepSeek API
+            </button>
+
+            <button id="testLocalFallback" class="w-full py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all">
+                🔄 测试本地回退方案
+            </button>
+
+            <div id="result" class="mt-6 p-4 bg-gray-50 rounded-lg min-h-[100px]">
+                <p class="text-gray-500">点击按钮开始测试...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        const API_KEY = 'sk-d1fdb210d0424ffdbad83f1ebe4e283b';
+
+        function showResult(message, isSuccess = true) {
+            resultDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <span class="text-xl">${isSuccess ? '✅' : '❌'}</span>
+                    <div class="flex-1">
+                        <pre class="whitespace-pre-wrap text-sm ${isSuccess ? 'text-green-700' : 'text-red-700'}">${message}</pre>
+                        <p class="text-xs text-gray-500 mt-2">时间: ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 环境检测
+        function detectEnvironment() {
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            
+            let envType = 'unknown';
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                envType = 'local';
+            } else if (hostname.includes('vercel.app')) {
+                envType = 'vercel';
+            } else if (hostname.includes('netlify.app')) {
+                envType = 'netlify';
+            } else if (hostname.includes('github.io')) {
+                envType = 'github-pages';
+            }
+
+            document.getElementById('envInfo').innerHTML = `
+                <p><strong>主机名:</strong> ${hostname}</p>
+                <p><strong>端口:</strong> ${port || '默认'}</p>
+                <p><strong>协议:</strong> ${protocol}</p>
+                <p><strong>环境类型:</strong> ${envType}</p>
+                <p><strong>API 路由支持:</strong> ${envType === 'vercel' ? '✅ 支持' : '❌ 不支持'}</p>
+            `;
+        }
+
+        // 直接测试 DeepSeek API
+        document.getElementById('testDirectDeepSeek').addEventListener('click', async () => {
+            showResult('正在直接测试 DeepSeek API...', true);
+            
+            try {
+                const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: '请用JSON格式回复：{"status": "success", "message": "DeepSeek直连测试成功"}'
+                            }
+                        ],
+                        max_tokens: 100
+                    })
+                });
+
+                console.log('DeepSeek 响应状态:', response.status);
+                console.log('DeepSeek 响应头:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('DeepSeek 响应数据:', data);
+
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const content = data.choices[0].message.content;
+                    showResult(`✅ DeepSeek API 直连成功！
+
+响应内容: ${content}
+
+详细信息:
+• 模型: ${data.model || 'deepseek-chat'}
+• 用量: ${data.usage ? JSON.stringify(data.usage) : '未知'}
+• 响应时间: ${new Date().toISOString()}`, true);
+                } else {
+                    showResult(`❌ DeepSeek API 响应格式异常:
+
+${JSON.stringify(data, null, 2)}`, false);
+                }
+
+            } catch (error) {
+                console.error('DeepSeek 直连测试失败:', error);
+                showResult(`❌ DeepSeek API 直连失败:
+
+错误信息: ${error.message}
+
+可能原因:
+1. API 密钥无效或过期
+2. 网络连接问题
+3. CORS 跨域限制
+4. API 服务暂时不可用
+
+建议解决方案:
+1. 检查 API 密钥是否正确
+2. 确认网络连接正常
+3. 尝试使用代理服务器
+4. 检查 DeepSeek 服务状态`, false);
+            }
+        });
+
+        // 测试本地回退方案
+        document.getElementById('testLocalFallback').addEventListener('click', async () => {
+            showResult('正在测试本地回退方案...', true);
+            
+            try {
+                // 模拟本地 API 配置
+                const mockConfig = {
+                    success: true,
+                    services: {
+                        deepseek: true,
+                        gemini: true,
+                        openai: false
+                    },
+                    defaultProvider: 'deepseek'
+                };
+
+                // 模拟保存配置
+                const apiConfig = {
+                    provider: 'deepseek',
+                    keys: {
+                        google: '',
+                        openai: '',
+                        deepseek: ''
+                    },
+                    useServerKeys: false, // 本地环境使用硬编码密钥
+                    localFallback: true
+                };
+
+                localStorage.setItem('lifeos_pro_api_config', JSON.stringify(apiConfig));
+
+                showResult(`✅ 本地回退方案配置成功！
+
+配置详情:
+${JSON.stringify(apiConfig, null, 2)}
+
+模拟服务状态:
+${JSON.stringify(mockConfig, null, 2)}
+
+说明:
+• 本地环境自动使用硬编码 API 密钥
+• 不依赖 /api/config 路由
+• 直接调用 DeepSeek API
+• 配置已保存到本地存储`, true);
+
+            } catch (error) {
+                showResult(`❌ 本地回退方案配置失败: ${error.message}`, false);
+            }
+        });
+
+        // 页面加载时检测环境
+        window.addEventListener('load', () => {
+            detectEnvironment();
+        });
+    </script>
+</body>
+</html>

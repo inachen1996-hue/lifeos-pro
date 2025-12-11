@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟设置弹窗修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { border-left: 5px solid #28a745; }
+        .info { border-left: 5px solid #007bff; }
+        .warning { border-left: 5px solid #ffc107; }
+        .fix { border-left: 5px solid #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍅 番茄钟设置弹窗修复测试</h1>
+    
+    <div class="card fix">
+        <h3>🔧 修复内容</h3>
+        <ul>
+            <li>✅ 添加最大高度限制：<span class="highlight">max-h-[90vh]</span></li>
+            <li>✅ 启用垂直滚动：<span class="highlight">overflow-y-auto</span></li>
+            <li>✅ 调整外层间距：<span class="highlight">p-4</span> (原来 p-6)</li>
+            <li>✅ 调整内层间距：<span class="highlight">p-6</span> (原来 p-8)</li>
+            <li>✅ 紧凑化布局：减少各区域间距</li>
+            <li>✅ 优化按钮尺寸：<span class="highlight">py-3</span> (原来 py-4)</li>
+        </ul>
+    </div>
+
+    <div class="card info">
+        <h3>🎯 修复前问题</h3>
+        <ul>
+            <li>❌ 弹窗内容过长，超出屏幕高度</li>
+            <li>❌ 无法滚动查看完整内容</li>
+            <li>❌ 在小屏幕设备上体验差</li>
+            <li>❌ 底部按钮可能被遮挡</li>
+        </ul>
+    </div>
+
+    <div class="card success">
+        <h3>✅ 修复后效果</h3>
+        <ul>
+            <li>✅ 弹窗高度限制在屏幕90%以内</li>
+            <li>✅ 内容区域可以垂直滚动</li>
+            <li>✅ 在各种屏幕尺寸下都能正常使用</li>
+            <li>✅ 保持美观的视觉效果</li>
+            <li>✅ 按钮始终可见和可点击</li>
+        </ul>
+    </div>
+
+    <div class="card info">
+        <h3>🧪 测试步骤</h3>
+        <ol>
+            <li><strong>打开主应用</strong> - 访问 index.html</li>
+            <li><strong>进入设置页面</strong> - 点击底部导航栏"设置"</li>
+            <li><strong>打开番茄钟设置</strong> - 点击"番茄钟设置"卡片</li>
+            <li><strong>验证滚动功能</strong> - 在弹窗中上下滚动</li>
+            <li><strong>测试不同屏幕</strong> - 调整浏览器窗口大小测试</li>
+            <li><strong>验证按钮可用</strong> - 确保"取消"和"保存设置"按钮可点击</li>
+        </ol>
+    </div>
+
+    <div class="card warning">
+        <h3>📱 移动端测试要点</h3>
+        <ul>
+            <li>在手机浏览器中测试弹窗显示</li>
+            <li>验证触摸滚动是否流畅</li>
+            <li>确保所有控件都能正常操作</li>
+            <li>检查在横屏和竖屏模式下的表现</li>
+        </ul>
+    </div>
+
+    <div class="card info">
+        <h3>🎨 技术细节</h3>
+        <h4>修复的CSS类：</h4>
+        <ul>
+            <li><code>max-h-[90vh]</code> - 限制最大高度为视口高度的90%</li>
+            <li><code>overflow-y-auto</code> - 内容溢出时显示垂直滚动条</li>
+            <li><code>p-4</code> - 外层容器间距调整</li>
+            <li><code>p-6</code> - 内层容器间距调整</li>
+            <li><code>space-y-4</code> - 内容区域间距紧凑化</li>
+            <li><code>mt-6</code> - 按钮区域上边距调整</li>
+        </ul>
+        
+        <h4>布局结构：</h4>
+        <pre style="background: #f1f3f4; padding: 10px; border-radius: 8px; font-size: 12px;">
+固定定位容器 (fixed inset-0)
+├── 背景遮罩 (bg-slate-900/20 backdrop-blur-sm)
+├── 居中容器 (flex items-center justify-center)
+└── 弹窗主体 (max-h-[90vh] overflow-y-auto)
+    ├── 标题区域
+    ├── 内容区域 (可滚动)
+    │   ├── 工作时长设置
+    │   ├── 短休息设置
+    │   ├── 长休息设置
+    │   ├── 周期设置
+    │   └── 预览效果
+    └── 按钮区域 (固定在底部)
+        </pre>
+    </div>
+
+    <div class="card success">
+        ✅ 番茄钟设置弹窗滚动问题已修复，现在可以在各种屏幕尺寸下正常使用
+    </div>
+
+    <script>
+        console.log('🍅 番茄钟设置弹窗修复测试页面已加载');
+        console.log('✅ 修复内容：添加滚动支持和高度限制');
+        console.log('✅ 优化内容：紧凑化布局和间距调整');
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复盘页面紧急修复</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+            <div style="text-align: center;">
+                <div style="width: 60px; height: 60px; border: 4px solid #E2C2FF; border-top-color: #5D576B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p style="color: #5D576B; font-weight: bold;">加载中...</p>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // 简化的音效函数
+        const playSound = (type) => {
+            console.log('🎵 播放音效:', type);
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.frequency.value = type === 'cheer' ? 523 : type === 'clap' ? 1000 : 60;
+                osc.type = 'sine';
+                gain.gain.value = 0.1;
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch (error) {
+                console.error('音效播放失败:', error);
+            }
+        };
+
+        // 简化的 AchievementJarContainer 组件
+        const AchievementJarContainer = ({ data, timeRange, onCelebrate }) => {
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        🏺 Achievement Jar - {timeRange === 'today' ? '今日' : timeRange === 'weekly' ? '本周' : '本月'}成就
+                    </h3>
+                    
+                    <div className="text-center py-8">
+                        <div className="text-6xl mb-4">🏺</div>
+                        <p className="text-gray-500 mb-4">
+                            {data.length === 0 ? '暂无数据' : `共有 ${data.length} 项成就`}
+                        </p>
+                        <button 
+                            onClick={() => onCelebrate('clap')}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            点击庆祝
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // 简化的 AchievementJarIntegratedProgress 组件
+        const AchievementJarIntegratedProgress = ({ 
+            fullHistory = '', 
+            progressScope = 'today', 
+            onScopeChange = () => {},
+            onToggleMode = null
+        }) => {
+            const [danmakus, setDanmakus] = useState([]);
+
+            // 生成弹幕函数
+            const generateDanmaku = () => {
+                const messages = ["太棒了！", "继续保持！", "你真努力！"];
+                const newDanmaku = {
+                    id: Date.now(),
+                    text: messages[Math.floor(Math.random() * messages.length)],
+                    top: 20 + Math.random() * 40
+                };
+                
+                setDanmakus(prev => [...prev, newDanmaku]);
+                
+                setTimeout(() => {
+                    setDanmakus(prev => prev.filter(d => d.id !== newDanmaku.id));
+                }, 3000);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-6">
+                    {/* 弹幕容器 */}
+                    <div className="fixed inset-0 pointer-events-none z-50">
+                        {danmakus.map(danmaku => (
+                            <div
+                                key={danmaku.id}
+                                className="absolute right-0 text-lg font-bold text-blue-600 animate-pulse"
+                                style={{ 
+                                    top: `${danmaku.top}%`,
+                                    animation: 'slideLeft 3s linear forwards'
+                                }}
+                            >
+                                {danmaku.text}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* 顶部切换按钮 */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            🏺 Achievement Jar (修复版)
+                        </h2>
+                        {onToggleMode && (
+                            <button
+                                onClick={onToggleMode}
+                                className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                切换界面
+                            </button>
+                        )}
+                    </div>
+
+                    {/* 时间范围选择 */}
+                    <div className="bg-white p-1.5 rounded-2xl shadow-sm flex gap-1 border border-slate-100 mb-6">
+                        {[
+                            { key: 'today', label: '今日' },
+                            { key: 'weekly', label: '本周' },
+                            { key: 'monthly', label: '本月' }
+                        ].map(({ key, label }) => (
+                            <button 
+                                key={key} 
+                                onClick={() => onScopeChange(key)} 
+                                className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                                    progressScope === key 
+                                        ? 'bg-gradient-to-r from-blue-400 to-cyan-400 text-white shadow-lg' 
+                                        : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Achievement Jar 容器 */}
+                    <AchievementJarContainer 
+                        data={[]}
+                        timeRange={progressScope}
+                        onCelebrate={(type) => {
+                            playSound(type);
+                            generateDanmaku();
+                        }}
+                    />
+
+                    {/* 庆祝按钮 */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-6">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                            🎉 庆祝成就
+                        </h3>
+                        <div className="flex gap-3 justify-center">
+                            <button 
+                                onClick={() => { playSound('cheer'); generateDanmaku(); }}
+                                className="px-6 py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-xl font-bold transition-all hover:scale-105 flex items-center gap-2"
+                            >
+                                🎉 喝彩
+                            </button>
+                            <button 
+                                onClick={() => { playSound('clap'); generateDanmaku(); }}
+                                className="px-6 py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-xl font-bold transition-all hover:scale-105 flex items-center gap-2"
+                            >
+                                👏 鼓掌
+                            </button>
+                            <button 
+                                onClick={() => { playSound('drum'); generateDanmaku(); }}
+                                className="px-6 py-3 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-xl font-bold transition-all hover:scale-105 flex items-center gap-2"
+                            >
+                                🥁 打鼓
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 测试信息 */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                        <h4 className="font-bold text-green-800 mb-2">✅ 修复状态</h4>
+                        <ul className="text-green-700 text-sm space-y-1">
+                            <li>• playSound 函数已定义并可正常工作</li>
+                            <li>• AchievementJarIntegratedProgress 组件已修复</li>
+                            <li>• 庆祝按钮功能正常</li>
+                            <li>• 弹幕系统正常工作</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        // 主应用组件
+        const App = () => {
+            const [progressScope, setProgressScope] = useState('today');
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <AchievementJarIntegratedProgress 
+                        fullHistory=""
+                        progressScope={progressScope}
+                        onScopeChange={setProgressScope}
+                        onToggleMode={() => alert('切换到原界面')}
+                    />
+                </div>
+            );
+        };
+
+        // 渲染应用
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        console.log('✅ 复盘页面修复版加载成功');
+    </script>
+
+    <style>
+        @keyframes slideLeft {
+            from { right: -100%; }
+            to { right: 100%; }
+        }
+    </style>
+</body>
+</html>
