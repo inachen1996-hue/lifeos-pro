@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek 计划生成和复盘测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .loading { color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 DeepSeek 计划生成和复盘测试</h1>
+        
+        <div class="test-section">
+            <h3>⚙️ 配置</h3>
+            <label>API Key:</label>
+            <input type="password" id="apiKey" value="sk-d1fdb210d0424ffdbad83f1ebe4e283b">
+            <label>计划请求:</label>
+            <input type="text" id="planInput" value="今天想要高效工作和学习" placeholder="输入你的计划请求">
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 测试功能</h3>
+            <button class="btn-primary" onclick="testPlanGeneration()">📅 测试计划生成</button>
+            <button class="btn-primary" onclick="testReviewGeneration()">📊 测试复盘生成</button>
+            <button class="btn-danger" onclick="clearResults()">🗑️ 清空结果</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 测试结果</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 详细日志</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('logs');
+        let resultsContainer = document.getElementById('results');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(title, content, isError = false) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `
+                <h4>${isError ? '❌' : '✅'} ${title}</h4>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+            `;
+            resultsContainer.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            logContainer.textContent = '';
+            resultsContainer.innerHTML = '';
+        }
+
+        // 模拟应用中的数据和配置
+        const mockData = {
+            bioState: {
+                wakeTime: "07:00",
+                sleepTime: "23:00",
+                workHours: 8
+            },
+            userState: {
+                energy: "high",
+                mood: "good"
+            },
+            allocations: {
+                work: 8,
+                study: 2,
+                hobby: 1
+            },
+            pomodoroConfig: {
+                workDuration: 25,
+                shortBreak: 5,
+                longBreak: 15,
+                cyclesBeforeLongBreak: 4
+            },
+            fullHistory: `09:00-12:00 工作 编程开发
+14:00-17:00 工作 会议讨论
+19:00-20:00 学习 阅读技术文档
+20:00-21:00 休息 看电视`,
+            diaryEntries: "今天工作效率不错，但学习时间不够。需要更好地平衡工作和学习。",
+            jsStats: {
+                work: 6.5,
+                study: 1.5,
+                rest: 2,
+                entertainment: 1
+            }
+        };
+
+        function getCurrentTimeStr() {
+            return new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getTodayDate() {
+            return new Date().toLocaleDateString('zh-CN');
+        }
+
+        async function testPlanGeneration() {
+            log('📅 开始测试计划生成...');
+            const apiKey = document.getElementById('apiKey').value;
+            const planInput = document.getElementById('planInput').value;
+
+            if (!apiKey) {
+                showResult('计划生成测试', '请输入 API Key', true);
+                return;
+            }
+
+            try {
+                // 显示加载状态
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'result loading';
+                loadingDiv.innerHTML = '<h4>⏳ 正在生成计划...</h4>';
+                resultsContainer.appendChild(loadingDiv);
+
+                const prompt = `Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}. User Bio: ${JSON.stringify(mockData.bioState)}. User State: ${JSON.stringify(mockData.userState)}. User Request: "${planInput}". Targets: ${JSON.stringify(mockData.allocations)}. Pomodoro Settings: ${JSON.stringify(mockData.pomodoroConfig)}. Language: Chinese (Mandarin). 
+              
+CRITICAL RULES:
+1. **Plan End**: STRICTLY plan tasks ONLY until ${mockData.bioState.sleepTime}.
+2. **Pomodoro Integration**: 
+   - Use user's custom pomodoro settings: Work ${mockData.pomodoroConfig.workDuration}min, Short Break ${mockData.pomodoroConfig.shortBreak}min, Long Break ${mockData.pomodoroConfig.longBreak}min
+   - After every ${mockData.pomodoroConfig.cyclesBeforeLongBreak} pomodoro cycles, insert a ${mockData.pomodoroConfig.longBreak}-minute long break
+   - For work/study blocks, structure them using these pomodoro intervals
+   - Add sub_blocks showing pomodoro timing (e.g., "Focus 25min", "Break 5min")
+3. **Breaks Strategy**: 
+   - **Intra-Task**: Follow user's pomodoro settings (${mockData.pomodoroConfig.workDuration}+${mockData.pomodoroConfig.shortBreak}), insert ${mockData.pomodoroConfig.longBreak}m Long Break after ${mockData.pomodoroConfig.cyclesBeforeLongBreak} cycles.
+   - **Inter-Task**: When switching big Tasks, insert 10-15m Break or Meal.
+4. **Overtime vs Low Energy**:
+   - IF (Request > Available Time): Fill with work, compress non-essential rest, BUT keep efficiency breaks.
+   - IF (Time > 21:00 AND No work request) OR (Pain/Tired AND No work request): **LOW ENERGY MODE** (Rest/Read/Meditate only).
+5. **Special Task Duration**: Treat "1h" as **PURE FOCUS**. Add breaks on top using pomodoro intervals.
+
+Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health|hobby", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
+
+                log('发送计划生成请求...');
+                const result = await callDeepSeekAPI(apiKey, prompt);
+                
+                // 移除加载状态
+                resultsContainer.removeChild(loadingDiv);
+                
+                log('解析计划数据...');
+                const planData = JSON.parse(result);
+                planData.date = getTodayDate();
+                
+                log('计划生成成功!');
+                showResult('计划生成测试', planData);
+                
+            } catch (error) {
+                // 移除加载状态
+                const loadingDiv = resultsContainer.querySelector('.loading');
+                if (loadingDiv) resultsContainer.removeChild(loadingDiv);
+                
+                log(`计划生成失败: ${error.message}`);
+                showResult('计划生成测试', error.message, true);
+            }
+        }
+
+        async function testReviewGeneration() {
+            log('📊 开始测试复盘生成...');
+            const apiKey = document.getElementById('apiKey').value;
+
+            if (!apiKey) {
+                showResult('复盘生成测试', '请输入 API Key', true);
+                return;
+            }
+
+            try {
+                // 显示加载状态
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'result loading';
+                loadingDiv.innerHTML = '<h4>⏳ 正在生成复盘...</h4>';
+                resultsContainer.appendChild(loadingDiv);
+
+                const prompt = `Role: Life Analyst. Scope: 今日. Targets: ${JSON.stringify(mockData.allocations)}. **STATS (TRUST THESE)**: ${JSON.stringify(mockData.jsStats)}. **Logs**: """${mockData.fullHistory}""". **Diary**: """${mockData.diaryEntries}""". **Previous Data**: """昨日数据较少""". 
+              
+Task: 
+1. **Deep Insight**: Find "Trigger Behavior Chains" (e.g. Bad emotion -> Binge TV). Analyze "Overdraft Risks". Identify "Beneficial Habits". 
+2. **Vision**: Project a 3-month vision if current habits continue (Be objective, gentle).
+3. **3 Protections**: List 3 things user needs to protect most.
+4. **Advice**: Reasonable time adjustments.
+5. **Format**: Use **bold** for key points, __underline__ for critical info. Use Emojis (🔗, 🔮, 🛡️, 💡) to structure sections. Separate sections clearly.
+6. **Language**: PURE CHINESE (Mandarin). NO ENGLISH in response content.
+
+Output JSON: { "summary": "String", "insights": ["Formatted String 1", "Formatted String 2", "Formatted String 3", "Formatted String 4"] }`;
+
+                log('发送复盘生成请求...');
+                const result = await callDeepSeekAPI(apiKey, prompt);
+                
+                // 移除加载状态
+                resultsContainer.removeChild(loadingDiv);
+                
+                log('解析复盘数据...');
+                const reviewData = JSON.parse(result);
+                const finalData = { ...reviewData, actual_allocation: mockData.jsStats };
+                
+                log('复盘生成成功!');
+                showResult('复盘生成测试', finalData);
+                
+            } catch (error) {
+                // 移除加载状态
+                const loadingDiv = resultsContainer.querySelector('.loading');
+                if (loadingDiv) resultsContainer.removeChild(loadingDiv);
+                
+                log(`复盘生成失败: ${error.message}`);
+                showResult('复盘生成测试', error.message, true);
+            }
+        }
+
+        async function callDeepSeekAPI(apiKey, prompt) {
+            const enhancedPrompt = `${prompt}\n\n重要：请确保你的回复是有效的JSON格式。`;
+            
+            // 检测环境
+            const hostname = window.location.hostname;
+            const isLocalDev = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isVercel = hostname.includes('vercel.app');
+            
+            log(`环境检测: hostname=${hostname}, isLocalDev=${isLocalDev}, isVercel=${isVercel}`);
+            
+            let response;
+            let method = '';
+            
+            try {
+                // 尝试本地代理
+                method = '本地代理 (localhost:3000)';
+                log(`尝试 ${method}...`);
+                response = await fetch('http://localhost:3000', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiKey: apiKey,
+                        model: 'deepseek-chat',
+                        messages: [
+                            { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                            { role: 'user', content: enhancedPrompt }
+                        ]
+                    })
+                });
+                log(`${method} 响应状态: ${response.status}`);
+            } catch (proxyError) {
+                log(`${method} 失败: ${proxyError.message}`);
+                
+                if (isVercel) {
+                    // Vercel API 路由
+                    method = 'Vercel API 路由 (/api/deepseek)';
+                    log(`尝试 ${method}...`);
+                    response = await fetch('/api/deepseek', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey: apiKey,
+                            model: 'deepseek-chat',
+                            messages: [
+                                { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                                { role: 'user', content: enhancedPrompt }
+                            ]
+                        })
+                    });
+                    log(`${method} 响应状态: ${response.status}`);
+                } else {
+                    // 直接调用
+                    method = '直接调用 DeepSeek API';
+                    log(`尝试 ${method}...`);
+                    response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [
+                                { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                                { role: 'user', content: enhancedPrompt }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 4000
+                        })
+                    });
+                    log(`${method} 响应状态: ${response.status}`);
+                }
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                log(`API 错误详情: ${JSON.stringify(errorData, null, 2)}`);
+                
+                let errorMessage = `DeepSeek API 错误 (${response.status})`;
+                if (errorData.error) {
+                    errorMessage += `: ${errorData.error.message || errorData.error}`;
+                } else {
+                    errorMessage += `: ${response.statusText}`;
+                }
+                
+                // 常见错误提示
+                if (response.status === 401) {
+                    errorMessage += '\n\n💡 解决方案：\n1. 检查 API Key 是否正确\n2. 确认 Key 是否已激活\n3. 访问 https://platform.deepseek.com/ 查看余额';
+                } else if (response.status === 429) {
+                    errorMessage += '\n\n💡 解决方案：\n1. 等待几秒后重试\n2. 检查是否超出速率限制';
+                } else if (response.status === 500 || response.status === 502 || response.status === 503) {
+                    errorMessage += '\n\n💡 解决方案：\n1. DeepSeek 服务器暂时不可用\n2. 请稍后重试\n3. 或切换到 Google/OpenAI';
+                } else if (response.status === 400) {
+                    errorMessage += '\n\n💡 可能原因：\n1. 请求参数格式错误\n2. 提示词过长\n3. 不支持的参数';
+                }
+                
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            log(`API 响应数据结构: choices=${data.choices?.length}, model=${data.model}`);
+
+            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                throw new Error('DeepSeek API 返回格式异常');
+            }
+
+            const content = data.choices[0].message.content;
+            log(`AI 回复内容长度: ${content.length} 字符`);
+            log(`AI 回复内容预览: ${content.substring(0, 200)}...`);
+
+            // 验证 JSON 格式
+            try {
+                JSON.parse(content);
+                log('JSON 格式验证通过');
+                return content;
+            } catch (e) {
+                log(`JSON 解析失败，尝试提取 JSON 部分...`);
+                log(`原始内容: ${content}`);
+                
+                // 尝试从文本中提取 JSON
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    log('成功提取 JSON 部分');
+                    return jsonMatch[0];
+                }
+                throw new Error(`返回内容无法解析为 JSON: ${content}`);
+            }
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+            log('🚀 DeepSeek 计划生成和复盘测试工具已加载');
+            log('请点击按钮开始测试功能');
+        };
+    </script>
+</body>
+</html>

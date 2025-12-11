@@ -691,10 +691,10 @@
         };
 
         // AI服务调用统一接口 - 支持服务器端密钥
-        const callAI = async (provider, apiKey, prompt) => {
+        const callAI = async (provider, apiKey, prompt, config = null) => {
           // 如果没有提供 apiKey 或配置为使用服务器密钥，则从服务器获取
           let actualApiKey = apiKey;
-          if (!actualApiKey || (apiConfig.useServerKeys && !apiKey)) {
+          if (!actualApiKey || (config && config.useServerKeys && !apiKey)) {
             actualApiKey = await getServerApiKey(provider);
             if (!actualApiKey) {
               throw new Error(`无法获取 ${provider} 的 API 密钥，请检查服务器配置`);
@@ -876,13 +876,31 @@
               JSON.parse(content);
               return content;
             } catch (e) {
-              console.warn('DeepSeek 返回的内容不是有效的 JSON，尝试提取 JSON 部分');
-              // 尝试从文本中提取 JSON
-              const jsonMatch = content.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                return jsonMatch[0];
+              console.warn('DeepSeek 返回的内容不是有效的 JSON，尝试清理和提取');
+              console.log('原始内容:', content);
+              
+              try {
+                // 首先尝试移除 markdown 代码块
+                let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+                JSON.parse(cleanContent);
+                console.log('成功清理 markdown 代码块');
+                return cleanContent;
+              } catch (e2) {
+                // 尝试从文本中提取 JSON
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  try {
+                    JSON.parse(jsonMatch[0]);
+                    console.log('成功提取 JSON 部分');
+                    return jsonMatch[0];
+                  } catch (e3) {
+                    console.error('提取的 JSON 仍然无效:', jsonMatch[0]);
+                    throw new Error(`提取的 JSON 无效: ${e3.message}`);
+                  }
+                }
+                console.error('无法找到有效的 JSON 内容');
+                throw new Error(`DeepSeek 返回的内容无法解析为 JSON: ${content.substring(0, 200)}...`);
               }
-              throw new Error('DeepSeek 返回的内容无法解析为 JSON');
             }
           }
           throw new Error('Unsupported AI provider');
@@ -1132,10 +1150,10 @@
         };
         
         // 统一的AI调用函数（支持重试）
-        const callAIWithRetry = async (provider, apiKey, prompt, retries = 3) => {
+        const callAIWithRetry = async (provider, apiKey, prompt, retries = 3, config = null) => {
           for (let i = 0; i < retries; i++) {
             try {
-              const responseText = await callAI(provider, apiKey, prompt);
+              const responseText = await callAI(provider, apiKey, prompt, config);
               return { response: { text: () => responseText } };
             } catch (error) {
               if (i === retries - 1) throw error;
@@ -1145,7 +1163,27 @@
         };
 
         const parseJSONSafely = (text) => {
-          try { return JSON.parse(text); } catch (e) { try { return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '')); } catch (e2) { throw new Error("无法解析 AI 返回的数据"); } }
+          try { 
+            return JSON.parse(text); 
+          } catch (e) { 
+            try { 
+              // 移除 markdown 代码块标记
+              let cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+              return JSON.parse(cleanText); 
+            } catch (e2) { 
+              try {
+                // 尝试提取 JSON 部分
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  return JSON.parse(jsonMatch[0]);
+                }
+                throw new Error("无法找到有效的 JSON 内容");
+              } catch (e3) {
+                console.error('JSON 解析失败:', { originalText: text, error: e3.message });
+                throw new Error(`无法解析 AI 返回的数据: ${e3.message}`); 
+              }
+            }
+          }
         };
 
         // 空气感马卡龙分类配置 - 使用低饱和度背景 + 鲜艳图标
@@ -4617,7 +4655,18 @@
           const [apiConfig, setApiConfig] = useState(() => {
             const saved = localStorage.getItem('lifeos_pro_api_config');
             if (saved) {
-              return JSON.parse(saved);
+              const config = JSON.parse(saved);
+              // 确保所有必需的属性都存在
+              return {
+                provider: config.provider || 'google',
+                keys: config.keys || {
+                  google: 'AIzaSyAs95vJEeL-CkfTdvxeKgZsViKJtjAppBE',
+                  openai: '',
+                  deepseek: 'sk-d1fdb210d0424ffdbad83f1ebe4e283b'
+                },
+                useServerKeys: config.useServerKeys !== undefined ? config.useServerKeys : false,
+                corsWorkaround: config.corsWorkaround !== undefined ? config.corsWorkaround : true
+              };
             }
             // 兼容旧版本的单一API key
             const oldKey = localStorage.getItem('lifeos_pro_key');
@@ -5737,11 +5786,14 @@
               6. **Language**: PURE CHINESE (Mandarin). NO ENGLISH in response content.
               
               Output JSON: { "summary": "String", "insights": ["Formatted String 1", "Formatted String 2", "Formatted String 3", "Formatted String 4"] }`;
-              const result = await callAIWithRetry(apiConfig.provider, userApiKey, prompt);
+              const result = await callAIWithRetry(apiConfig.provider, userApiKey, prompt, 3, apiConfig);
               const aiData = parseJSONSafely(result.response.text());
               const finalData = { ...aiData, actual_allocation: jsStats }; 
               setReviewResults(prev => ({ ...prev, [scope]: finalData })); showToast(`${scope}复盘已更新`);
-            } catch (e) { showToast('分析失败', 'error'); } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '', scope: '' }); }
+            } catch (e) { 
+              console.error('复盘生成失败:', e); 
+              showToast(`分析失败: ${e.message}`, 'error'); 
+            } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '', scope: '' }); }
           };
 
           const generatePlan = async () => {
@@ -5767,11 +5819,15 @@
               5. **Special Task Duration**: Treat "1h" as **PURE FOCUS**. Add breaks on top using pomodoro intervals.
               
               Output JSON: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health|hobby", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
-              const result = await callAIWithRetry(apiConfig.provider, userApiKey, prompt);
+              const result = await callAIWithRetry(apiConfig.provider, userApiKey, prompt, 3, apiConfig);
               const planData = parseJSONSafely(result.response.text());
               planData.date = getTodayDate(); // 添加日期字段
               setTodayPlan(planData); showToast('今日计划已生成');
-            } catch (e) { showToast('生成失败', 'error'); setActivePage('status'); } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '' }); }
+            } catch (e) { 
+              console.error('计划生成失败:', e); 
+              showToast(`生成失败: ${e.message}`, 'error'); 
+              setActivePage('status'); 
+            } finally { clearInterval(timer); setLoading({ state: false, text: '', progress: 0, taskType: '' }); }
           };
 
           const calculatePlanStats = () => {

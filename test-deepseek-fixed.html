@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek 修复后测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .loading { background: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 8px; color: white; font-weight: bold; z-index: 1000; }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 DeepSeek 修复后功能测试</h1>
+        
+        <div class="test-section">
+            <h3>⚙️ 配置</h3>
+            <label>API Key:</label>
+            <input type="password" id="apiKey" value="sk-d1fdb210d0424ffdbad83f1ebe4e283b">
+            <label>计划请求:</label>
+            <input type="text" id="planInput" value="今天想要高效工作和学习" placeholder="输入你的计划请求">
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 功能测试</h3>
+            <button class="btn-primary" onclick="testPlanGeneration()">📅 测试计划生成 (修复后)</button>
+            <button class="btn-primary" onclick="testReviewGeneration()">📊 测试复盘生成 (修复后)</button>
+            <button class="btn-success" onclick="testJSONParsing()">🔧 测试 JSON 解析</button>
+            <button class="btn-danger" onclick="clearResults()">🗑️ 清空结果</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 测试结果</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 详细日志</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('logs');
+        let resultsContainer = document.getElementById('results');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(title, content, isError = false) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `
+                <h4>${isError ? '❌' : '✅'} ${title}</h4>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+            `;
+            resultsContainer.appendChild(resultDiv);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+
+        function clearResults() {
+            logContainer.textContent = '';
+            resultsContainer.innerHTML = '';
+        }
+
+        // 修复后的 parseJSONSafely 函数
+        const parseJSONSafely = (text) => {
+          try { 
+            return JSON.parse(text); 
+          } catch (e) { 
+            try { 
+              // 移除 markdown 代码块标记
+              let cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+              return JSON.parse(cleanText); 
+            } catch (e2) { 
+              try {
+                // 尝试提取 JSON 部分
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  return JSON.parse(jsonMatch[0]);
+                }
+                throw new Error("无法找到有效的 JSON 内容");
+              } catch (e3) {
+                console.error('JSON 解析失败:', { originalText: text, error: e3.message });
+                throw new Error(`无法解析 AI 返回的数据: ${e3.message}`); 
+              }
+            }
+          }
+        };
+
+        // 修复后的 callAI 函数 (DeepSeek 部分)
+        const callAI = async (provider, apiKey, prompt) => {
+          if (provider !== 'deepseek') {
+            throw new Error('此测试页面仅支持 DeepSeek');
+          }
+
+          const enhancedPrompt = `${prompt}\n\n重要：请确保你的回复是有效的JSON格式。`;
+          
+          // 检测环境
+          const hostname = window.location.hostname;
+          const isLocalDev = hostname === 'localhost' || hostname === '127.0.0.1';
+          const isVercel = hostname.includes('vercel.app');
+          
+          let response;
+          
+          try {
+            // 尝试本地代理
+            log('尝试本地代理服务器...');
+            response = await fetch('http://localhost:3000', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                apiKey: apiKey,
+                model: 'deepseek-chat',
+                messages: [
+                  { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                  { role: 'user', content: enhancedPrompt }
+                ]
+              })
+            });
+            log(`本地代理响应: ${response.status}`);
+          } catch (proxyError) {
+            log(`本地代理失败: ${proxyError.message}`);
+            
+            if (isVercel) {
+              // Vercel API 路由
+              log('尝试 Vercel API 路由...');
+              response = await fetch('/api/deepseek', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  apiKey: apiKey,
+                  model: 'deepseek-chat',
+                  messages: [
+                    { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                    { role: 'user', content: enhancedPrompt }
+                  ]
+                })
+              });
+              log(`Vercel API 响应: ${response.status}`);
+            } else {
+              // 直接调用
+              log('尝试直接调用 DeepSeek API...');
+              response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  model: 'deepseek-chat',
+                  messages: [
+                    { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                    { role: 'user', content: enhancedPrompt }
+                  ],
+                  temperature: 0.7,
+                  max_tokens: 4000
+                })
+              });
+              log(`直接调用响应: ${response.status}`);
+            }
+          }
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            log(`API 错误详情: ${JSON.stringify(errorData, null, 2)}`);
+            throw new Error(`DeepSeek API 错误 (${response.status}): ${errorData.error?.message || response.statusText}`);
+          }
+
+          const data = await response.json();
+          log(`API 响应数据结构: choices=${data.choices?.length}, model=${data.model}`);
+
+          if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('DeepSeek API 返回格式异常');
+          }
+
+          const content = data.choices[0].message.content;
+          log(`AI 回复内容长度: ${content.length} 字符`);
+          log(`AI 回复内容预览: ${content.substring(0, 200)}...`);
+
+          // 修复后的 JSON 处理逻辑
+          try {
+            JSON.parse(content);
+            log('✅ 直接 JSON 解析成功');
+            return content;
+          } catch (e) {
+            log('⚠️ 直接解析失败，尝试清理和提取...');
+            log(`原始内容: ${content}`);
+            
+            try {
+              // 首先尝试移除 markdown 代码块
+              let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+              JSON.parse(cleanContent);
+              log('✅ 成功清理 markdown 代码块');
+              return cleanContent;
+            } catch (e2) {
+              // 尝试从文本中提取 JSON
+              const jsonMatch = content.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                try {
+                  JSON.parse(jsonMatch[0]);
+                  log('✅ 成功提取 JSON 部分');
+                  return jsonMatch[0];
+                } catch (e3) {
+                  log(`❌ 提取的 JSON 仍然无效: ${jsonMatch[0]}`);
+                  throw new Error(`提取的 JSON 无效: ${e3.message}`);
+                }
+              }
+              log('❌ 无法找到有效的 JSON 内容');
+              throw new Error(`DeepSeek 返回的内容无法解析为 JSON: ${content.substring(0, 200)}...`);
+            }
+          }
+        };
+
+        // 修复后的 callAIWithRetry 函数
+        const callAIWithRetry = async (provider, apiKey, prompt, retries = 3) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const responseText = await callAI(provider, apiKey, prompt);
+              return { response: { text: () => responseText } };
+            } catch (error) {
+              log(`重试 ${i + 1}/${retries} 失败: ${error.message}`);
+              if (i === retries - 1) throw error;
+              await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+            }
+          }
+        };
+
+        // 模拟应用数据
+        const mockData = {
+          bioState: { wakeTime: "07:00", sleepTime: "23:00", workHours: 8 },
+          userState: { energy: "high", mood: "good" },
+          allocations: { work: 8, study: 2, hobby: 1 },
+          pomodoroConfig: { workDuration: 25, shortBreak: 5, longBreak: 15, cyclesBeforeLongBreak: 4 },
+          fullHistory: `09:00-12:00 工作 编程开发\n14:00-17:00 工作 会议讨论\n19:00-20:00 学习 阅读技术文档\n20:00-21:00 休息 看电视`,
+          diaryEntries: "今天工作效率不错，但学习时间不够。需要更好地平衡工作和学习。",
+          jsStats: { work: 6.5, study: 1.5, rest: 2, entertainment: 1 }
+        };
+
+        function getCurrentTimeStr() {
+          return new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getTodayDate() {
+          return new Date().toLocaleDateString('zh-CN');
+        }
+
+        async function testPlanGeneration() {
+          log('📅 开始测试修复后的计划生成...');
+          const apiKey = document.getElementById('apiKey').value;
+          const planInput = document.getElementById('planInput').value;
+
+          if (!apiKey) {
+            showResult('计划生成测试', '请输入 API Key', true);
+            return;
+          }
+
+          try {
+            // 显示加载状态
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'result loading';
+            loadingDiv.innerHTML = '<h4>⏳ 正在生成计划...</h4>';
+            resultsContainer.appendChild(loadingDiv);
+
+            const prompt = `Current Time: ${getCurrentTimeStr()}, Date: ${getTodayDate()}. User Bio: ${JSON.stringify(mockData.bioState)}. User State: ${JSON.stringify(mockData.userState)}. User Request: "${planInput}". Targets: ${JSON.stringify(mockData.allocations)}. Pomodoro Settings: ${JSON.stringify(mockData.pomodoroConfig)}. Language: Chinese (Mandarin). 
+              
+CRITICAL RULES:
+1. **Plan End**: STRICTLY plan tasks ONLY until ${mockData.bioState.sleepTime}.
+2. **Pomodoro Integration**: Use user's custom pomodoro settings
+3. **Output JSON**: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest|sleep|life|entertainment|health|hobby", "title": "String", "desc": "String", "sub_blocks": [ { "time": "HH:MM", "label": "Focus/Break", "detail": "String" } ], "energy_required": "high|low" } ] }`;
+
+            log('发送计划生成请求...');
+            const result = await callAIWithRetry('deepseek', apiKey, prompt);
+            
+            // 移除加载状态
+            resultsContainer.removeChild(loadingDiv);
+            
+            log('解析计划数据...');
+            const planData = parseJSONSafely(result.response.text());
+            planData.date = getTodayDate();
+            
+            log('✅ 计划生成成功!');
+            showResult('计划生成测试 (修复后)', planData);
+            showToast('今日计划已生成');
+            
+          } catch (error) {
+            // 移除加载状态
+            const loadingDiv = resultsContainer.querySelector('.loading');
+            if (loadingDiv) resultsContainer.removeChild(loadingDiv);
+            
+            log(`❌ 计划生成失败: ${error.message}`);
+            showResult('计划生成测试 (修复后)', `生成失败: ${error.message}`, true);
+            showToast(`生成失败: ${error.message}`, 'error');
+          }
+        }
+
+        async function testReviewGeneration() {
+          log('📊 开始测试修复后的复盘生成...');
+          const apiKey = document.getElementById('apiKey').value;
+
+          if (!apiKey) {
+            showResult('复盘生成测试', '请输入 API Key', true);
+            return;
+          }
+
+          try {
+            // 显示加载状态
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'result loading';
+            loadingDiv.innerHTML = '<h4>⏳ 正在生成复盘...</h4>';
+            resultsContainer.appendChild(loadingDiv);
+
+            const prompt = `Role: Life Analyst. Scope: 今日. Targets: ${JSON.stringify(mockData.allocations)}. **STATS (TRUST THESE)**: ${JSON.stringify(mockData.jsStats)}. **Logs**: """${mockData.fullHistory}""". **Diary**: """${mockData.diaryEntries}""". **Previous Data**: """昨日数据较少""". 
+              
+Task: 
+1. **Deep Insight**: Find "Trigger Behavior Chains" (e.g. Bad emotion -> Binge TV). Analyze "Overdraft Risks". Identify "Beneficial Habits". 
+2. **Vision**: Project a 3-month vision if current habits continue (Be objective, gentle).
+3. **3 Protections**: List 3 things user needs to protect most.
+4. **Advice**: Reasonable time adjustments.
+5. **Format**: Use **bold** for key points, __underline__ for critical info. Use Emojis (🔗, 🔮, 🛡️, 💡) to structure sections. Separate sections clearly.
+6. **Language**: PURE CHINESE (Mandarin). NO ENGLISH in response content.
+
+Output JSON: { "summary": "String", "insights": ["Formatted String 1", "Formatted String 2", "Formatted String 3", "Formatted String 4"] }`;
+
+            log('发送复盘生成请求...');
+            const result = await callAIWithRetry('deepseek', apiKey, prompt);
+            
+            // 移除加载状态
+            resultsContainer.removeChild(loadingDiv);
+            
+            log('解析复盘数据...');
+            const aiData = parseJSONSafely(result.response.text());
+            const finalData = { ...aiData, actual_allocation: mockData.jsStats };
+            
+            log('✅ 复盘生成成功!');
+            showResult('复盘生成测试 (修复后)', finalData);
+            showToast('今日复盘已更新');
+            
+          } catch (error) {
+            // 移除加载状态
+            const loadingDiv = resultsContainer.querySelector('.loading');
+            if (loadingDiv) resultsContainer.removeChild(loadingDiv);
+            
+            log(`❌ 复盘生成失败: ${error.message}`);
+            showResult('复盘生成测试 (修复后)', `分析失败: ${error.message}`, true);
+            showToast(`分析失败: ${error.message}`, 'error');
+          }
+        }
+
+        function testJSONParsing() {
+          log('🔧 测试 JSON 解析功能...');
+          
+          // 测试各种 DeepSeek 可能返回的格式
+          const testCases = [
+            {
+              name: '标准 JSON',
+              content: '{"test": "success"}'
+            },
+            {
+              name: 'Markdown 代码块',
+              content: '```json\n{"test": "success"}\n```'
+            },
+            {
+              name: '复杂计划响应',
+              content: '```json\n{\n    "theme_title": "高效工作日",\n    "advice": "建议合理安排时间",\n    "blocks": [{"time": "09:00-10:00", "category": "work", "title": "工作", "desc": "处理任务"}]\n}\n```'
+            },
+            {
+              name: '混合文本',
+              content: '这是前置文本\n{"test": "success", "message": "嵌入的JSON"}\n这是后置文本'
+            }
+          ];
+
+          testCases.forEach((testCase, index) => {
+            try {
+              const result = parseJSONSafely(testCase.content);
+              log(`✅ 测试${index + 1} (${testCase.name}) 通过: ${JSON.stringify(result)}`);
+              showResult(`JSON解析测试${index + 1} - ${testCase.name}`, result);
+            } catch (error) {
+              log(`❌ 测试${index + 1} (${testCase.name}) 失败: ${error.message}`);
+              showResult(`JSON解析测试${index + 1} - ${testCase.name}`, error.message, true);
+            }
+          });
+
+          log('🏁 JSON 解析测试完成');
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+          log('🚀 DeepSeek 修复后功能测试工具已加载');
+          log('现在可以测试修复后的计划生成和复盘功能');
+        };
+    </script>
+</body>
+</html>

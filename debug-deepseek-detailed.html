@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek API 详细调试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DeepSeek API 详细调试工具</h1>
+        
+        <div class="test-section">
+            <h3>📋 API 配置</h3>
+            <label>API Key:</label>
+            <input type="password" id="apiKey" placeholder="输入你的 DeepSeek API Key" value="sk-d1fdb210d0424ffdbad83f1ebe4e283b">
+            <label>测试提示词:</label>
+            <textarea id="testPrompt" placeholder="输入测试提示词">请生成一个简单的JSON格式回复，包含一个greeting字段，内容为"Hello World"</textarea>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 测试步骤</h3>
+            <button class="btn-primary" onclick="testConnection()">1. 测试连接</button>
+            <button class="btn-primary" onclick="testSimpleCall()">2. 测试简单调用</button>
+            <button class="btn-primary" onclick="testPlanGeneration()">3. 测试计划生成</button>
+            <button class="btn-primary" onclick="testReviewGeneration()">4. 测试复盘生成</button>
+            <button class="btn-danger" onclick="clearLogs()">清空日志</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 测试结果</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 详细日志</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('logs');
+        let resultsContainer = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(message);
+        }
+
+        function showResult(title, success, message) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-section ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `<h4>${success ? '✅' : '❌'} ${title}</h4><p>${message}</p>`;
+            resultsContainer.appendChild(resultDiv);
+        }
+
+        function clearLogs() {
+            logContainer.textContent = '';
+            resultsContainer.innerHTML = '';
+        }
+
+        async function testConnection() {
+            log('🔗 开始测试连接...');
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!apiKey) {
+                showResult('连接测试', false, '请输入 API Key');
+                return;
+            }
+
+            try {
+                // 测试环境检测
+                const hostname = window.location.hostname;
+                const isLocalDev = hostname === 'localhost' || hostname === '127.0.0.1';
+                const isVercel = hostname.includes('vercel.app');
+                
+                log(`环境检测: hostname=${hostname}, isLocalDev=${isLocalDev}, isVercel=${isVercel}`);
+
+                // 尝试不同的调用方式
+                let response;
+                let method = '';
+
+                try {
+                    // 方法1: 本地代理
+                    method = '本地代理 (localhost:3000)';
+                    log(`尝试方法1: ${method}`);
+                    response = await fetch('http://localhost:3000', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey: apiKey,
+                            model: 'deepseek-chat',
+                            messages: [{ role: 'user', content: 'Hello' }]
+                        })
+                    });
+                    log(`方法1响应状态: ${response.status}`);
+                } catch (proxyError) {
+                    log(`方法1失败: ${proxyError.message}`);
+                    
+                    try {
+                        // 方法2: Vercel API 路由
+                        method = 'Vercel API 路由 (/api/deepseek)';
+                        log(`尝试方法2: ${method}`);
+                        response = await fetch('/api/deepseek', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                apiKey: apiKey,
+                                model: 'deepseek-chat',
+                                messages: [{ role: 'user', content: 'Hello' }]
+                            })
+                        });
+                        log(`方法2响应状态: ${response.status}`);
+                    } catch (vercelError) {
+                        log(`方法2失败: ${vercelError.message}`);
+                        
+                        // 方法3: 直接调用
+                        method = '直接调用 DeepSeek API';
+                        log(`尝试方法3: ${method}`);
+                        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: 'deepseek-chat',
+                                messages: [{ role: 'user', content: 'Hello' }],
+                                temperature: 0.7,
+                                max_tokens: 100
+                            })
+                        });
+                        log(`方法3响应状态: ${response.status}`);
+                    }
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`连接成功! 使用方法: ${method}`);
+                    log(`响应数据: ${JSON.stringify(data, null, 2)}`);
+                    showResult('连接测试', true, `成功连接 DeepSeek API (${method})`);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`连接失败: ${response.status} ${response.statusText}`);
+                    log(`错误详情: ${JSON.stringify(errorData, null, 2)}`);
+                    showResult('连接测试', false, `连接失败: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                }
+
+            } catch (error) {
+                log(`连接测试异常: ${error.message}`);
+                showResult('连接测试', false, `连接异常: ${error.message}`);
+            }
+        }
+
+        async function testSimpleCall() {
+            log('🧪 开始测试简单调用...');
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('testPrompt').value;
+
+            try {
+                const result = await callDeepSeekAPI(apiKey, prompt);
+                log(`简单调用成功: ${JSON.stringify(result, null, 2)}`);
+                showResult('简单调用测试', true, '成功获得 AI 回复');
+            } catch (error) {
+                log(`简单调用失败: ${error.message}`);
+                showResult('简单调用测试', false, error.message);
+            }
+        }
+
+        async function testPlanGeneration() {
+            log('📅 开始测试计划生成...');
+            const apiKey = document.getElementById('apiKey').value;
+
+            const planPrompt = `Current Time: 09:00, Date: 2024-12-11. User Bio: {"wakeTime":"07:00","sleepTime":"23:00","workHours":8}. User State: {"energy":"high","mood":"good"}. User Request: "今天想要高效工作". Targets: {"work":8,"study":2,"hobby":1}. Pomodoro Settings: {"workDuration":25,"shortBreak":5,"longBreak":15,"cyclesBeforeLongBreak":4}. Language: Chinese (Mandarin). 
+
+CRITICAL RULES:
+1. **Plan End**: STRICTLY plan tasks ONLY until 23:00.
+2. **Pomodoro Integration**: Use user's custom pomodoro settings
+3. **Output JSON**: { "theme_title": "String", "advice": "String", "blocks": [ { "time": "HH:MM - HH:MM", "category": "work|study|rest", "title": "String", "desc": "String" } ] }`;
+
+            try {
+                const result = await callDeepSeekAPI(apiKey, planPrompt);
+                const planData = JSON.parse(result);
+                log(`计划生成成功: ${JSON.stringify(planData, null, 2)}`);
+                showResult('计划生成测试', true, `成功生成计划: ${planData.theme_title}`);
+            } catch (error) {
+                log(`计划生成失败: ${error.message}`);
+                showResult('计划生成测试', false, error.message);
+            }
+        }
+
+        async function testReviewGeneration() {
+            log('📊 开始测试复盘生成...');
+            const apiKey = document.getElementById('apiKey').value;
+
+            const reviewPrompt = `Role: Life Analyst. Scope: 今日. Targets: {"work":8,"study":2,"hobby":1}. **STATS**: {"work":6.5,"study":1.5,"rest":2,"entertainment":1}. **Logs**: """09:00-12:00 工作 编程开发\n14:00-17:00 工作 会议讨论\n19:00-20:00 学习 阅读技术文档""". **Diary**: """今天工作效率不错，但学习时间不够""". 
+
+Task: 
+1. **Deep Insight**: Find behavior patterns
+2. **Vision**: Project future if habits continue
+3. **3 Protections**: List 3 things to protect
+4. **Advice**: Time adjustments
+5. **Language**: PURE CHINESE (Mandarin)
+
+Output JSON: { "summary": "String", "insights": ["String 1", "String 2", "String 3", "String 4"] }`;
+
+            try {
+                const result = await callDeepSeekAPI(apiKey, reviewPrompt);
+                const reviewData = JSON.parse(result);
+                log(`复盘生成成功: ${JSON.stringify(reviewData, null, 2)}`);
+                showResult('复盘生成测试', true, `成功生成复盘分析`);
+            } catch (error) {
+                log(`复盘生成失败: ${error.message}`);
+                showResult('复盘生成测试', false, error.message);
+            }
+        }
+
+        async function callDeepSeekAPI(apiKey, prompt) {
+            const enhancedPrompt = `${prompt}\n\n重要：请确保你的回复是有效的JSON格式。`;
+            
+            // 检测环境
+            const hostname = window.location.hostname;
+            const isLocalDev = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isVercel = hostname.includes('vercel.app');
+            
+            let response;
+            
+            try {
+                // 尝试本地代理
+                log('尝试本地代理服务器...');
+                response = await fetch('http://localhost:3000', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiKey: apiKey,
+                        model: 'deepseek-chat',
+                        messages: [
+                            { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                            { role: 'user', content: enhancedPrompt }
+                        ]
+                    })
+                });
+                log(`本地代理响应: ${response.status}`);
+            } catch (proxyError) {
+                log(`本地代理失败: ${proxyError.message}`);
+                
+                if (isVercel) {
+                    // Vercel API 路由
+                    log('尝试 Vercel API 路由...');
+                    response = await fetch('/api/deepseek', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey: apiKey,
+                            model: 'deepseek-chat',
+                            messages: [
+                                { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                                { role: 'user', content: enhancedPrompt }
+                            ]
+                        })
+                    });
+                    log(`Vercel API 响应: ${response.status}`);
+                } else {
+                    // 直接调用
+                    log('尝试直接调用 DeepSeek API...');
+                    response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [
+                                { role: 'system', content: 'You are a helpful assistant that always responds in valid JSON format.' },
+                                { role: 'user', content: enhancedPrompt }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 4000
+                        })
+                    });
+                    log(`直接调用响应: ${response.status}`);
+                }
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                log(`API 错误详情: ${JSON.stringify(errorData, null, 2)}`);
+                throw new Error(`DeepSeek API 错误 (${response.status}): ${errorData.error?.message || response.statusText}`);
+            }
+
+            const data = await response.json();
+            log(`API 响应数据: ${JSON.stringify(data, null, 2)}`);
+
+            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                throw new Error('DeepSeek API 返回格式异常');
+            }
+
+            const content = data.choices[0].message.content;
+            log(`AI 回复内容: ${content}`);
+
+            // 验证 JSON 格式
+            try {
+                JSON.parse(content);
+                return content;
+            } catch (e) {
+                log(`JSON 解析失败，尝试提取 JSON 部分...`);
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return jsonMatch[0];
+                }
+                throw new Error('返回内容无法解析为 JSON');
+            }
+        }
+
+        // 页面加载时自动填入 API Key
+        window.onload = function() {
+            log('🚀 DeepSeek API 调试工具已加载');
+            log('请按顺序执行测试步骤，查看详细日志');
+        };
+    </script>
+</body>
+</html>

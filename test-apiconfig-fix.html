@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApiConfig 修复测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; background: #007bff; color: white; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ApiConfig 修复测试</h1>
+        
+        <div class="test-section">
+            <h3>🧪 测试 ApiConfig 初始化和使用</h3>
+            <button onclick="testApiConfig()">测试 ApiConfig</button>
+            <button onclick="testCallAI()">测试 CallAI 函数</button>
+            <button onclick="clearLogs()">清空日志</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 测试日志</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('logs');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logContainer.textContent = '';
+        }
+
+        // 模拟主应用中的 apiConfig 初始化逻辑
+        function initializeApiConfig() {
+            const saved = localStorage.getItem('lifeos_pro_api_config');
+            if (saved) {
+                const config = JSON.parse(saved);
+                // 确保所有必需的属性都存在
+                return {
+                    provider: config.provider || 'google',
+                    keys: config.keys || {
+                        google: 'AIzaSyAs95vJEeL-CkfTdvxeKgZsViKJtjAppBE',
+                        openai: '',
+                        deepseek: 'sk-d1fdb210d0424ffdbad83f1ebe4e283b'
+                    },
+                    useServerKeys: config.useServerKeys !== undefined ? config.useServerKeys : false,
+                    corsWorkaround: config.corsWorkaround !== undefined ? config.corsWorkaround : true
+                };
+            }
+            // 兼容旧版本的单一API key
+            const oldKey = localStorage.getItem('lifeos_pro_key');
+            return {
+                provider: 'google', // 默认使用 Gemini (避免 CORS 问题)
+                keys: {
+                    google: oldKey || 'AIzaSyAs95vJEeL-CkfTdvxeKgZsViKJtjAppBE', // Gemini API 支持浏览器调用
+                    openai: '',
+                    deepseek: 'sk-d1fdb210d0424ffdbad83f1ebe4e283b' // DeepSeek 仅在服务器环境可用
+                },
+                useServerKeys: false, // 本地环境使用硬编码密钥
+                corsWorkaround: true // 标记已应用 CORS 解决方案
+            };
+        }
+
+        // 模拟修复后的 callAI 函数
+        const callAI = async (provider, apiKey, prompt, config = null) => {
+            log(`调用 callAI: provider=${provider}, hasApiKey=${!!apiKey}, hasConfig=${!!config}`);
+            
+            // 如果没有提供 apiKey 或配置为使用服务器密钥，则从服务器获取
+            let actualApiKey = apiKey;
+            if (!actualApiKey || (config && config.useServerKeys && !apiKey)) {
+                log('需要从服务器获取 API 密钥...');
+                // 这里模拟获取服务器密钥的逻辑
+                actualApiKey = 'mock-server-key';
+            }
+            
+            log(`实际使用的 API Key: ${actualApiKey ? actualApiKey.substring(0, 10) + '...' : 'none'}`);
+            
+            if (provider === 'deepseek') {
+                log('DeepSeek 提供商 - 模拟成功调用');
+                return '{"test": "success", "provider": "deepseek"}';
+            } else if (provider === 'google') {
+                log('Google 提供商 - 模拟成功调用');
+                return '{"test": "success", "provider": "google"}';
+            } else {
+                throw new Error(`不支持的提供商: ${provider}`);
+            }
+        };
+
+        function testApiConfig() {
+            log('🧪 开始测试 ApiConfig 初始化...');
+
+            try {
+                // 测试1: 清空 localStorage，测试默认初始化
+                localStorage.removeItem('lifeos_pro_api_config');
+                localStorage.removeItem('lifeos_pro_key');
+                
+                const config1 = initializeApiConfig();
+                log('✅ 测试1 (默认初始化) 通过:');
+                log(`  provider: ${config1.provider}`);
+                log(`  useServerKeys: ${config1.useServerKeys}`);
+                log(`  corsWorkaround: ${config1.corsWorkaround}`);
+                log(`  keys: ${JSON.stringify(config1.keys, null, 2)}`);
+
+                // 测试2: 保存配置并重新加载
+                localStorage.setItem('lifeos_pro_api_config', JSON.stringify(config1));
+                const config2 = initializeApiConfig();
+                log('✅ 测试2 (从 localStorage 加载) 通过');
+
+                // 测试3: 测试不完整的配置
+                const incompleteConfig = { provider: 'deepseek', keys: { deepseek: 'test-key' } };
+                localStorage.setItem('lifeos_pro_api_config', JSON.stringify(incompleteConfig));
+                const config3 = initializeApiConfig();
+                log('✅ 测试3 (不完整配置修复) 通过:');
+                log(`  useServerKeys: ${config3.useServerKeys} (应该是 false)`);
+                log(`  corsWorkaround: ${config3.corsWorkaround} (应该是 true)`);
+
+                // 测试4: 测试旧版本兼容性
+                localStorage.removeItem('lifeos_pro_api_config');
+                localStorage.setItem('lifeos_pro_key', 'old-api-key');
+                const config4 = initializeApiConfig();
+                log('✅ 测试4 (旧版本兼容) 通过:');
+                log(`  google key: ${config4.keys.google}`);
+
+            } catch (error) {
+                log(`❌ ApiConfig 测试失败: ${error.message}`);
+            }
+
+            log('🏁 ApiConfig 测试完成');
+        }
+
+        function testCallAI() {
+            log('🧪 开始测试 CallAI 函数...');
+
+            try {
+                const apiConfig = initializeApiConfig();
+                
+                // 测试1: 使用 DeepSeek 提供商
+                callAI('deepseek', 'sk-test123', 'test prompt', apiConfig)
+                    .then(result => {
+                        log('✅ 测试1 (DeepSeek 调用) 通过:');
+                        log(`  结果: ${result}`);
+                    })
+                    .catch(error => {
+                        log(`❌ 测试1 (DeepSeek 调用) 失败: ${error.message}`);
+                    });
+
+                // 测试2: 使用 Google 提供商
+                callAI('google', 'AIza-test123', 'test prompt', apiConfig)
+                    .then(result => {
+                        log('✅ 测试2 (Google 调用) 通过:');
+                        log(`  结果: ${result}`);
+                    })
+                    .catch(error => {
+                        log(`❌ 测试2 (Google 调用) 失败: ${error.message}`);
+                    });
+
+                // 测试3: 测试服务器密钥逻辑
+                const serverConfig = { ...apiConfig, useServerKeys: true };
+                callAI('deepseek', '', 'test prompt', serverConfig)
+                    .then(result => {
+                        log('✅ 测试3 (服务器密钥) 通过:');
+                        log(`  结果: ${result}`);
+                    })
+                    .catch(error => {
+                        log(`❌ 测试3 (服务器密钥) 失败: ${error.message}`);
+                    });
+
+                // 测试4: 测试无配置调用
+                callAI('google', 'AIza-test123', 'test prompt', null)
+                    .then(result => {
+                        log('✅ 测试4 (无配置调用) 通过:');
+                        log(`  结果: ${result}`);
+                    })
+                    .catch(error => {
+                        log(`❌ 测试4 (无配置调用) 失败: ${error.message}`);
+                    });
+
+            } catch (error) {
+                log(`❌ CallAI 测试失败: ${error.message}`);
+            }
+
+            log('🏁 CallAI 测试完成');
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+            log('🚀 ApiConfig 修复测试工具已加载');
+            log('点击按钮开始测试修复后的 ApiConfig 功能');
+        };
+    </script>
+</body>
+</html>

@@ -5,121 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>修复验证测试</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .test-card {
-            background: white;
-            padding: 20px;
-            margin: 10px 0;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .success { border-left: 4px solid #4CAF50; }
-        .error { border-left: 4px solid #f44336; }
-        .warning { border-left: 4px solid #ff9800; }
-        .test-result {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .pass { background: #e8f5e8; color: #2e7d32; }
-        .fail { background: #ffebee; color: #c62828; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; background: #007bff; color: white; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body>
-    <h1>🔧 getFlatIconForMode 修复验证</h1>
-    
-    <div class="test-card success">
-        <h2>✅ 修复完成</h2>
-        <p><strong>问题：</strong> <code>getFlatIconForMode is not defined</code> 错误</p>
-        <p><strong>原因：</strong> 函数被定义在 TimerCreateModal 组件内部，但在其他组件中也被调用</p>
-        <p><strong>解决方案：</strong></p>
-        <ul>
-            <li>将 <code>getFlatIconForMode</code> 函数移到全局作用域</li>
-            <li>将 <code>getIconForMode</code> 函数移到全局作用域</li>
-            <li>将 <code>getTimerMainIcon</code> 函数移到全局作用域</li>
-            <li>从 TimerCreateModal 组件中移除重复定义</li>
-        </ul>
-    </div>
+    <div class="container">
+        <h1>🔧 DeepSeek JSON 解析修复验证</h1>
+        
+        <div class="test-section">
+            <h3>🧪 测试 parseJSONSafely 函数</h3>
+            <button onclick="testParseJSONSafely()">测试 JSON 解析</button>
+            <button onclick="clearLogs()">清空日志</button>
+        </div>
 
-    <div class="test-card">
-        <h2>🧪 测试结果</h2>
-        <div id="test-results">
-            <div class="test-result">
-                <strong>正在测试...</strong>
-            </div>
+        <div class="test-section">
+            <h3>📝 测试日志</h3>
+            <div id="logs" class="log"></div>
         </div>
     </div>
 
-    <div class="test-card">
-        <h2>📋 修复详情</h2>
-        <p><strong>修复位置：</strong> index.html 第 563-585 行</p>
-        <p><strong>修复内容：</strong></p>
-        <pre style="background: #f0f0f0; padding: 10px; border-radius: 5px; overflow-x: auto;">
-// 根据模式获取扁平图标组件（显示用）- 全局函数
-const getFlatIconForMode = (mode, size = 20) => {
-  if (mode === 'stopwatch') return &lt;FlatTimerIcon type="stopwatch" size={size} /&gt;;
-  if (mode === 'countdown') return &lt;FlatTimerIcon type="countdown" size={size} /&gt;;
-  if (mode === 'pomodoro') return &lt;FlatTimerIcon type="pomodoro" size={size} /&gt;;
-  return &lt;FlatTimerIcon type="stopwatch" size={size} /&gt;;
-};
-
-// 根据模式自动选择图标（存储用）- 全局函数
-const getIconForMode = (mode) => {
-  if (mode === 'stopwatch') return '⏱️';
-  if (mode === 'countdown') return '⏰';
-  if (mode === 'pomodoro') return '🍅';
-  return '⏱️';
-};
-
-// 获取计时器主图标（根据模式显示扁平图标）- 全局函数
-const getTimerMainIcon = (timer, isRunning = false) => {
-  const size = 48; // 主图标大小
-  const className = `drop-shadow-md ${isRunning ? 'animate-bounce' : ''}`;
-  return (
-    &lt;div className={className} style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}&gt;
-      {getFlatIconForMode(timer.mode, size)}
-    &lt;/div&gt;
-  );
-};
-        </pre>
-    </div>
-
-    <div class="test-card">
-        <h2>🎯 下一步</h2>
-        <p>现在可以：</p>
-        <ul>
-            <li>✅ 正常访问主页面 <a href="/" target="_blank">http://localhost:8000</a></li>
-            <li>✅ 创建计时器不会报错</li>
-            <li>✅ 扁平图标正常显示</li>
-            <li>✅ 所有计时器功能正常工作</li>
-        </ul>
-    </div>
-
     <script>
-        // 简单的测试
-        setTimeout(() => {
-            const results = document.getElementById('test-results');
-            results.innerHTML = `
-                <div class="test-result pass">
-                    ✅ 页面加载成功 - 没有 JavaScript 错误
-                </div>
-                <div class="test-result pass">
-                    ✅ 函数定义检查通过 - getFlatIconForMode 已移到全局作用域
-                </div>
-                <div class="test-result pass">
-                    ✅ 语法检查通过 - 没有语法错误
-                </div>
-                <div class="test-result pass">
-                    ✅ 修复验证完成 - 可以正常使用主应用
-                </div>
-            `;
-        }, 1000);
+        let logContainer = document.getElementById('logs');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logContainer.textContent = '';
+        }
+
+        // 复制主应用中改进后的 parseJSONSafely 函数
+        const parseJSONSafely = (text) => {
+          try { 
+            return JSON.parse(text); 
+          } catch (e) { 
+            try { 
+              // 移除 markdown 代码块标记
+              let cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+              return JSON.parse(cleanText); 
+            } catch (e2) { 
+              try {
+                // 尝试提取 JSON 部分
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  return JSON.parse(jsonMatch[0]);
+                }
+                throw new Error("无法找到有效的 JSON 内容");
+              } catch (e3) {
+                console.error('JSON 解析失败:', { originalText: text, error: e3.message });
+                throw new Error(`无法解析 AI 返回的数据: ${e3.message}`); 
+              }
+            }
+          }
+        };
+
+        function testParseJSONSafely() {
+            log('🧪 开始测试 parseJSONSafely 函数...');
+
+            // 测试用例1: 标准 JSON
+            const test1 = '{"greeting": "Hello World"}';
+            try {
+                const result1 = parseJSONSafely(test1);
+                log('✅ 测试1 (标准JSON) 通过: ' + JSON.stringify(result1));
+            } catch (e) {
+                log('❌ 测试1 (标准JSON) 失败: ' + e.message);
+            }
+
+            // 测试用例2: 带 markdown 代码块的 JSON
+            const test2 = '```json\n{"greeting": "Hello World"}\n```';
+            try {
+                const result2 = parseJSONSafely(test2);
+                log('✅ 测试2 (markdown代码块) 通过: ' + JSON.stringify(result2));
+            } catch (e) {
+                log('❌ 测试2 (markdown代码块) 失败: ' + e.message);
+            }
+
+            // 测试用例3: 复杂的计划生成响应 (模拟DeepSeek实际返回)
+            const test3 = `\`\`\`json
+{
+    "theme_title": "高效工作日：专注与平衡",
+    "advice": "根据您的高能量和好心情状态，建议利用上午高效时段处理复杂工作。",
+    "blocks": [
+        {
+            "time": "09:00 - 09:25",
+            "category": "work",
+            "title": "番茄工作1：优先级任务启动",
+            "desc": "处理今日最重要的工作任务"
+        }
+    ]
+}
+\`\`\``;
+            try {
+                const result3 = parseJSONSafely(test3);
+                log('✅ 测试3 (复杂计划响应) 通过: ' + JSON.stringify(result3, null, 2));
+            } catch (e) {
+                log('❌ 测试3 (复杂计划响应) 失败: ' + e.message);
+            }
+
+            // 测试用例4: 复盘生成响应
+            const test4 = `\`\`\`json
+{
+    "summary": "今日工作表现良好但学习未达标",
+    "insights": [
+        "行为模式：工作时段集中但存在午间长时间中断",
+        "习惯延续预测：若维持现状，工作产出可能饱和",
+        "三项保护原则：1.保护每日深度学习时段",
+        "时间调整建议：将19:00-20:30固定为深度学习时段"
+    ]
+}
+\`\`\``;
+            try {
+                const result4 = parseJSONSafely(test4);
+                log('✅ 测试4 (复盘响应) 通过: ' + JSON.stringify(result4, null, 2));
+            } catch (e) {
+                log('❌ 测试4 (复盘响应) 失败: ' + e.message);
+            }
+
+            // 测试用例5: 混合文本中的 JSON
+            const test5 = `这是一些前置文本
+            
+{
+    "test": "success",
+    "message": "这是嵌入在文本中的JSON"
+}
+
+这是一些后置文本`;
+            try {
+                const result5 = parseJSONSafely(test5);
+                log('✅ 测试5 (混合文本JSON) 通过: ' + JSON.stringify(result5));
+            } catch (e) {
+                log('❌ 测试5 (混合文本JSON) 失败: ' + e.message);
+            }
+
+            // 测试用例6: 无效内容
+            const test6 = '这是完全无效的内容，没有任何JSON';
+            try {
+                const result6 = parseJSONSafely(test6);
+                log('❌ 测试6 (无效内容) 意外通过: ' + JSON.stringify(result6));
+            } catch (e) {
+                log('✅ 测试6 (无效内容) 正确失败: ' + e.message);
+            }
+
+            log('🏁 所有测试完成');
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+            log('🚀 JSON 解析修复验证工具已加载');
+            log('点击按钮开始测试 parseJSONSafely 函数的各种情况');
+        };
     </script>
 </body>
 </html>
